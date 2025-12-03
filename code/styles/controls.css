@@ -1,0 +1,122 @@
+/* ========================================
+   Controls CSS - Panel de contrôles
+   Version : 1.0
+   Date : 02/12/2025
+   ======================================== */
+
+/* Note: Les styles principaux sont dans main.css */
+/* Ce fichier contient les styles spécifiques supplémentaires */
+
+/* ========================================
+   1. Améliorations Dropdowns
+   ======================================== */
+
+.form-control option {
+    padding: var(--spacing-sm);
+}
+
+/* Style focus plus visible pour accessibilité */
+.form-control:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/* ========================================
+   2. Radio Buttons - Design Custom
+   ======================================== */
+
+.radio-label input[type="radio"]:checked + span {
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+.radio-label input[type="radio"]:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/* ========================================
+   3. Transitions Smooth
+   ======================================== */
+
+.form-control,
+.radio-label,
+.btn {
+    transition: all var(--transition-base);
+}
+
+/* ========================================
+   4. États Disabled
+   ======================================== */
+
+.form-control:disabled,
+.radio-label input[type="radio"]:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.radio-label input[type="radio"]:disabled + span {
+    cursor: not-allowed;
+    color: var(--color-text-light);
+}
+
+/* ========================================
+   5. Immatriculation (US-004)
+   ======================================== */
+
+/* Input group pour l'immatriculation */
+.input-group {
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: flex-start;
+}
+
+.input-group .form-control {
+    flex: 1;
+    font-weight: 500;
+    letter-spacing: 0.05em; /* Espacement entre caractères pour lisibilité */
+    text-transform: uppercase; /* Affichage en majuscules */
+}
+
+.input-group .btn {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+/* Message d'erreur immatriculation */
+.form-error {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background-color: #fee2e2;
+    border-radius: var(--radius-md);
+    animation: slideUp var(--transition-fast);
+}
+
+.form-error.hidden {
+    display: none !important;
+}
+
+/* ========================================
+   6. Responsive Supplémentaire
+   ======================================== */
+
+@media (max-width: 768px) {
+    .form-control {
+        font-size: 0.875rem;
+    }
+
+    .radio-label span {
+        font-size: 0.875rem;
+    }
+
+    /* Stack vertical sur mobile pour immatriculation */
+    .input-group {
+        flex-direction: column;
+    }
+
+    .input-group .btn {
+        width: 100%;
+    }
+}
