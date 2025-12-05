@@ -1,8 +1,8 @@
 # Kanban Board - Configurateur_Daher
 
 **Projet** : 005-Configurateur_Daher
-**Sprint actuel** : Sprint #7 (EN COURS 🚀 - Refonte UI + Mosaïque)
-**Derniere mise a jour** : 05/12/2025 - Sprint #7 démarré - US-028 et US-029 en développement
+**Sprint actuel** : Sprint #10 (TERMINÉ ✅ - 5 SP livrés, 26/26 critères QA validés)
+**Derniere mise a jour** : 06/12/2025 - Sprint #10 Review complété (4 US, 5 SP, 100% validés)
 **Équipe** : 6 agents (PO + ARCH + COORDINATOR + 1 DEV-Généraliste + 1 QA-Fonctionnel + 1 DOC)
 
 ---
@@ -379,6 +379,161 @@ _Tous les tests QA du Sprint #7 sont terminés et validés_
 
 ---
 
+## Sprint #8 - Téléchargement d'images (Prévu)
+
+**Sprint Goal** : "Permettre le téléchargement individuel et par lot des images générées"
+
+**Date de démarrage** : Non démarré
+**Capacity** : 7 Story Points (US-031: 2 SP + US-032: 5 SP)
+
+### 🔵 To Do (2 US - 7 SP)
+
+- [US-031] Téléchargement individuel d'images (2 SP)
+  - Icône download en coin supérieur droit de chaque vignette
+  - Clic → téléchargement immédiat
+  - Nommage: `vue_exterieur_N.png` ou `vue_interieur_N.png`
+
+- [US-032] Téléchargement par lot avec sélection (5 SP)
+  - Bouton "Télécharger plusieurs images" active mode sélection
+  - Checkboxes sur vignettes
+  - Téléchargements séquentiels
+  - Compteur de sélection + barre de progression
+
+### 🟡 In Progress (0 US - 0 SP)
+
+_Aucune US en cours_
+
+### 🟢 Testing (0 US - 0 SP)
+
+_Aucun test en cours_
+
+### ✅ Done (0 US - 0 SP)
+
+_Sprint pas encore démarré_
+
+**Progression Sprint #8** : 0/7 SP (0%)
+
+---
+
+## Sprint #9 - Barre de recherche + Immatriculation dynamique (TERMINÉ ✅)
+
+**Sprint Goal** : "Améliorer l'UX avec filtrage de dropdowns et cohérence automatique modèle/immatriculation"
+
+**Date de démarrage** : 05/12/2025
+**Date de clôture** : 05/12/2025
+**Capacity** : 6 Story Points (US-033: 5 SP + US-034: 1 SP)
+**Validation Stakeholder** : ✅ "Parfait" + "Excellente feature"
+
+### 🔵 To Do (0 US - 0 SP)
+
+_Sprint terminé_
+
+### 🟡 In Progress (0 US - 0 SP)
+
+_Sprint terminé_
+
+### 🟢 Testing (0 US - 0 SP)
+
+_Sprint terminé_
+
+### ✅ Done (2 US - 6 SP)
+
+- [US-034] Immatriculation par défaut dynamique selon modèle (1 SP) - **VALIDÉ le 05/12/2025**
+  - ✅ Changement automatique N960TB ↔ N980TB selon modèle sélectionné
+  - ✅ Flag `hasCustomImmat` pour protection des modifications user
+  - ✅ Conservation des immatriculations personnalisées
+  - ✅ Mise à jour input visuel + state synchronisés
+  - ✅ Tests QA : 7/7 critères PASS (0 bugs)
+  - **Fichiers modifiés** : state.js (+1 ligne), app.js (+39 lignes)
+
+- [US-033] Barre de recherche zones couleurs par tags (5 SP) - **VALIDÉ le 05/12/2025**
+  - ✅ 5 inputs de recherche (un par zone A/B/C/D/A+)
+  - ✅ Filtrage insensible à la casse + recherche sur nom ET tags
+  - ✅ Affichage immédiat (pas de bouton "Rechercher")
+  - ✅ Message "Aucune correspondance" si 0 résultat
+  - ✅ Sélection préservée après filtrage
+  - ✅ Tests QA : 8/8 critères PASS (0 bugs)
+  - **Fichiers modifiés** : api.js (+4 lignes), index.html (+63 lignes), app.js (+103 lignes), controls.css (+30 lignes)
+
+**Progression Sprint #9** : 6/6 SP complétés (100% ✅) - **SPRINT TERMINÉ ET VALIDÉ**
+
+**Métriques Sprint #9** :
+- **Velocity** : 6/6 SP (100% ✅)
+- **Durée** : ~3h30 (dev + QA)
+- **Taux de qualité** : 100% (15/15 critères QA PASS)
+- **Bugs corrigés** : 0 (implémentation parfaite)
+- **Mode de coordination** : Automatique (COORDINATOR)
+
+---
+
+## Sprint #10 - Formatage dropdowns + Configuration intérieur (TERMINÉ ✅)
+
+**Sprint Goal** : "Corriger formatage dropdowns + Compléter configuration intérieur (Stitching + Réorganisation Sièges + Toggle buttons)"
+
+**Date de démarrage** : 06/12/2025
+**Date de clôture** : 06/12/2025
+**Capacity** : 5 Story Points (US-038: 1 SP + US-035: 1 SP + US-036: 2 SP + US-037: 1 SP)
+**Équipe** : 6 agents
+**Validation Stakeholder** : ✅ "Parfait !" (après correction toggle buttons)
+
+### 🔵 To Do (0 US - 0 SP)
+
+_Sprint terminé_
+
+### 🟡 In Progress (0 US - 0 SP)
+
+_Sprint terminé_
+
+### 🟢 Testing (0 US - 0 SP)
+
+_Sprint terminé_
+
+### ✅ Done (4 US - 5 SP)
+
+- [US-038] Corriger formatage noms dropdowns (1 SP) - **VALIDÉ le 06/12/2025**
+  - ✅ Problème résolu : "BlackOnyx_5557_Suede_Premium" → "Black Onyx"
+  - ✅ Filtre numérique ajouté : `replace(/\d+/g, '')`
+  - ✅ Conversion CamelCase → espaces fonctionnelle
+  - ✅ Tests QA : 8/8 critères PASS (0 bugs)
+  - **Fichier modifié** : code/js/api.js (lignes 432-438)
+  - **Commit** : 515c41d
+
+- [US-035] Réorganiser section Sièges (1 SP) - **VALIDÉ le 06/12/2025**
+  - ✅ Ultra-Suede Ribbon déplacé de Matériaux → Sièges
+  - ✅ Ordre correct : Cuir → Ultra-Suede → Stitching → Matériau Central → Perforation → Ceintures
+  - ✅ Tests QA : 6/6 critères PASS (0 bugs)
+  - **Fichier modifié** : code/index.html (lignes 381-454)
+  - **Commit** : 70275c2
+
+- [US-036] Ajouter paramètre Stitching (2 SP) - **VALIDÉ le 06/12/2025**
+  - ✅ Dropdown Interior_Stitching fonctionnel
+  - ✅ Options extraites depuis XML via extractParameterOptions()
+  - ✅ Event listener + payload API + synchronisation Prestige
+  - ✅ Tests QA : 8/8 critères PASS (0 bugs)
+  - **Fichiers modifiés** : api.js, state.js, config.js, app.js, index.html (5 fichiers)
+  - **Commit** : ebd4b5b
+
+- [US-037] Toggle buttons Matériau Central (1 SP) - **VALIDÉ le 06/12/2025**
+  - ✅ Toggle buttons "Suede / Cuir" (format identique aux portes)
+  - ✅ Event listeners click avec classList.add/remove('active')
+  - ✅ Synchronisation Prestige fonctionnelle
+  - ✅ Tests QA : 4/4 critères PASS (0 bugs)
+  - ⚠️ **Correction en cours de sprint** : Radio buttons → Toggle buttons (feedback utilisateur)
+  - **Fichiers modifiés** : index.html (lignes 400-403), app.js (lignes 1240-1254, 905-916)
+  - **Commits** : d882f1f (initial), d9aedfe (correction)
+
+**Progression Sprint #10** : 5/5 SP complétés (100% ✅) - **SPRINT TERMINÉ ET VALIDÉ**
+
+**Métriques Sprint #10** :
+- **Velocity** : 5/5 SP (100% ✅)
+- **Durée** : ~3h (dev + QA + review)
+- **Taux de qualité** : 100% (26/26 critères QA PASS)
+- **Bugs corrigés** : 0 (implémentation parfaite après correction UI)
+- **Mode de coordination** : Automatique (COORDINATOR)
+- **Correction rapide** : Toggle buttons après feedback utilisateur (~10 min)
+
+---
+
 ## Backlog Icebox (ARCHIVÉ - Non demandé)
 
 US créées automatiquement mais jamais demandées par l'utilisateur :
@@ -457,6 +612,10 @@ US créées automatiquement mais jamais demandées par l'utilisateur :
 | 03/12/2025 | US-005 | In Progress → Testing (4 bugs UX corrigés) | DEV-Généraliste |
 | 03/12/2025 | US-005 | Testing → Done (36/36 critères PASS après corrections) | QA-Fonctionnel |
 | 03/12/2025 | Sprint #1 | TERMINÉ - MVP 100% fonctionnel (48 SP / 48 SP) | COORDINATOR |
+| 05/12/2025 | US-034 | Créée et ajoutée au Sprint #9 (To Do) | PO |
+| 05/12/2025 | Sprint #9 | TERMINÉ - 6 SP complétés (US-033 + US-034) | COORDINATOR |
+| 06/12/2025 | Sprint #10 | Sprint Planning terminé - 4 US prêtes (5 SP) | ARCH |
+| 06/12/2025 | US-038, US-035, US-036, US-037 | Créées et ajoutées au Sprint #10 (To Do) | PO |
 
 ---
 

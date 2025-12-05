@@ -3,7 +3,7 @@
 **Projet** : 005-Configurateur_Daher
 **Date de creation** : 02/12/2025
 **PO** : Claude (PO Agent)
-**Derniere mise a jour** : 05/12/2025 - US-028 corrigée (Affichage conditionnel selon vue) + US-029 (Mosaïque d'images) + US-030 (Optimisation 1920x1080 sans scroll)
+**Derniere mise a jour** : 05/12/2025 - US-034 (Immatriculation dynamique selon modèle) ajoutée au Sprint #9
 
 ---
 
@@ -1260,6 +1260,760 @@ Modifications recommandées :
 
 ---
 
+## User Stories - Sprint #8 (Téléchargement d'images)
+
+### [US-031] Téléchargement individuel d'images
+
+**Priorité** : Haute
+**Story Points** : 2 SP
+**Sprint** : Sprint #8 (Prévu)
+**Status** : To Do
+
+**User Story :**
+En tant qu'utilisateur,
+Je veux pouvoir télécharger une image individuelle depuis la mosaïque,
+Afin de sauvegarder rapidement une vue spécifique sans télécharger toutes les images.
+
+**Contexte :**
+- La mosaïque d'images (US-029) affiche 5 images en vue Extérieur et 6 images en vue Intérieur
+- Actuellement, aucune option de téléchargement n'est disponible
+- Besoin d'un moyen rapide de télécharger une image individuelle
+
+**Critères d'acceptation :**
+
+**A. Icône de téléchargement sur les vignettes**
+- [ ] Icône download visible sur chaque vignette de la mosaïque
+- [ ] Position de l'icône : coin supérieur droit de chaque image (overlay)
+- [ ] Icône stylisée : symbole download standard (flèche vers le bas + barre)
+- [ ] Icône visible en permanence OU au hover de l'image
+- [ ] Icône cliquable avec cursor pointer
+- [ ] Taille icône : ~24-32px (visible mais discrète)
+
+**B. Comportement au clic sur l'icône**
+- [ ] Clic sur icône → Télécharge immédiatement l'image correspondante
+- [ ] Ne déclenche PAS l'ouverture en modal fullscreen (seul le clic sur l'image ouvre le modal)
+- [ ] Téléchargement direct sans popup de confirmation
+- [ ] Feedback visuel : icône change brièvement de couleur/taille au clic
+
+**C. Nommage des fichiers téléchargés**
+- [ ] Format : `vue_exterieur_N.png` ou `vue_interieur_N.png`
+- [ ] N = numéro de la vue (1, 2, 3, 4, 5 pour extérieur ; 1-6 pour intérieur)
+- [ ] Extension : `.png` (ou `.jpg` selon format de l'API)
+- [ ] Exemples :
+  - Vue Extérieur image 1 : `vue_exterieur_1.png`
+  - Vue Intérieur image 3 : `vue_interieur_3.png`
+
+**D. Gestion des événements**
+- [ ] Event listener `click` sur l'icône download (pas sur l'image elle-même)
+- [ ] Event listener séparé du clic sur l'image (qui ouvre le modal)
+- [ ] Utiliser `event.stopPropagation()` pour éviter conflit avec modal
+
+**E. Téléchargement technique**
+- [ ] Utiliser `fetch()` pour récupérer l'image depuis l'URL
+- [ ] Convertir en Blob
+- [ ] Créer lien `<a download="vue_exterieur_1.png">` dynamique
+- [ ] Trigger `.click()` programmatique
+- [ ] Nettoyer URL.createObjectURL après téléchargement
+
+**F. UX et design**
+- [ ] Icône avec fond semi-transparent (ex: `background: rgba(0,0,0,0.6)`)
+- [ ] Icône blanche ou couleur contrastante visible sur toutes les images
+- [ ] Hover effect sur l'icône : changement de couleur, scale(1.1)
+- [ ] Transition smooth (0.2s)
+- [ ] Icône ne gêne pas la visualisation de l'image
+
+**G. Responsive**
+- [ ] Icône visible et fonctionnelle sur desktop (1920x1080, 1366x768)
+- [ ] Icône adaptée sur tablette (taille légèrement réduite acceptable)
+- [ ] Sur mobile : Icône toujours visible (pas seulement au hover)
+
+**H. Tests et validation**
+- [ ] Tester téléchargement de chaque image (5 en Ext, 6 en Int)
+- [ ] Vérifier nommage correct : `vue_exterieur_1.png` à `vue_exterieur_5.png`
+- [ ] Vérifier nommage correct : `vue_interieur_1.png` à `vue_interieur_6.png`
+- [ ] Vérifier que clic icône ne déclenche PAS modal fullscreen
+- [ ] Vérifier que clic image déclenche TOUJOURS modal fullscreen
+- [ ] Console sans erreurs
+- [ ] Tester sur Chrome, Firefox, Edge
+- [ ] Vérifier que l'image téléchargée est identique à celle affichée
+
+**Notes techniques :**
+
+**Fichiers à modifier :**
+1. **index.html** : Ajouter icône download dans chaque vignette (ou générer dynamiquement)
+2. **ui.js** : Modifier `renderMosaic()` pour ajouter icône download
+   ```javascript
+   function renderMosaic(images) {
+     const mosaicContainer = document.getElementById('viewport-mosaic');
+     mosaicContainer.innerHTML = '';
+     images.forEach((url, index) => {
+       const wrapper = document.createElement('div');
+       wrapper.className = 'mosaic-item';
+
+       const img = document.createElement('img');
+       img.src = url;
+       img.alt = `Vue ${index + 1}`;
+       img.addEventListener('click', () => openFullscreen(index));
+
+       const downloadIcon = document.createElement('button');
+       downloadIcon.className = 'download-icon';
+       downloadIcon.innerHTML = '<i class="icon-download"></i>'; // Ou SVG
+       downloadIcon.addEventListener('click', (e) => {
+         e.stopPropagation(); // Empêcher ouverture modal
+         downloadImage(url, index);
+       });
+
+       wrapper.appendChild(img);
+       wrapper.appendChild(downloadIcon);
+       mosaicContainer.appendChild(wrapper);
+     });
+   }
+   ```
+
+3. **ui.js** : Créer fonction `downloadImage(url, index)`
+   ```javascript
+   async function downloadImage(url, index) {
+     const viewType = state.getViewType(); // 'exterior' ou 'interior'
+     const filename = `vue_${viewType === 'exterior' ? 'exterieur' : 'interieur'}_${index + 1}.png`;
+
+     try {
+       const response = await fetch(url);
+       const blob = await response.blob();
+       const blobUrl = URL.createObjectURL(blob);
+
+       const link = document.createElement('a');
+       link.href = blobUrl;
+       link.download = filename;
+       link.click();
+
+       URL.revokeObjectURL(blobUrl);
+     } catch (error) {
+       console.error('Erreur téléchargement image:', error);
+       // Optionnel : Afficher message d'erreur à l'utilisateur
+     }
+   }
+   ```
+
+4. **main.css** : Styling de l'icône download
+   ```css
+   .mosaic-item {
+     position: relative;
+     display: inline-block;
+   }
+
+   .download-icon {
+     position: absolute;
+     top: 8px;
+     right: 8px;
+     width: 32px;
+     height: 32px;
+     background: rgba(0, 0, 0, 0.6);
+     border: none;
+     border-radius: var(--radius-md);
+     color: white;
+     cursor: pointer;
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     transition: transform 0.2s, background 0.2s;
+     z-index: 10;
+   }
+
+   .download-icon:hover {
+     background: rgba(0, 0, 0, 0.8);
+     transform: scale(1.1);
+   }
+
+   .download-icon:active {
+     transform: scale(0.95);
+   }
+
+   /* Icône visible au hover de l'image (optionnel) */
+   .mosaic-item .download-icon {
+     opacity: 0;
+     transition: opacity 0.2s;
+   }
+
+   .mosaic-item:hover .download-icon {
+     opacity: 1;
+   }
+   ```
+
+**Icône SVG recommandée :**
+```html
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+  <polyline points="7 10 12 15 17 10"></polyline>
+  <line x1="12" y1="15" x2="12" y2="3"></line>
+</svg>
+```
+
+**Complexité :**
+- Ajouter icône download sur chaque vignette (DOM + CSS)
+- Event listener avec `stopPropagation()`
+- Fonction de téléchargement (fetch + Blob + download)
+- Nommage dynamique selon viewType et index
+- Styling et UX
+
+**Estimation** : 2 Story Points (~1h de développement)
+
+---
+
+### [US-032] Téléchargement par lot avec sélection
+
+**Priorité** : Haute
+**Story Points** : 5 SP
+**Sprint** : Sprint #8 (Prévu)
+**Status** : To Do
+
+**User Story :**
+En tant qu'utilisateur,
+Je veux pouvoir sélectionner plusieurs images et les télécharger en une seule action,
+Afin de gagner du temps lorsque je souhaite télécharger plusieurs vues spécifiques.
+
+**Contexte :**
+- US-031 permet le téléchargement individuel (une par une)
+- Besoin d'un mode sélection pour télécharger plusieurs images simultanément
+- L'utilisateur veut pouvoir choisir quelles images télécharger (pas toutes obligatoirement)
+
+**Critères d'acceptation :**
+
+**A. Bouton d'activation du mode sélection**
+- [ ] Bouton "Télécharger plusieurs images" visible au-dessus ou en-dessous de la mosaïque
+- [ ] Clic sur le bouton → Active le mode sélection
+- [ ] En mode sélection :
+  - [ ] Des checkboxes apparaissent sur chaque vignette
+  - [ ] Le bouton change de texte : "Annuler sélection" ou "Quitter mode sélection"
+  - [ ] Un nouveau bouton "Télécharger la sélection (X)" apparaît (X = nombre d'images cochées)
+- [ ] Clic sur "Annuler sélection" → Désactive le mode sélection, masque les checkboxes
+
+**B. Checkboxes sur les vignettes**
+- [ ] Checkbox visible sur chaque image de la mosaïque (en mode sélection uniquement)
+- [ ] Position : coin supérieur gauche de chaque image (opposé à l'icône download)
+- [ ] Checkbox stylisée : carré blanc avec border, coche bleue/verte quand sélectionnée
+- [ ] Taille : ~24-32px (cliquable facilement)
+- [ ] Clic sur checkbox → Toggle sélection (coché/décoché)
+- [ ] État initial : Toutes décochées
+
+**C. Sélection d'images**
+- [ ] Clic sur checkbox → Sélectionne/désélectionne l'image correspondante
+- [ ] Compteur mis à jour en temps réel : "Télécharger la sélection (3)" si 3 images cochées
+- [ ] Possibilité de cocher/décocher n'importe quelle image indépendamment
+- [ ] Feedback visuel : Image sélectionnée avec bordure colorée OU overlay semi-transparent
+- [ ] Minimum 1 image doit être sélectionnée pour activer le bouton de téléchargement
+
+**D. Bouton "Tout sélectionner / Tout désélectionner" (optionnel mais recommandé)**
+- [ ] Bouton "Tout sélectionner" visible en mode sélection
+- [ ] Clic → Coche toutes les checkboxes
+- [ ] Bouton change en "Tout désélectionner" quand toutes cochées
+- [ ] Clic "Tout désélectionner" → Décoche toutes les checkboxes
+
+**E. Téléchargement de la sélection**
+- [ ] Bouton "Télécharger la sélection (X)" actif uniquement si au moins 1 image sélectionnée
+- [ ] Clic sur le bouton → Télécharge toutes les images sélectionnées **séquentiellement** (une par une)
+- [ ] Pas de fichier ZIP : Téléchargements individuels successifs
+- [ ] Délai entre chaque téléchargement : ~200-500ms (éviter surcharge navigateur)
+- [ ] Progression affichée : "Téléchargement 2/5..." ou barre de progression
+
+**F. Nommage des fichiers téléchargés**
+- [ ] Même format que US-031 : `vue_exterieur_N.png` ou `vue_interieur_N.png`
+- [ ] N = numéro de la vue originale (pas de renumérotation)
+- [ ] Exemples : Si l'utilisateur sélectionne vues 1, 3, 5 en extérieur :
+  - `vue_exterieur_1.png`
+  - `vue_exterieur_3.png`
+  - `vue_exterieur_5.png`
+
+**G. Feedback UX pendant téléchargement**
+- [ ] Message "Téléchargement en cours..." affiché
+- [ ] Barre de progression OU compteur "2/5 téléchargées"
+- [ ] Désactiver bouton "Télécharger la sélection" pendant le téléchargement
+- [ ] Message de succès : "5 images téléchargées avec succès !"
+- [ ] Gestion d'erreur : Si une image échoue, continuer avec les suivantes + afficher erreur
+
+**H. Sortie du mode sélection**
+- [ ] Après téléchargement, rester en mode sélection (ne pas quitter automatiquement)
+- [ ] L'utilisateur peut modifier sa sélection et retélécharger
+- [ ] Clic sur "Annuler sélection" → Quitte le mode, masque checkboxes
+
+**I. Comportement en mode sélection**
+- [ ] En mode sélection, clic sur l'image elle-même ne déclenche PAS le modal fullscreen
+- [ ] En mode sélection, clic sur l'image → Toggle checkbox (alternative UX)
+- [ ] OU : Clic image ouvre toujours modal, seul clic checkbox sélectionne
+- [ ] Choix recommandé : Clic image toggle checkbox en mode sélection
+
+**J. Icône download individuelle (US-031) en mode sélection**
+- [ ] Masquer l'icône download individuelle quand mode sélection est actif
+- [ ] OU : Garder icône visible mais désactivée (opacité réduite, non cliquable)
+- [ ] Choix recommandé : Masquer pour éviter confusion
+
+**K. Responsive**
+- [ ] Checkboxes visibles et cliquables sur desktop, tablette, mobile
+- [ ] Boutons "Télécharger plusieurs images" et "Télécharger la sélection" adaptés aux petits écrans
+- [ ] Sur mobile : Boutons en pleine largeur si nécessaire
+
+**L. Tests et validation**
+- [ ] Activer mode sélection → Vérifier apparition des checkboxes
+- [ ] Sélectionner 3 images → Vérifier compteur "Télécharger la sélection (3)"
+- [ ] Télécharger la sélection → Vérifier que les 3 images se téléchargent séquentiellement
+- [ ] Vérifier nommage correct des fichiers téléchargés
+- [ ] Tester "Tout sélectionner" → Vérifier toutes cochées
+- [ ] Tester "Tout désélectionner" → Vérifier toutes décochées
+- [ ] Tester annulation mode sélection → Vérifier checkboxes disparaissent
+- [ ] Tester avec 5 images (Ext) et 6 images (Int)
+- [ ] Vérifier gestion d'erreur si téléchargement échoue
+- [ ] Console sans erreurs
+- [ ] Tester sur Chrome, Firefox, Edge
+
+**Notes techniques :**
+
+**Fichiers à modifier :**
+
+1. **index.html** : Ajouter boutons de contrôle du mode sélection
+   ```html
+   <div id="mosaic-controls">
+     <button id="btn-toggle-selection-mode" class="btn-secondary">
+       Télécharger plusieurs images
+     </button>
+     <button id="btn-select-all" class="btn-secondary" style="display: none;">
+       Tout sélectionner
+     </button>
+     <button id="btn-download-selection" class="btn-primary" style="display: none;" disabled>
+       Télécharger la sélection (0)
+     </button>
+   </div>
+   <div id="download-progress" class="hidden">
+     <p>Téléchargement en cours... <span id="progress-counter">0/0</span></p>
+   </div>
+   ```
+
+2. **ui.js** : Ajouter mode sélection dans `renderMosaic()`
+   ```javascript
+   let selectionMode = false;
+   let selectedImages = new Set();
+
+   function renderMosaic(images) {
+     const mosaicContainer = document.getElementById('viewport-mosaic');
+     mosaicContainer.innerHTML = '';
+     images.forEach((url, index) => {
+       const wrapper = document.createElement('div');
+       wrapper.className = 'mosaic-item';
+
+       const img = document.createElement('img');
+       img.src = url;
+       img.alt = `Vue ${index + 1}`;
+       img.addEventListener('click', () => {
+         if (selectionMode) {
+           toggleSelection(index); // Toggle checkbox en mode sélection
+         } else {
+           openFullscreen(index); // Ouvrir modal en mode normal
+         }
+       });
+
+       // Checkbox (visible uniquement en mode sélection)
+       const checkbox = document.createElement('input');
+       checkbox.type = 'checkbox';
+       checkbox.className = 'selection-checkbox hidden';
+       checkbox.id = `checkbox-${index}`;
+       checkbox.addEventListener('change', () => toggleSelection(index));
+
+       // Icône download (masquée en mode sélection)
+       const downloadIcon = document.createElement('button');
+       downloadIcon.className = 'download-icon';
+       downloadIcon.innerHTML = '<svg>...</svg>';
+       downloadIcon.addEventListener('click', (e) => {
+         e.stopPropagation();
+         downloadImage(url, index);
+       });
+
+       wrapper.appendChild(img);
+       wrapper.appendChild(checkbox);
+       wrapper.appendChild(downloadIcon);
+       mosaicContainer.appendChild(wrapper);
+     });
+   }
+
+   function toggleSelection(index) {
+     const checkbox = document.getElementById(`checkbox-${index}`);
+     if (selectedImages.has(index)) {
+       selectedImages.delete(index);
+       checkbox.checked = false;
+     } else {
+       selectedImages.add(index);
+       checkbox.checked = true;
+     }
+     updateSelectionUI();
+   }
+
+   function updateSelectionUI() {
+     const count = selectedImages.size;
+     const btnDownload = document.getElementById('btn-download-selection');
+     btnDownload.textContent = `Télécharger la sélection (${count})`;
+     btnDownload.disabled = count === 0;
+   }
+   ```
+
+3. **ui.js** : Créer fonction `downloadSelectedImages()`
+   ```javascript
+   async function downloadSelectedImages() {
+     const images = Array.from(document.querySelectorAll('.mosaic-item img'));
+     const selectedIndexes = Array.from(selectedImages);
+     const total = selectedIndexes.length;
+
+     const progressCounter = document.getElementById('progress-counter');
+     const progressContainer = document.getElementById('download-progress');
+     progressContainer.classList.remove('hidden');
+
+     for (let i = 0; i < selectedIndexes.length; i++) {
+       const index = selectedIndexes[i];
+       const url = images[index].src;
+
+       progressCounter.textContent = `${i + 1}/${total}`;
+
+       try {
+         await downloadImage(url, index);
+         await new Promise(resolve => setTimeout(resolve, 300)); // Délai 300ms
+       } catch (error) {
+         console.error(`Erreur téléchargement image ${index + 1}:`, error);
+       }
+     }
+
+     progressContainer.classList.add('hidden');
+     alert(`${total} image(s) téléchargée(s) avec succès !`);
+   }
+   ```
+
+4. **app.js** : Event listeners pour les boutons
+   ```javascript
+   document.getElementById('btn-toggle-selection-mode').addEventListener('click', () => {
+     selectionMode = !selectionMode;
+
+     const checkboxes = document.querySelectorAll('.selection-checkbox');
+     const downloadIcons = document.querySelectorAll('.download-icon');
+     const btnToggle = document.getElementById('btn-toggle-selection-mode');
+     const btnSelectAll = document.getElementById('btn-select-all');
+     const btnDownloadSelection = document.getElementById('btn-download-selection');
+
+     if (selectionMode) {
+       checkboxes.forEach(cb => cb.classList.remove('hidden'));
+       downloadIcons.forEach(icon => icon.classList.add('hidden'));
+       btnToggle.textContent = 'Annuler sélection';
+       btnSelectAll.style.display = 'inline-block';
+       btnDownloadSelection.style.display = 'inline-block';
+     } else {
+       checkboxes.forEach(cb => cb.classList.add('hidden'));
+       downloadIcons.forEach(icon => icon.classList.remove('hidden'));
+       btnToggle.textContent = 'Télécharger plusieurs images';
+       btnSelectAll.style.display = 'none';
+       btnDownloadSelection.style.display = 'none';
+       selectedImages.clear();
+     }
+   });
+
+   document.getElementById('btn-select-all').addEventListener('click', () => {
+     const checkboxes = document.querySelectorAll('.selection-checkbox');
+     const allSelected = selectedImages.size === checkboxes.length;
+
+     if (allSelected) {
+       selectedImages.clear();
+       checkboxes.forEach(cb => cb.checked = false);
+       document.getElementById('btn-select-all').textContent = 'Tout sélectionner';
+     } else {
+       checkboxes.forEach((cb, index) => {
+         selectedImages.add(index);
+         cb.checked = true;
+       });
+       document.getElementById('btn-select-all').textContent = 'Tout désélectionner';
+     }
+     updateSelectionUI();
+   });
+
+   document.getElementById('btn-download-selection').addEventListener('click', () => {
+     downloadSelectedImages();
+   });
+   ```
+
+5. **main.css** : Styling pour checkboxes et mode sélection
+   ```css
+   .selection-checkbox {
+     position: absolute;
+     top: 8px;
+     left: 8px;
+     width: 28px;
+     height: 28px;
+     cursor: pointer;
+     z-index: 10;
+     accent-color: var(--color-primary);
+   }
+
+   .selection-checkbox.hidden {
+     display: none;
+   }
+
+   .mosaic-item.selected img {
+     border: 3px solid var(--color-primary);
+     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+   }
+
+   #download-progress {
+     text-align: center;
+     padding: var(--spacing-md);
+     background: var(--color-primary-light);
+     border-radius: var(--radius-md);
+     margin-top: var(--spacing-md);
+   }
+
+   #download-progress.hidden {
+     display: none;
+   }
+
+   #mosaic-controls {
+     display: flex;
+     gap: var(--spacing-sm);
+     margin-bottom: var(--spacing-md);
+     flex-wrap: wrap;
+   }
+
+   #btn-download-selection:disabled {
+     opacity: 0.5;
+     cursor: not-allowed;
+   }
+   ```
+
+**Complexité :**
+- Gestion du state selectionMode (toggle)
+- Afficher/masquer checkboxes et icônes download
+- Gestion Set() pour selectedImages
+- Téléchargement séquentiel avec barre de progression
+- Event listeners multiples (boutons + checkboxes)
+- Feedback UX (compteur, progression, messages)
+- Tests exhaustifs
+
+**Estimation** : 5 Story Points (~2-3h de développement)
+
+---
+
+## User Stories - Sprint #9
+
+### [US-033] Barre de recherche pour filtrer les zones de couleurs par tags
+
+**Priorité** : Moyenne
+**Story Points** : 5 SP
+**Sprint** : Sprint #9
+**Status** : To Do
+
+**User Story :**
+En tant qu'utilisateur,
+Je veux pouvoir taper du texte dans une barre de recherche pour filtrer les options des dropdowns de zones de couleurs (A, B, C, D, A+),
+Afin de trouver rapidement une couleur par son nom ou ses tags (ex: "orange", "solid", "traffic") sans scroller dans une longue liste.
+
+**Contexte métier :**
+Dans le XML, chaque couleur contient des **tags de recherche** après le marqueur `A+` ou `NOA+`, séparés par des tirets.
+
+**Exemple** :
+```
+TrafficRed-03020-#bc413c-#E00500-A+-03020-orange-traffic-red-solid-light
+                                    └─────────────────┬───────────────────┘
+                                                  Tags de recherche
+```
+Tags : `03020`, `orange`, `traffic`, `red`, `solid`, `light`
+
+**Critères d'acceptation :**
+- [ ] Barre de recherche ajoutée **uniquement** au-dessus des 5 dropdowns de zones de couleurs (Zone A, B, C, D, A+)
+- [ ] Les autres dropdowns (PaintScheme, Prestige, Version, etc.) ne sont **PAS** concernés
+- [ ] Extraction des tags depuis le XML : parser la partie après `A+` ou `NOA+`, split par tirets
+- [ ] Filtrage en temps réel sur **label ET tags** : dès que l'utilisateur tape, les options sont filtrées
+- [ ] Recherche insensible à la casse (case-insensitive)
+- [ ] Si aucune couleur ne correspond, afficher message "Aucun résultat"
+- [ ] Bouton "✕" pour effacer la recherche et réafficher toutes les options
+- [ ] **Affichage** : Le dropdown affiche uniquement le label de couleur (ex: "TrafficRed"), **pas les tags**
+- [ ] Performance : pas de lag lors de la saisie (même avec 100+ couleurs)
+- [ ] Accessibilité : placeholder clair ("Rechercher une couleur...")
+
+**Détails techniques :**
+
+1. **Extraction des tags depuis le XML** (dans `app.js` lors de `initColorZones()`) :
+   ```javascript
+   async function initColorZones() {
+       const xmlDoc = await getDatabaseXML();
+       const paintScheme = getConfig().paintScheme;
+
+       // Extraire les zones de couleurs depuis le bookmark du paint scheme
+       const zones = getExteriorColorZones(xmlDoc, paintScheme);
+
+       // Pour chaque zone (A, B, C, D, A+)
+       zones.forEach((colorOptions, zoneName) => {
+           const enrichedOptions = colorOptions.map(color => {
+               // Format XML: "TrafficRed-03020-#bc413c-#E00500-A+-03020-orange-traffic-red-solid-light"
+               const parts = color.split('-');
+               const aIndexPlus = parts.indexOf('A+');
+               const aIndexNOA = parts.indexOf('NOA+');
+               const tagStartIndex = (aIndexPlus !== -1) ? aIndexPlus + 1 :
+                                     (aIndexNOA !== -1) ? aIndexNOA + 1 : -1;
+
+               let tags = [];
+               if (tagStartIndex !== -1 && tagStartIndex < parts.length) {
+                   tags = parts.slice(tagStartIndex); // Tous les éléments après A+ ou NOA+
+               }
+
+               return {
+                   label: parts[0], // Premier élément = nom couleur (ex: "TrafficRed")
+                   value: color,    // Valeur complète pour l'API
+                   tags: tags       // Tags de recherche
+               };
+           });
+
+           // Peupler le dropdown avec options enrichies
+           populateColorDropdownWithSearch(`selectZone${zoneName}`, enrichedOptions);
+       });
+   }
+   ```
+
+2. **HTML** : Ajouter inputs de recherche au-dessus des 5 dropdowns zones
+   ```html
+   <!-- Zone A -->
+   <div class="form-group">
+       <label for="selectZoneA">Zone A</label>
+       <div class="search-wrapper">
+           <input type="text" id="searchZoneA" class="form-control search-input"
+                  placeholder="Rechercher une couleur...">
+           <button type="button" class="btn-clear-search hidden" id="btnClearZoneA">✕</button>
+       </div>
+       <select id="selectZoneA" name="zoneA" class="form-control"></select>
+   </div>
+   <!-- Répéter pour zones B, C, D, A+ -->
+   ```
+
+3. **JavaScript** : Fonction de filtrage avec tags
+   ```javascript
+   function populateColorDropdownWithSearch(selectId, optionsWithTags) {
+       const select = document.getElementById(selectId);
+       const searchId = selectId.replace('select', 'search');
+       const searchInput = document.getElementById(searchId);
+       const btnClear = document.getElementById(`btnClear${selectId.replace('select', '')}`);
+
+       // Stocker les options avec tags
+       let allOptions = optionsWithTags;
+
+       // Peupler initialement
+       refreshDropdown(select, allOptions);
+
+       // Event listener recherche
+       searchInput.addEventListener('input', (e) => {
+           const searchTerm = e.target.value.toLowerCase().trim();
+           btnClear.classList.toggle('hidden', !searchTerm);
+
+           if (!searchTerm) {
+               refreshDropdown(select, allOptions);
+               return;
+           }
+
+           // Filtrer sur label ET tags
+           const filtered = allOptions.filter(opt => {
+               const labelMatch = opt.label.toLowerCase().includes(searchTerm);
+               const tagMatch = opt.tags.some(tag => tag.toLowerCase().includes(searchTerm));
+               return labelMatch || tagMatch;
+           });
+
+           if (filtered.length === 0) {
+               select.innerHTML = '<option disabled>Aucun résultat</option>';
+           } else {
+               refreshDropdown(select, filtered);
+           }
+       });
+
+       // Event listener clear
+       btnClear.addEventListener('click', () => {
+           searchInput.value = '';
+           btnClear.classList.add('hidden');
+           refreshDropdown(select, allOptions);
+       });
+   }
+
+   function refreshDropdown(select, options) {
+       select.innerHTML = '';
+       options.forEach(opt => {
+           const optionEl = document.createElement('option');
+           optionEl.value = opt.value;
+           optionEl.textContent = opt.label; // Afficher SEULEMENT le label, PAS les tags
+           select.appendChild(optionEl);
+       });
+   }
+   ```
+
+4. **CSS** : Styling (identique)
+
+**Complexité :**
+- Parsing XML pour extraire tags (logique nouvelle)
+- Structure de données enrichie (label + value + tags[])
+- Fonction de filtrage sur label ET tags (plus complexe)
+- 5 inputs de recherche à ajouter (Zone A, B, C, D, A+)
+- Event listeners multiples
+- Performance : filtrage rapide sur 100+ couleurs
+
+**Estimation** : 5 Story Points (~2-3h de développement)
+
+---
+
+### [US-034] Immatriculation par défaut dynamique selon le modèle d'avion
+
+**Priorité** : Moyenne
+**Story Points** : 1 SP
+**Sprint** : Sprint #9
+**Status** : To Do
+
+**User Story :**
+En tant qu'utilisateur,
+Je veux que l'immatriculation par défaut change automatiquement selon le modèle d'avion sélectionné,
+Afin d'avoir une cohérence entre le modèle et l'immatriculation affichée.
+
+**Critères d'acceptation :**
+- [ ] Au chargement initial : Si le modèle par défaut est "960", l'immatriculation est "N960TB"
+- [ ] Au chargement initial : Si le modèle par défaut est "980", l'immatriculation est "N980TB"
+- [ ] Quand l'utilisateur change le dropdown "Modèle" de 960 → 980, l'immatriculation devient automatiquement "N980TB"
+- [ ] Quand l'utilisateur change le dropdown "Modèle" de 980 → 960, l'immatriculation devient automatiquement "N960TB"
+- [ ] Si l'utilisateur a manuellement modifié l'immatriculation (autre que N960TB ou N980TB), le changement de modèle ne l'écrase PAS (garder la valeur personnalisée)
+- [ ] Le state est mis à jour (`updateConfig('immat', 'N960TB')` ou `'N980TB'`)
+- [ ] L'input visuel `#inputImmat` est mis à jour avec la nouvelle valeur
+
+**Détails techniques :**
+
+1. **Event listener sur le dropdown Version** (dans `app.js`) :
+   ```javascript
+   const selectVersion = document.getElementById('selectVersion');
+   selectVersion.addEventListener('change', (e) => {
+       const newVersion = e.target.value;
+       const currentImmat = getConfig().immat;
+
+       // Vérifier si l'immat actuelle est une valeur par défaut
+       const isDefaultImmat = (currentImmat === 'N960TB' || currentImmat === 'N980TB');
+
+       if (isDefaultImmat) {
+           // Mettre à jour avec la nouvelle valeur par défaut
+           const newDefaultImmat = `N${newVersion}TB`;
+           updateConfig('immat', newDefaultImmat);
+           document.getElementById('inputImmat').value = newDefaultImmat;
+           console.log(`Immat mise à jour automatiquement: ${newDefaultImmat}`);
+       } else {
+           console.log(`Immat personnalisée conservée: ${currentImmat}`);
+       }
+
+       // Déclencher le rendu
+       triggerRender();
+   });
+   ```
+
+2. **Initialisation** : Vérifier que `DEFAULT_CONFIG.immat` dans `config.js` est cohérent avec `DEFAULT_CONFIG.version`
+
+**Complexité :**
+- Event listener simple
+- Logique conditionnelle basique
+- Mise à jour du state et de l'input
+- Pas d'appel API supplémentaire
+
+**Estimation** : 1 Story Point (~30 min de développement)
+
+---
+
 ## Définition de terminé (DoD)
 
 - [ ] Code fonctionnel testé manuellement
@@ -1278,4 +2032,7 @@ Modifications recommandées :
 **Total Sprint #5** : 4 Story Points ✅ (TERMINÉ)
 **Total Sprint #6** : 10 Story Points (US-027: 10 SP - Configurateur intérieur complet)
 **Total Sprint #7** : 11 Story Points (US-028: 3 SP - Affichage conditionnel selon vue + US-029: 5 SP - Mosaïque d'images + US-030: 3 SP - Optimisation 1920x1080)
+**Total Sprint #8** : 7 Story Points (US-031: 2 SP - Téléchargement individuel images + US-032: 5 SP - Téléchargement par lot)
+**Total Sprint #9** : 4 Story Points (US-033: 3 SP - Barre de recherche pour filtrer dropdowns + US-034: 1 SP - Immatriculation dynamique selon modèle)
+**Total Sprint #10** : 5 Story Points ✅ (US-038: 1 SP - Corriger formatage noms dropdowns + US-035: 1 SP - Réorganiser section Sièges + US-036: 2 SP - Ajouter Stitching + US-037: 1 SP - Toggle buttons Matériau Central)
 **Total Icebox** : ~22 Story Points (archivé, non demandé)
