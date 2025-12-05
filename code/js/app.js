@@ -662,6 +662,43 @@ function toggleInteriorConfig(viewType) {
 }
 
 // ======================================
+// US-034 : Immatriculation dynamique selon modèle
+// ======================================
+
+/**
+ * US-034 : Met à jour l'immatriculation par défaut selon le modèle
+ * Ne met à jour QUE si l'utilisateur n'a pas customisé l'immat
+ *
+ * @param {string} model - Modèle d'avion ("960" ou "980")
+ */
+function updateDefaultImmatFromModel(model) {
+    const currentConfig = getConfig();
+
+    // Si l'utilisateur a customisé l'immat, ne rien faire
+    if (currentConfig.hasCustomImmat) {
+        console.log('🔒 Immatriculation personnalisée, pas de mise à jour automatique');
+        return;
+    }
+
+    // Déterminer l'immat par défaut selon le modèle
+    const defaultImmat = model === '980' ? 'N980TB' : 'N960TB';
+
+    // Mettre à jour l'immat si elle est différente
+    if (currentConfig.immat !== defaultImmat) {
+        console.log(`🔄 Mise à jour immat par défaut: ${defaultImmat} (modèle ${model})`);
+
+        // Mettre à jour le state
+        updateConfig('immat', defaultImmat);
+
+        // Mettre à jour l'input visuel
+        const inputImmat = document.getElementById('inputImmat');
+        if (inputImmat) {
+            inputImmat.value = defaultImmat;
+        }
+    }
+}
+
+// ======================================
 // Event Listeners sur les contrôles (US-003 + US-005)
 // ======================================
 
@@ -693,6 +730,7 @@ function attachEventListeners() {
     if (selectVersion) {
         selectVersion.addEventListener('change', (e) => {
             updateConfig('version', e.target.value);
+            updateDefaultImmatFromModel(e.target.value); // US-034: Mettre à jour immat par défaut
             console.log('Version changée:', e.target.value);
             triggerRender(); // US-005: Appel API automatique
         });
@@ -888,7 +926,8 @@ function attachEventListeners() {
             // Vérifier que la valeur a changé
             if (currentImmat !== previousImmat) {
                 updateConfig('immat', currentImmat);
-                console.log('Immatriculation mise à jour:', currentImmat);
+                updateConfig('hasCustomImmat', true); // US-034: Marquer comme personnalisée
+                console.log('Immatriculation personnalisée:', currentImmat);
                 triggerRender(); // US-005: Appel API
             } else {
                 console.log('Immatriculation inchangée');
@@ -1245,6 +1284,9 @@ async function init() {
 
     // Charger la config par défaut depuis le XML
     const defaultConfigLoaded = await loadDefaultConfigFromXML();
+
+    // US-034 : Initialiser immat par défaut selon modèle
+    updateDefaultImmatFromModel(getConfig().version);
 
     // Initialiser le carrousel (US-029: Remplacé par mosaïque, plus besoin d'init)
     // initCarousel();

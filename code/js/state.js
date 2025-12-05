@@ -20,6 +20,7 @@ const state = {
         fontType: DEFAULT_CONFIG.fontType,
         style: DEFAULT_CONFIG.style,
         immat: DEFAULT_CONFIG.immat,
+        hasCustomImmat: false, // US-034: Flag pour tracker si user a customisé l'immat
         imageWidth: DEFAULT_CONFIG.imageWidth,
         imageHeight: DEFAULT_CONFIG.imageHeight,
         viewType: "exterior", // US-022: "exterior" ou "interior"
