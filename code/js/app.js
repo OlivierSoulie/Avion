@@ -493,7 +493,7 @@ async function initUI() {
         populateDropdown('lower-side-panel', interiorOptions.lowerSidePanel, config.lowerSidePanel);
         populateDropdown('ultra-suede-ribbon', interiorOptions.ultraSuedeRibbon, config.ultraSuedeRibbon);
         populateDropdown('stitching', interiorOptions.stitching, config.stitching); // US-036
-        populateDropdown('central-seat-material', interiorOptions.centralSeatMaterial, config.centralSeatMaterial);
+        // US-037 : central-seat-material est maintenant des radio buttons statiques (pas de populate)
 
         log.success('Tous les dropdowns peuplés depuis le XML');
     } catch (error) {
@@ -864,6 +864,7 @@ function attachEventListeners() {
                 updateConfig('upperSidePanel', prestigeConfig.upperSidePanel);
                 updateConfig('lowerSidePanel', prestigeConfig.lowerSidePanel);
                 updateConfig('ultraSuedeRibbon', prestigeConfig.ultraSuedeRibbon);
+                updateConfig('stitching', prestigeConfig.stitching); // US-036
                 updateConfig('centralSeatMaterial', prestigeConfig.centralSeatMaterial);
                 updateConfig('perforatedSeatOptions', prestigeConfig.perforatedSeatOptions);
 
@@ -878,7 +879,7 @@ function attachEventListeners() {
                 const upperSidePanelSelect = document.getElementById('upper-side-panel');
                 const lowerSidePanelSelect = document.getElementById('lower-side-panel');
                 const ultraSuedeRibbonSelect = document.getElementById('ultra-suede-ribbon');
-                const centralSeatMaterialSelect = document.getElementById('central-seat-material');
+                const stitchingSelect = document.getElementById('stitching'); // US-036
 
                 if (carpetSelect) carpetSelect.value = prestigeConfig.carpet;
                 if (seatCoversSelect) seatCoversSelect.value = prestigeConfig.seatCovers;
@@ -888,7 +889,7 @@ function attachEventListeners() {
                 if (upperSidePanelSelect) upperSidePanelSelect.value = prestigeConfig.upperSidePanel;
                 if (lowerSidePanelSelect) lowerSidePanelSelect.value = prestigeConfig.lowerSidePanel;
                 if (ultraSuedeRibbonSelect) ultraSuedeRibbonSelect.value = prestigeConfig.ultraSuedeRibbon;
-                if (centralSeatMaterialSelect) centralSeatMaterialSelect.value = prestigeConfig.centralSeatMaterial;
+                if (stitchingSelect) stitchingSelect.value = prestigeConfig.stitching; // US-036
 
                 log.debug('Dropdowns mis à jour - carpet:', carpetSelect?.value, 'seatCovers:', seatCoversSelect?.value);
 
@@ -896,6 +897,14 @@ function attachEventListeners() {
                 const perforatedRadios = document.querySelectorAll('input[name="perforated-seat"]');
                 perforatedRadios.forEach(radio => {
                     if (radio.value === prestigeConfig.perforatedSeatOptions) {
+                        radio.checked = true;
+                    }
+                });
+
+                // US-037 : Mettre à jour les radio buttons central-seat-material
+                const centralSeatRadios = document.querySelectorAll('input[name="central-seat-material"]');
+                centralSeatRadios.forEach(radio => {
+                    if (radio.value === prestigeConfig.centralSeatMaterial) {
                         radio.checked = true;
                     }
                 });
@@ -1222,10 +1231,16 @@ function attachEventListeners() {
         triggerRender();
     });
 
-    document.getElementById('central-seat-material').addEventListener('change', (e) => {
-        updateConfig('centralSeatMaterial', e.target.value);
-        console.log('Matériau siège central changé:', e.target.value);
-        triggerRender();
+    // US-037 : Radio buttons Matériau Central
+    const centralSeatMaterialRadios = document.querySelectorAll('input[name="central-seat-material"]');
+    centralSeatMaterialRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                updateConfig('centralSeatMaterial', e.target.value);
+                console.log('Matériau siège central changé:', e.target.value);
+                triggerRender();
+            }
+        });
     });
 
     // Event listener pour les radio buttons perforation

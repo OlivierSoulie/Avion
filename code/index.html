@@ -394,10 +394,19 @@
                                 <label for="stitching">Stitching</label>
                                 <select id="stitching" class="form-control"></select>
                             </div>
-                            <!-- 4. Matériau Central -->
+                            <!-- 4. Matériau Central (US-037 : Radio buttons) -->
                             <div class="form-group">
-                                <label for="central-seat-material">Matériau central</label>
-                                <select id="central-seat-material" class="form-control"></select>
+                                <label>Matériau central</label>
+                                <div class="radio-group">
+                                    <label class="radio-label">
+                                        <input type="radio" name="central-seat-material" value="Ultra-Suede_Premium">
+                                        <span>Suede</span>
+                                    </label>
+                                    <label class="radio-label">
+                                        <input type="radio" name="central-seat-material" value="Leather_Premium" checked>
+                                        <span>Cuir</span>
+                                    </label>
+                                </div>
                             </div>
                             <!-- 5. Perforation des sièges -->
                             <div class="form-group">
