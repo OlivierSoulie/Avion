@@ -142,6 +142,8 @@
     position: relative;
     width: 100%;
     cursor: pointer;
+    overflow: hidden; /* BUG FIX: Empêcher le débordement lors du hover scale */
+    border-radius: var(--radius-md); /* Conserver le border-radius sur le conteneur */
 }
 
 /* Styles des images - US-030 : max-height pour éviter dépassement */
