@@ -901,13 +901,19 @@ function attachEventListeners() {
                     }
                 });
 
-                // US-037 : Mettre à jour les radio buttons central-seat-material
-                const centralSeatRadios = document.querySelectorAll('input[name="central-seat-material"]');
-                centralSeatRadios.forEach(radio => {
-                    if (radio.value === prestigeConfig.centralSeatMaterial) {
-                        radio.checked = true;
+                // US-037 : Mettre à jour les toggle buttons central-seat-material
+                const btnCentralSeatSuede = document.getElementById('btnCentralSeatSuede');
+                const btnCentralSeatCuir = document.getElementById('btnCentralSeatCuir');
+
+                if (btnCentralSeatSuede && btnCentralSeatCuir) {
+                    if (prestigeConfig.centralSeatMaterial === 'Ultra-Suede_Premium') {
+                        btnCentralSeatSuede.classList.add('active');
+                        btnCentralSeatCuir.classList.remove('active');
+                    } else if (prestigeConfig.centralSeatMaterial === 'Leather_Premium') {
+                        btnCentralSeatCuir.classList.add('active');
+                        btnCentralSeatSuede.classList.remove('active');
                     }
-                });
+                }
 
                 console.log('✅ Prestige config appliquée:', prestigeConfig);
 
@@ -1231,17 +1237,27 @@ function attachEventListeners() {
         triggerRender();
     });
 
-    // US-037 : Radio buttons Matériau Central
-    const centralSeatMaterialRadios = document.querySelectorAll('input[name="central-seat-material"]');
-    centralSeatMaterialRadios.forEach(radio => {
-        radio.addEventListener('change', (e) => {
-            if (e.target.checked) {
-                updateConfig('centralSeatMaterial', e.target.value);
-                console.log('Matériau siège central changé:', e.target.value);
-                triggerRender();
-            }
+    // US-037 : Toggle buttons Matériau Central
+    const btnCentralSeatSuede = document.getElementById('btnCentralSeatSuede');
+    const btnCentralSeatCuir = document.getElementById('btnCentralSeatCuir');
+
+    if (btnCentralSeatSuede && btnCentralSeatCuir) {
+        btnCentralSeatSuede.addEventListener('click', () => {
+            btnCentralSeatSuede.classList.add('active');
+            btnCentralSeatCuir.classList.remove('active');
+            updateConfig('centralSeatMaterial', 'Ultra-Suede_Premium');
+            console.log('Matériau siège central: Suede');
+            triggerRender();
         });
-    });
+
+        btnCentralSeatCuir.addEventListener('click', () => {
+            btnCentralSeatCuir.classList.add('active');
+            btnCentralSeatSuede.classList.remove('active');
+            updateConfig('centralSeatMaterial', 'Leather_Premium');
+            console.log('Matériau siège central: Cuir');
+            triggerRender();
+        });
+    }
 
     // Event listener pour les radio buttons perforation
     const perforatedRadios = document.querySelectorAll('input[name="perforated-seat"]');
