@@ -378,18 +378,24 @@
                             <span class="accordion-icon">▼</span>
                         </div>
                         <div class="accordion-content">
+                            <!-- US-035 : Ordre réorganisé -->
+                            <!-- 1. Cuir des sièges -->
                             <div class="form-group">
                                 <label for="seat-covers">Cuir des sièges</label>
                                 <select id="seat-covers" class="form-control"></select>
                             </div>
+                            <!-- 2. Ultra-Suede Ribbon (déplacé de Matériaux) -->
                             <div class="form-group">
-                                <label for="seatbelts">Ceintures</label>
-                                <select id="seatbelts" class="form-control"></select>
+                                <label for="ultra-suede-ribbon">Ruban Ultra-Suede</label>
+                                <select id="ultra-suede-ribbon" class="form-control"></select>
                             </div>
+                            <!-- 3. [Stitching sera ajouté ici par US-036] -->
+                            <!-- 4. Matériau Central -->
                             <div class="form-group">
                                 <label for="central-seat-material">Matériau central</label>
                                 <select id="central-seat-material" class="form-control"></select>
                             </div>
+                            <!-- 5. Perforation des sièges -->
                             <div class="form-group">
                                 <label>Perforation des sièges</label>
                                 <div class="radio-group">
@@ -402,6 +408,11 @@
                                         <span>ON</span>
                                     </label>
                                 </div>
+                            </div>
+                            <!-- 6. Ceintures (déplacé après Perforation) -->
+                            <div class="form-group">
+                                <label for="seatbelts">Ceintures</label>
+                                <select id="seatbelts" class="form-control"></select>
                             </div>
                         </div>
                     </div>
@@ -433,10 +444,7 @@
                                 <label for="lower-side-panel">Panneau inférieur</label>
                                 <select id="lower-side-panel" class="form-control"></select>
                             </div>
-                            <div class="form-group">
-                                <label for="ultra-suede-ribbon">Ruban Ultra-Suede</label>
-                                <select id="ultra-suede-ribbon" class="form-control"></select>
-                            </div>
+                            <!-- US-035 : Ultra-Suede Ribbon déplacé vers section Sièges -->
                         </div>
                     </div>
                 </div>
