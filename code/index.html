@@ -75,6 +75,13 @@
                             ⬇ Download JSON
                         </button>
                     </div>
+
+                    <!-- US-032 : Téléchargement multiple d'images -->
+                    <div class="form-group">
+                        <button type="button" class="btn btn-secondary" id="btnBulkDownload" title="Télécharger plusieurs images">
+                            📥 Télécharger plusieurs images
+                        </button>
+                    </div>
                 </div>
 
                 <div class="viewport-header">
@@ -113,6 +120,25 @@
                     <div class="viewport-error hidden" id="viewportError">
                         <p class="error-message"></p>
                         <button class="btn-retry" id="btnRetry">Réessayer</button>
+                    </div>
+
+                    <!-- US-032 : Contrôles mode sélection -->
+                    <div id="selectionControls" class="selection-controls hidden">
+                        <span id="selectionCounter" class="selection-counter">0 images sélectionnées</span>
+                        <button type="button" id="btnDownloadSelected" class="btn btn-primary" disabled>
+                            Télécharger la sélection (0)
+                        </button>
+                        <button type="button" id="btnCancelSelection" class="btn btn-secondary">
+                            Annuler
+                        </button>
+                    </div>
+
+                    <!-- US-032 : Barre de progression téléchargement -->
+                    <div id="downloadProgress" class="download-progress hidden">
+                        <p id="downloadStatus">Téléchargement en cours...</p>
+                        <div class="progress-bar">
+                            <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+                        </div>
                     </div>
 
                     <!-- Mosaïque d'images (ajouté dynamiquement par JS) -->
@@ -321,8 +347,17 @@
                                 <select id="central-seat-material" class="form-control"></select>
                             </div>
                             <div class="form-group">
-                                <label for="perforated-seat-options">Perforation</label>
-                                <select id="perforated-seat-options" class="form-control"></select>
+                                <label>Perforation des sièges</label>
+                                <div class="radio-group">
+                                    <label class="radio-label">
+                                        <input type="radio" name="perforated-seat" value="NoSeatPerforation_Premium" checked>
+                                        <span>OFF</span>
+                                    </label>
+                                    <label class="radio-label">
+                                        <input type="radio" name="perforated-seat" value="SeatCenterPerforation_Premium">
+                                        <span>ON</span>
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </div>

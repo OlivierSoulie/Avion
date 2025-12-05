@@ -5,28 +5,17 @@
 
 import { getConfig, updateConfig, setImages, setLoading, setError, hashConfig, getLastPayload, getViewType } from './state.js';
 import {
-    VERSION_LIST,
-    PAINT_SCHEMES_LIST,
-    PRESTIGE_LIST,
-    DECORS_CONFIG,
-    SPINNER_LIST,
     STYLES_SLANTED,
     STYLES_STRAIGHT,
-    DEFAULT_CONFIG,
-    // US-027 : Listes intérieur
-    CARPET_LIST,
-    SEAT_COVERS_LIST,
-    TABLET_FINISH_LIST,
-    SEATBELTS_LIST,
-    METAL_FINISH_LIST,
-    UPPER_SIDE_PANEL_LIST,
-    LOWER_SIDE_PANEL_LIST,
-    ULTRA_SUEDE_RIBBON_LIST,
-    CENTRAL_SEAT_MATERIAL_LIST,
-    PERFORATED_SEAT_OPTIONS_LIST
+    DECORS_CONFIG,
+    DEFAULT_CONFIG
+    // IMPORTANT : Toutes les listes de choix (VERSION, PAINT_SCHEMES, PRESTIGE, SPINNER, etc.)
+    // sont maintenant extraites dynamiquement du XML via getExteriorOptionsFromXML() et getInteriorOptionsFromXML()
+    // DECORS_CONFIG est conservé car il contient de la logique (type, suffix), pas seulement des données
 } from './config.js';
-import { initRetryButton, renderMosaic, showLoader, hideLoader, showError, hideError, disableControls, enableControls, showPlaceholder, showSuccessToast, initConnectionStatus, initFullscreen } from './ui.js';
-import { fetchRenderImages, testPayloadBuild, fetchDatabases, setDatabaseId, getDefaultConfig, parsePrestigeConfig, getDatabaseXML, getExteriorColorZones, parsePaintSchemeBookmark } from './api.js';
+import { initRetryButton, renderMosaic, showLoader, hideLoader, showError, hideError, disableControls, enableControls, showPlaceholder, showSuccessToast, initConnectionStatus, initFullscreen, enterSelectionMode, exitSelectionMode, downloadSelectedImages } from './ui.js';
+import { fetchRenderImages, testPayloadBuild, fetchDatabases, setDatabaseId, getDefaultConfig, parsePrestigeConfig, getDatabaseXML, getExteriorColorZones, parsePaintSchemeBookmark, getInteriorOptionsFromXML, getExteriorOptionsFromXML } from './api.js';
+import { log } from './logger.js';
 
 // ======================================
 // Fonctions utilitaires UI
@@ -453,35 +442,68 @@ async function initUI() {
     // US-019: Charger les bases de données en premier
     await loadDatabases();
 
-    // Peupler les dropdowns principaux
-    populateSelect('selectVersion', VERSION_LIST, DEFAULT_CONFIG.version);
-    populateSelect('selectPaintScheme', PAINT_SCHEMES_LIST, DEFAULT_CONFIG.paintScheme);
-    populateSelect('selectPrestige', PRESTIGE_LIST, DEFAULT_CONFIG.prestige);
-
-    // Pour les décors, on prend les clés de DECORS_CONFIG
-    const decorsList = Object.keys(DECORS_CONFIG);
-    populateSelect('selectDecor', decorsList, DEFAULT_CONFIG.decor);
-
-    populateSelect('selectSpinner', SPINNER_LIST, DEFAULT_CONFIG.spinner);
-
-    // Peupler le dropdown Style selon le type de police par défaut
-    updateStyleDropdown(DEFAULT_CONFIG.fontType);
-
-    // US-027 : Peupler les 10 dropdowns intérieur
     const config = getConfig();
-    populateDropdown('carpet', CARPET_LIST, config.carpet);
-    populateDropdown('seat-covers', SEAT_COVERS_LIST, config.seatCovers);
-    populateDropdown('tablet-finish', TABLET_FINISH_LIST, config.tabletFinish);
-    populateDropdown('seatbelts', SEATBELTS_LIST, config.seatbelts);
-    populateDropdown('metal-finish', METAL_FINISH_LIST, config.metalFinish);
-    populateDropdown('upper-side-panel', UPPER_SIDE_PANEL_LIST, config.upperSidePanel);
-    populateDropdown('lower-side-panel', LOWER_SIDE_PANEL_LIST, config.lowerSidePanel);
-    populateDropdown('ultra-suede-ribbon', ULTRA_SUEDE_RIBBON_LIST, config.ultraSuedeRibbon);
-    populateDropdown('central-seat-material', CENTRAL_SEAT_MATERIAL_LIST, config.centralSeatMaterial);
-    populateDropdown('perforated-seat-options', PERFORATED_SEAT_OPTIONS_LIST, config.perforatedSeatOptions);
+
+    // Télécharger le XML et extraire TOUTES les options (extérieur + intérieur)
+    try {
+        log.init('Extraction de toutes les options depuis XML...');
+        const xmlDoc = await getDatabaseXML();
+
+        // Extraire les options extérieur
+        const exteriorOptions = getExteriorOptionsFromXML(xmlDoc);
+
+        // Peupler les dropdowns extérieur avec les valeurs du XML
+        populateDropdown('selectVersion', exteriorOptions.version, DEFAULT_CONFIG.version);
+        populateDropdown('selectPaintScheme', exteriorOptions.paintScheme, DEFAULT_CONFIG.paintScheme);
+        populateDropdown('selectPrestige', exteriorOptions.prestige, DEFAULT_CONFIG.prestige);
+        populateDropdown('selectSpinner', exteriorOptions.spinner, DEFAULT_CONFIG.spinner);
+
+        // Peupler le décor
+        populateDropdown('selectDecor', exteriorOptions.decor, DEFAULT_CONFIG.decor);
+
+        // Peupler le dropdown Style selon le type de police par défaut
+        // Utiliser les styles extraits du XML (ou fallback hardcodé si absent)
+        updateStyleDropdown(DEFAULT_CONFIG.fontType, exteriorOptions.styleSlanted, exteriorOptions.styleStraight);
+
+        // Extraire les options intérieur
+        const interiorOptions = getInteriorOptionsFromXML(xmlDoc);
+
+        // Peupler les dropdowns intérieur avec les valeurs du XML
+        populateDropdown('carpet', interiorOptions.carpet, config.carpet);
+        populateDropdown('seat-covers', interiorOptions.seatCovers, config.seatCovers);
+        populateDropdown('tablet-finish', interiorOptions.tabletFinish, config.tabletFinish);
+        populateDropdown('seatbelts', interiorOptions.seatbelts, config.seatbelts);
+        populateDropdown('metal-finish', interiorOptions.metalFinish, config.metalFinish);
+        populateDropdown('upper-side-panel', interiorOptions.upperSidePanel, config.upperSidePanel);
+        populateDropdown('lower-side-panel', interiorOptions.lowerSidePanel, config.lowerSidePanel);
+        populateDropdown('ultra-suede-ribbon', interiorOptions.ultraSuedeRibbon, config.ultraSuedeRibbon);
+        populateDropdown('central-seat-material', interiorOptions.centralSeatMaterial, config.centralSeatMaterial);
+
+        log.success('Tous les dropdowns peuplés depuis le XML');
+    } catch (error) {
+        log.error('Erreur chargement options depuis XML:', error);
+        // En cas d'erreur, les dropdowns resteront vides
+    }
+
+    // Initialiser les radio buttons perforation
+    const perforatedRadios = document.querySelectorAll('input[name="perforated-seat"]');
+    perforatedRadios.forEach(radio => {
+        if (radio.value === config.perforatedSeatOptions) {
+            radio.checked = true;
+        }
+    });
 
     // Peupler les zones de couleurs personnalisées
     await initColorZones();
+
+    // US-032 : Event listeners mode sélection
+    const btnBulkDownload = document.getElementById('btnBulkDownload');
+    const btnCancelSelection = document.getElementById('btnCancelSelection');
+    const btnDownloadSelected = document.getElementById('btnDownloadSelected');
+
+    btnBulkDownload?.addEventListener('click', enterSelectionMode);
+    btnCancelSelection?.addEventListener('click', exitSelectionMode);
+    btnDownloadSelected?.addEventListener('click', downloadSelectedImages);
 
     console.log('Interface initialisée avec succès');
 }
@@ -721,16 +743,37 @@ function attachEventListeners() {
                 updateConfig('perforatedSeatOptions', prestigeConfig.perforatedSeatOptions);
 
                 // 4. Mettre à jour les dropdowns visuellement
-                document.getElementById('carpet').value = prestigeConfig.carpet;
-                document.getElementById('seat-covers').value = prestigeConfig.seatCovers;
-                document.getElementById('tablet-finish').value = prestigeConfig.tabletFinish;
-                document.getElementById('seatbelts').value = prestigeConfig.seatbelts;
-                document.getElementById('metal-finish').value = prestigeConfig.metalFinish;
-                document.getElementById('upper-side-panel').value = prestigeConfig.upperSidePanel;
-                document.getElementById('lower-side-panel').value = prestigeConfig.lowerSidePanel;
-                document.getElementById('ultra-suede-ribbon').value = prestigeConfig.ultraSuedeRibbon;
-                document.getElementById('central-seat-material').value = prestigeConfig.centralSeatMaterial;
-                document.getElementById('perforated-seat-options').value = prestigeConfig.perforatedSeatOptions;
+                log.int('Mise à jour dropdowns avec prestige:', prestigeName);
+
+                const carpetSelect = document.getElementById('carpet');
+                const seatCoversSelect = document.getElementById('seat-covers');
+                const tabletFinishSelect = document.getElementById('tablet-finish');
+                const seatbeltsSelect = document.getElementById('seatbelts');
+                const metalFinishSelect = document.getElementById('metal-finish');
+                const upperSidePanelSelect = document.getElementById('upper-side-panel');
+                const lowerSidePanelSelect = document.getElementById('lower-side-panel');
+                const ultraSuedeRibbonSelect = document.getElementById('ultra-suede-ribbon');
+                const centralSeatMaterialSelect = document.getElementById('central-seat-material');
+
+                if (carpetSelect) carpetSelect.value = prestigeConfig.carpet;
+                if (seatCoversSelect) seatCoversSelect.value = prestigeConfig.seatCovers;
+                if (tabletFinishSelect) tabletFinishSelect.value = prestigeConfig.tabletFinish;
+                if (seatbeltsSelect) seatbeltsSelect.value = prestigeConfig.seatbelts;
+                if (metalFinishSelect) metalFinishSelect.value = prestigeConfig.metalFinish;
+                if (upperSidePanelSelect) upperSidePanelSelect.value = prestigeConfig.upperSidePanel;
+                if (lowerSidePanelSelect) lowerSidePanelSelect.value = prestigeConfig.lowerSidePanel;
+                if (ultraSuedeRibbonSelect) ultraSuedeRibbonSelect.value = prestigeConfig.ultraSuedeRibbon;
+                if (centralSeatMaterialSelect) centralSeatMaterialSelect.value = prestigeConfig.centralSeatMaterial;
+
+                log.debug('Dropdowns mis à jour - carpet:', carpetSelect?.value, 'seatCovers:', seatCoversSelect?.value);
+
+                // Mettre à jour les radio buttons perforation
+                const perforatedRadios = document.querySelectorAll('input[name="perforated-seat"]');
+                perforatedRadios.forEach(radio => {
+                    if (radio.value === prestigeConfig.perforatedSeatOptions) {
+                        radio.checked = true;
+                    }
+                });
 
                 console.log('✅ Prestige config appliquée:', prestigeConfig);
 
@@ -1052,10 +1095,14 @@ function attachEventListeners() {
         triggerRender();
     });
 
-    document.getElementById('perforated-seat-options').addEventListener('change', (e) => {
-        updateConfig('perforatedSeatOptions', e.target.value);
-        console.log('Perforation sièges changée:', e.target.value);
-        triggerRender();
+    // Event listener pour les radio buttons perforation
+    const perforatedRadios = document.querySelectorAll('input[name="perforated-seat"]');
+    perforatedRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            updateConfig('perforatedSeatOptions', e.target.value);
+            console.log('Perforation sièges changée:', e.target.value);
+            triggerRender();
+        });
     });
 
     // Zones de couleurs personnalisées
@@ -1124,8 +1171,12 @@ function attachEventListeners() {
  * Met à jour le dropdown Style selon le type de police
  * @param {string} fontType - 'slanted' ou 'straight'
  */
-function updateStyleDropdown(fontType) {
-    const styles = fontType === 'slanted' ? STYLES_SLANTED : STYLES_STRAIGHT;
+function updateStyleDropdown(fontType, stylesSlanted = null, stylesStraight = null) {
+    // Utiliser les styles fournis en paramètre, ou fallback sur les constantes
+    const slantedList = stylesSlanted || STYLES_SLANTED;
+    const straightList = stylesStraight || STYLES_STRAIGHT;
+
+    const styles = fontType === 'slanted' ? slantedList : straightList;
     const defaultStyle = fontType === 'slanted' ? 'A' : 'F';
 
     // Repeupler le dropdown
@@ -1134,7 +1185,7 @@ function updateStyleDropdown(fontType) {
     // Mettre à jour le state avec la nouvelle valeur par défaut
     updateConfig('style', defaultStyle);
 
-    console.log(`Dropdown style mis à jour pour ${fontType}: ${styles.join(', ')}`);
+    log.ui(`Dropdown style mis à jour pour ${fontType}: ${styles.join(', ')}`);
 }
 
 // ======================================
