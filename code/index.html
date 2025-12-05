@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurateur TBM Daher</title>
+    <meta name="description" content="Configurateur web pour visualiser les rendus TBM">
+    <meta name="author" content="Configurateur Daher">
+
+    <!-- Styles CSS -->
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/viewport.css">
+    <link rel="stylesheet" href="styles/controls.css">
+    <link rel="stylesheet" href="styles/animations.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="app-header">
+        <h1>Configurateur TBM Daher</h1>
+        <p class="app-subtitle">Configurez et visualisez votre avion TBM en temps réel</p>
+        <!-- BUG-003 FIX: Badge indicateur de connexion -->
+        <div class="connection-badge" id="connectionBadge">
+            <span class="badge-dot"></span>
+            <span class="badge-text">En ligne</span>
+        </div>
+    </header>
+
+    <!-- Main Container (Grid 2 colonnes) -->
+    <main class="app-container">
+        <!-- Section Viewport (Gauche) -->
+        <section class="viewport-section" id="viewportSection">
+            <div class="viewport-container">
+                <!-- Section Données Techniques (en haut sur une ligne) -->
+                <div class="technical-controls">
+                    <!-- US-019 : Sélection Base de Données -->
+                    <div class="form-group">
+                        <label for="selectDatabase">Base de données</label>
+                        <select id="selectDatabase" name="database" class="form-control">
+                            <option value="" disabled selected>Chargement...</option>
+                            <!-- Options ajoutées dynamiquement par JS -->
+                        </select>
+                    </div>
+
+                    <!-- Dimensions Image -->
+                    <div class="form-group">
+                        <label>Dimensions Image</label>
+                        <div class="dimensions-group">
+                            <input
+                                type="number"
+                                id="inputWidth"
+                                name="imageWidth"
+                                class="form-control"
+                                placeholder="1920"
+                                value="1920"
+                                min="100"
+                                max="10000"
+                            >
+                            <span>×</span>
+                            <input
+                                type="number"
+                                id="inputHeight"
+                                name="imageHeight"
+                                class="form-control"
+                                placeholder="1080"
+                                value="1080"
+                                min="100"
+                                max="10000"
+                            >
+                        </div>
+                    </div>
+
+                    <!-- US-021 : Téléchargement JSON -->
+                    <div class="form-group">
+                        <button type="button" class="btn btn-download" id="btnDownloadJSON" title="Télécharger la configuration JSON">
+                            ⬇ Download JSON
+                        </button>
+                    </div>
+                </div>
+
+                <div class="viewport-header">
+                    <h2>Aperçu</h2>
+                    <!-- Sélecteur de vue Ext/Int -->
+                    <div class="view-selector">
+                        <div class="toggle-group">
+                            <button type="button" class="toggle-btn active" id="btnViewExterior" data-view="exterior">
+                                Extérieur
+                            </button>
+                            <button type="button" class="toggle-btn" id="btnViewInterior" data-view="interior">
+                                Intérieur
+                            </button>
+                        </div>
+                    </div>
+                    <div class="viewport-actions">
+                        <button class="btn btn-icon" id="btnFullscreen" title="Plein écran">
+                            <span class="icon-fullscreen">⛶</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Zone d'affichage des images (mosaïque) -->
+                <div class="viewport-display" id="viewportDisplay">
+                    <div class="viewport-placeholder">
+                        <p>Sélectionnez une configuration pour générer le rendu</p>
+                    </div>
+
+                    <!-- Loader (caché par défaut) -->
+                    <div class="viewport-loader hidden" id="viewportLoader">
+                        <div class="spinner"></div>
+                        <p>Génération en cours...</p>
+                    </div>
+
+                    <!-- Message d'erreur (caché par défaut) -->
+                    <div class="viewport-error hidden" id="viewportError">
+                        <p class="error-message"></p>
+                        <button class="btn-retry" id="btnRetry">Réessayer</button>
+                    </div>
+
+                    <!-- Mosaïque d'images (ajouté dynamiquement par JS) -->
+                    <div class="mosaic-grid hidden" id="mosaicGrid">
+                        <!-- Images ajoutées dynamiquement par renderMosaic() -->
+                    </div>
+                </div>
+
+                <!-- Actions contextuelles sous la mosaïque -->
+                <div class="viewport-actions-panel">
+                    <!-- Actions EXTÉRIEUR : Décor + Portes -->
+                    <div id="actions-exterior" class="actions-section">
+                        <div class="form-group">
+                            <label for="selectDecor">Décor</label>
+                            <select id="selectDecor" name="decor" class="form-control"></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Porte pilote</label>
+                            <div class="toggle-group">
+                                <button type="button" class="toggle-btn active" id="btnDoorPilotClosed" data-value="Closed">Fermée</button>
+                                <button type="button" class="toggle-btn" id="btnDoorPilotOpen" data-value="Open">Ouverte</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Porte passager</label>
+                            <div class="toggle-group">
+                                <button type="button" class="toggle-btn active" id="btnDoorPassengerClosed" data-value="Closed">Fermée</button>
+                                <button type="button" class="toggle-btn" id="btnDoorPassengerOpen" data-value="Open">Ouverte</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Actions INTÉRIEUR : Accessoires -->
+                    <div id="actions-interior" class="actions-section" style="display: none;">
+                        <div class="form-group">
+                            <label>Volet Hublots</label>
+                            <div class="toggle-group">
+                                <button type="button" class="toggle-btn active" id="btnSunGlassOFF" data-value="SunGlassOFF">OFF</button>
+                                <button type="button" class="toggle-btn" id="btnSunGlassON" data-value="SunGlassON">ON</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Tablette</label>
+                            <div class="toggle-group">
+                                <button type="button" class="toggle-btn active" id="btnTabletClosed" data-value="Closed">Fermée</button>
+                                <button type="button" class="toggle-btn" id="btnTabletOpen" data-value="Open">Ouverte</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section Controls (Droite) -->
+        <aside class="controls-section" id="controlsSection">
+            <div class="controls-container">
+                <!-- US-028 : Affichage conditionnel selon vue (Extérieur / Intérieur) -->
+
+                <!-- SECTION EXTÉRIEUR (visible par défaut) -->
+                <div id="controls-exterior" class="controls-view-section">
+                    <!-- Accordéon Extérieur -->
+
+                    <!-- 1. Avion -->
+                    <div class="accordion-section active">
+                        <div class="accordion-header">
+                            <span>Avion</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="form-group">
+                                <label for="selectVersion">Modèle</label>
+                                <select id="selectVersion" name="version" class="form-control"></select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Peinture -->
+                    <div class="accordion-section">
+                        <div class="accordion-header">
+                            <span>Peinture</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="form-group">
+                                <label for="selectPaintScheme">Schéma</label>
+                                <select id="selectPaintScheme" name="paintScheme" class="form-control"></select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Zones Personnalisées -->
+                    <div class="accordion-section">
+                        <div class="accordion-header">
+                            <span>Zones Personnalisées</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="form-group">
+                                <label for="selectZoneA">Zone A</label>
+                                <select id="selectZoneA" name="zoneA" class="form-control"></select>
+                            </div>
+                            <div class="form-group">
+                                <label for="selectZoneB">Zone B</label>
+                                <select id="selectZoneB" name="zoneB" class="form-control"></select>
+                            </div>
+                            <div class="form-group">
+                                <label for="selectZoneC">Zone C</label>
+                                <select id="selectZoneC" name="zoneC" class="form-control"></select>
+                            </div>
+                            <div class="form-group">
+                                <label for="selectZoneD">Zone D</label>
+                                <select id="selectZoneD" name="zoneD" class="form-control"></select>
+                            </div>
+                            <div class="form-group">
+                                <label for="selectZoneAPlus">Zone A+</label>
+                                <select id="selectZoneAPlus" name="zoneAPlus" class="form-control"></select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Hélice -->
+                    <div class="accordion-section">
+                        <div class="accordion-header">
+                            <span>Hélice</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="form-group">
+                                <label for="selectSpinner">Finition</label>
+                                <select id="selectSpinner" name="spinner" class="form-control"></select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 5. Immatriculation -->
+                    <div class="accordion-section">
+                        <div class="accordion-header">
+                            <span>Immatriculation</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="form-group">
+                                <label for="inputImmat">Numéro</label>
+                                <div class="input-group">
+                                    <input type="text" id="inputImmat" name="immat" class="form-control" maxlength="6" placeholder="N960TB" value="N960TB">
+                                    <button type="button" class="btn btn-primary" id="btnSubmitImmat">Envoyer</button>
+                                </div>
+                                <span class="form-error hidden" id="errorImmat">Maximum 6 caractères alphanumériques</span>
+                            </div>
+                            <div class="form-group">
+                                <label>Type Police</label>
+                                <div class="radio-group">
+                                    <label class="radio-label">
+                                        <input type="radio" name="fontType" value="slanted" id="radioSlanted" checked>
+                                        <span>Slanted</span>
+                                    </label>
+                                    <label class="radio-label">
+                                        <input type="radio" name="fontType" value="straight" id="radioStraight">
+                                        <span>Straight</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="selectStyle">Style</label>
+                                <select id="selectStyle" name="style" class="form-control"></select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION INTÉRIEUR (masquée par défaut) -->
+                <div id="controls-interior" class="controls-view-section" style="display: none;">
+                    <!-- Accordéon Intérieur -->
+
+                    <!-- 1. Prestige -->
+                    <div class="accordion-section active">
+                        <div class="accordion-header">
+                            <span>Prestige</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="form-group">
+                                <label for="selectPrestige">Collection</label>
+                                <select id="selectPrestige" name="prestige" class="form-control"></select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Sièges -->
+                    <div class="accordion-section">
+                        <div class="accordion-header">
+                            <span>Sièges</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="form-group">
+                                <label for="seat-covers">Cuir des sièges</label>
+                                <select id="seat-covers" class="form-control"></select>
+                            </div>
+                            <div class="form-group">
+                                <label for="seatbelts">Ceintures</label>
+                                <select id="seatbelts" class="form-control"></select>
+                            </div>
+                            <div class="form-group">
+                                <label for="central-seat-material">Matériau central</label>
+                                <select id="central-seat-material" class="form-control"></select>
+                            </div>
+                            <div class="form-group">
+                                <label for="perforated-seat-options">Perforation</label>
+                                <select id="perforated-seat-options" class="form-control"></select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Matériaux -->
+                    <div class="accordion-section">
+                        <div class="accordion-header">
+                            <span>Matériaux</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="form-group">
+                                <label for="carpet">Tapis</label>
+                                <select id="carpet" class="form-control"></select>
+                            </div>
+                            <div class="form-group">
+                                <label for="tablet-finish">Bois tablette</label>
+                                <select id="tablet-finish" class="form-control"></select>
+                            </div>
+                            <div class="form-group">
+                                <label for="metal-finish">Finition métal</label>
+                                <select id="metal-finish" class="form-control"></select>
+                            </div>
+                            <div class="form-group">
+                                <label for="upper-side-panel">Panneau supérieur</label>
+                                <select id="upper-side-panel" class="form-control"></select>
+                            </div>
+                            <div class="form-group">
+                                <label for="lower-side-panel">Panneau inférieur</label>
+                                <select id="lower-side-panel" class="form-control"></select>
+                            </div>
+                            <div class="form-group">
+                                <label for="ultra-suede-ribbon">Ruban Ultra-Suede</label>
+                                <select id="ultra-suede-ribbon" class="form-control"></select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <p>&copy; 2025 Configurateur TBM Daher - Version 1.0</p>
+        <p>Généré avec l'API Lumiscaphe</p>
+    </footer>
+
+    <!-- US-020 : Modal plein écran -->
+    <div class="fullscreen-modal hidden" id="fullscreenModal">
+        <div class="fullscreen-backdrop" id="fullscreenBackdrop"></div>
+        <div class="fullscreen-content">
+            <button class="fullscreen-close" id="fullscreenClose">✕</button>
+            <button class="fullscreen-nav fullscreen-prev" id="fullscreenPrev">
+                <span>‹</span>
+            </button>
+            <img class="fullscreen-image" id="fullscreenImage" src="" alt="Image plein écran">
+            <button class="fullscreen-nav fullscreen-next" id="fullscreenNext">
+                <span>›</span>
+            </button>
+            <div class="fullscreen-counter" id="fullscreenCounter">1 / 1</div>
+        </div>
+    </div>
+
+    <!-- Scripts JS (modules ES6) -->
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>

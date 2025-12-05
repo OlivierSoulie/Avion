@@ -3,7 +3,7 @@
 // Version : 1.0
 // Date : 02/12/2025
 
-import { getConfig, updateConfig, setImages, setLoading, setError } from './state.js';
+import { getConfig, updateConfig, setImages, setLoading, setError, hashConfig, getLastPayload, getViewType } from './state.js';
 import {
     VERSION_LIST,
     PAINT_SCHEMES_LIST,
@@ -12,10 +12,21 @@ import {
     SPINNER_LIST,
     STYLES_SLANTED,
     STYLES_STRAIGHT,
-    DEFAULT_CONFIG
+    DEFAULT_CONFIG,
+    // US-027 : Listes intérieur
+    CARPET_LIST,
+    SEAT_COVERS_LIST,
+    TABLET_FINISH_LIST,
+    SEATBELTS_LIST,
+    METAL_FINISH_LIST,
+    UPPER_SIDE_PANEL_LIST,
+    LOWER_SIDE_PANEL_LIST,
+    ULTRA_SUEDE_RIBBON_LIST,
+    CENTRAL_SEAT_MATERIAL_LIST,
+    PERFORATED_SEAT_OPTIONS_LIST
 } from './config.js';
-import { initCarousel, initRetryButton, updateCarousel, showLoader, hideLoader, showError, hideError, disableControls, enableControls } from './ui.js';
-import { fetchRenderImages, testPayloadBuild } from './api.js';
+import { initRetryButton, renderMosaic, showLoader, hideLoader, showError, hideError, disableControls, enableControls, showPlaceholder, showSuccessToast, initConnectionStatus, initFullscreen } from './ui.js';
+import { fetchRenderImages, testPayloadBuild, fetchDatabases, setDatabaseId, getDefaultConfig, parsePrestigeConfig, getDatabaseXML, getExteriorColorZones, parsePaintSchemeBookmark } from './api.js';
 
 // ======================================
 // Fonctions utilitaires UI
@@ -52,18 +63,397 @@ function populateSelect(selectId, values, defaultValue) {
     });
 }
 
+/**
+ * US-027 : Peuple un dropdown avec une liste d'options (format {label, value})
+ * @param {string} selectId - L'ID du select à remplir
+ * @param {Array} optionsList - Liste d'objets {label, value}
+ * @param {string} defaultValue - La valeur par défaut à sélectionner
+ */
+function populateDropdown(selectId, optionsList, defaultValue) {
+    const select = document.getElementById(selectId);
+    if (!select) {
+        console.warn(`Select avec ID "${selectId}" non trouvé`);
+        return;
+    }
+
+    // Vider le select existant
+    select.innerHTML = '';
+
+    // Ajouter les options
+    optionsList.forEach(option => {
+        const optionElement = document.createElement('option');
+        optionElement.value = option.value;
+        optionElement.textContent = option.label;
+        if (option.value === defaultValue) {
+            optionElement.selected = true;
+        }
+        select.appendChild(optionElement);
+    });
+}
+
+/**
+ * US-021 : Télécharge le dernier payload JSON
+ * Génère un fichier JSON avec le payload envoyé à l'API
+ */
+function downloadJSON() {
+    console.log('📥 Téléchargement du payload JSON...');
+
+    // Récupérer le dernier payload
+    const payload = getLastPayload();
+
+    if (!payload) {
+        console.warn('⚠️ Aucun payload disponible');
+        showError('Aucune configuration générée. Veuillez d\'abord générer un rendu.');
+        setTimeout(() => hideError(), 3000);
+        return;
+    }
+
+    try {
+        // Créer le contenu JSON (indenté pour lisibilité)
+        const jsonContent = JSON.stringify(payload, null, 2);
+
+        // Créer un Blob avec le contenu
+        const blob = new Blob([jsonContent], { type: 'application/json' });
+
+        // Générer le nom de fichier avec timestamp
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+        const config = getConfig();
+        const filename = `configurateur-payload-${config.version}-${config.paintScheme}-${timestamp}.json`;
+
+        // Créer un lien de téléchargement temporaire
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+
+        // Déclencher le téléchargement
+        document.body.appendChild(link);
+        link.click();
+
+        // Nettoyer
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        console.log(`✅ JSON téléchargé : ${filename}`);
+        showSuccessToast('JSON téléchargé avec succès !');
+
+    } catch (error) {
+        console.error('❌ Erreur lors du téléchargement JSON:', error);
+        showError('Erreur lors du téléchargement du JSON.');
+        setTimeout(() => hideError(), 3000);
+    }
+}
+
+// ======================================
+// Gestion de la configuration par défaut depuis XML
+// ======================================
+
+/**
+ * Parse une config string du XML et extrait les valeurs individuelles
+ * Format: "Version.960/Exterior_PaintScheme.Sirocco/Interior_PrestigeSelection.Oslo/..."
+ *
+ * @param {string} configString - La config string depuis <Default value="..." />
+ * @returns {Object} Config parsée {version, paintScheme, prestige, decor, spinner}
+ */
+function parseDefaultConfigString(configString) {
+    console.log('🔧 Parsing de la config string par défaut...');
+    console.log('   Config string complète:', configString);
+
+    const config = {};
+    const parts = configString.split('/');
+
+    console.log('   Parties trouvées:', parts);
+
+    for (const part of parts) {
+        console.log('   > Analyse de:', part);
+
+        if (part.startsWith('Version.')) {
+            config.version = part.replace('Version.', '');
+            console.log('     ✅ Version:', config.version);
+        } else if (part.startsWith('Exterior_PaintScheme.')) {
+            // Prendre tout après "Exterior_PaintScheme." mais juste le nom (avant les autres params)
+            const fullValue = part.replace('Exterior_PaintScheme.', '');
+            // Le nom du scheme est le premier élément (avant underscore avec chiffres)
+            config.paintScheme = fullValue.split('_')[0];
+            console.log('     ✅ PaintScheme (valeur complète):', fullValue);
+            console.log('     ✅ PaintScheme (nom extrait):', config.paintScheme);
+        } else if (part.startsWith('Interior_PrestigeSelection.')) {
+            const fullValue = part.replace('Interior_PrestigeSelection.', '');
+            config.prestige = fullValue.split('_')[0];
+            console.log('     ✅ Prestige:', config.prestige);
+        } else if (part.startsWith('Position.')) {
+            config.decor = part.replace('Position.', '');
+            console.log('     ✅ Decor (Position):', config.decor);
+        } else if (part.startsWith('Decor.')) {
+            // Extraire le nom du décor (avant _Ground ou _Flight)
+            const decorFull = part.replace('Decor.', '');
+            config.decor = decorFull.split('_')[0];
+            console.log('     ✅ Decor:', config.decor);
+        } else if (part.startsWith('Exterior_Spinner.')) {
+            config.spinner = part.replace('Exterior_Spinner.', '');
+            console.log('     ✅ Spinner:', config.spinner);
+        }
+    }
+
+    console.log('✅ Config parsée finale:', config);
+    return config;
+}
+
+/**
+ * Charge la config par défaut depuis le XML et initialise le state
+ * Retourne true si une config a été chargée, false sinon
+ */
+async function loadDefaultConfigFromXML() {
+    console.log('📦 Chargement de la configuration par défaut depuis le XML...');
+
+    try {
+        const defaultConfigString = await getDefaultConfig();
+
+        if (!defaultConfigString) {
+            console.warn('⚠️ Pas de config par défaut dans le XML, utilisation des valeurs hardcodées');
+            return false;
+        }
+
+        // Parser la config string
+        const parsedConfig = parseDefaultConfigString(defaultConfigString);
+
+        // Mettre à jour le state avec les valeurs parsées
+        if (parsedConfig.version) updateConfig('version', parsedConfig.version);
+        if (parsedConfig.paintScheme) updateConfig('paintScheme', parsedConfig.paintScheme);
+        if (parsedConfig.prestige) updateConfig('prestige', parsedConfig.prestige);
+        if (parsedConfig.decor) updateConfig('decor', parsedConfig.decor);
+        if (parsedConfig.spinner) updateConfig('spinner', parsedConfig.spinner);
+
+        // Mettre à jour les dropdowns pour refléter ces valeurs
+        if (parsedConfig.version) {
+            const selectVersion = document.getElementById('selectVersion');
+            if (selectVersion) selectVersion.value = parsedConfig.version;
+        }
+        if (parsedConfig.paintScheme) {
+            const selectPaintScheme = document.getElementById('selectPaintScheme');
+            if (selectPaintScheme) selectPaintScheme.value = parsedConfig.paintScheme;
+        }
+        if (parsedConfig.prestige) {
+            const selectPrestige = document.getElementById('selectPrestige');
+            if (selectPrestige) selectPrestige.value = parsedConfig.prestige;
+        }
+        if (parsedConfig.decor) {
+            const selectDecor = document.getElementById('selectDecor');
+            if (selectDecor) selectDecor.value = parsedConfig.decor;
+        }
+        if (parsedConfig.spinner) {
+            const selectSpinner = document.getElementById('selectSpinner');
+            if (selectSpinner) selectSpinner.value = parsedConfig.spinner;
+        }
+
+        console.log('✅ Configuration par défaut appliquée depuis le XML');
+        return true;
+
+    } catch (error) {
+        console.error('❌ Erreur chargement config par défaut:', error);
+        return false;
+    }
+}
+
+// ======================================
+// US-019 : Gestion des bases de données
+// ======================================
+
+/**
+ * Charge la liste des bases de données et peuple le sélecteur
+ */
+async function loadDatabases() {
+    console.log('📋 Chargement de la liste des bases de données...');
+
+    const selectDatabase = document.getElementById('selectDatabase');
+    if (!selectDatabase) {
+        console.error('❌ Sélecteur de base non trouvé dans le DOM');
+        return;
+    }
+
+    console.log('   > Sélecteur trouvé:', selectDatabase);
+
+    try {
+        // Appeler l'API pour récupérer les bases
+        console.log('   > Appel fetchDatabases()...');
+        const databases = await fetchDatabases();
+        console.log('   > fetchDatabases() terminé, données reçues:', databases);
+
+        // Vider le select et ajouter les options
+        selectDatabase.innerHTML = '';
+
+        if (databases.length === 0) {
+            selectDatabase.innerHTML = '<option value="" disabled selected>Aucune base disponible</option>';
+            return;
+        }
+
+        databases.forEach((db, index) => {
+            const option = document.createElement('option');
+            option.value = db.id;
+            option.textContent = db.name;
+
+            // Sélectionner la DERNIÈRE base par défaut
+            if (index === databases.length - 1) {
+                option.selected = true;
+                setDatabaseId(db.id);
+                console.log(`✅ Base par défaut (dernière): ${db.name} (${db.id})`);
+            }
+
+            selectDatabase.appendChild(option);
+        });
+
+        console.log(`✅ ${databases.length} base(s) chargée(s) dans le sélecteur`);
+
+    } catch (error) {
+        console.error('❌ Erreur chargement des bases:', error);
+        selectDatabase.innerHTML = '<option value="" disabled selected>Erreur de chargement</option>';
+        showError('Impossible de charger les bases de données. Vérifiez votre connexion.');
+    }
+}
+
 // ======================================
 // Initialisation UI
 // ======================================
 
 /**
+ * Initialise les zones de couleurs personnalisées
+ * Récupère les couleurs depuis le XML et peuple les 5 dropdowns
+ */
+async function initColorZones() {
+    console.log('🎨 Initialisation des zones de couleurs...');
+
+    try {
+        // Récupérer les zones depuis le XML
+        const zones = await getExteriorColorZones();
+
+        // Peupler les dropdowns
+        populateColorZone('selectZoneA', zones.zoneA);
+        populateColorZone('selectZoneB', zones.zoneB);
+        populateColorZone('selectZoneC', zones.zoneC);
+        populateColorZone('selectZoneD', zones.zoneD);
+        // Zone A+ : Filtrer uniquement les couleurs avec tag "A+"
+        const zonePlusColors = zones.zoneAPlus.filter(color => color.tag === 'A+');
+        populateColorZone('selectZoneAPlus', zonePlusColors);
+
+        // Synchroniser les zones avec le schéma de peinture actuel
+        const currentScheme = getConfig().paintScheme;
+        if (currentScheme) {
+            await syncZonesWithPaintScheme(currentScheme);
+            console.log('✅ Zones synchronisées avec le schéma par défaut');
+        } else {
+            // Fallback: Initialiser avec les premières couleurs si pas de schéma
+            if (zones.zoneA.length > 0) updateConfig('zoneA', zones.zoneA[0].name);
+            if (zones.zoneB.length > 0) updateConfig('zoneB', zones.zoneB[0].name);
+            if (zones.zoneC.length > 0) updateConfig('zoneC', zones.zoneC[0].name);
+            if (zones.zoneD.length > 0) updateConfig('zoneD', zones.zoneD[0].name);
+            if (zonePlusColors.length > 0) updateConfig('zoneAPlus', zonePlusColors[0].name);
+        }
+
+        console.log('✅ Zones de couleurs initialisées');
+
+    } catch (error) {
+        console.error('❌ Erreur initialisation zones de couleurs:', error);
+    }
+}
+
+/**
+ * Peuple un dropdown de zone de couleur
+ * @param {string} selectId - ID du select
+ * @param {Array} colors - Liste des couleurs parsées
+ */
+function populateColorZone(selectId, colors) {
+    const select = document.getElementById(selectId);
+    if (!select) {
+        console.warn(`⚠️ Select ${selectId} non trouvé dans le DOM`);
+        return;
+    }
+
+    console.log(`   > Peuplement ${selectId} : ${colors.length} couleurs`);
+
+    // Vider le select
+    select.innerHTML = '';
+
+    // Ajouter les options
+    colors.forEach(color => {
+        const option = document.createElement('option');
+        option.value = color.name;
+        option.textContent = color.name;
+        // Stocker les données complètes dans data attributes
+        option.dataset.htmlColor = color.htmlColor;
+        option.dataset.tag = color.tag;
+        select.appendChild(option);
+    });
+
+    console.log(`   ✅ ${selectId} peuplé avec ${select.options.length} options`);
+
+    // Sélectionner la première couleur par défaut
+    if (colors.length > 0) {
+        select.value = colors[0].name;
+    }
+
+    console.log(`   > ${selectId}: ${colors.length} couleurs`);
+}
+
+/**
+ * Synchronise les zones de couleurs avec un schéma de peinture
+ * Appelé quand l'utilisateur change le schéma
+ *
+ * @param {string} schemeName - Nom du schéma (ex: "Zephir")
+ */
+async function syncZonesWithPaintScheme(schemeName) {
+    console.log(`🔄 Synchronisation zones avec schéma: ${schemeName}`);
+
+    try {
+        // 1. Télécharger le XML
+        const xmlDoc = await getDatabaseXML();
+
+        // 2. Parser le bookmark du schéma
+        const zoneColors = parsePaintSchemeBookmark(xmlDoc, schemeName);
+
+        if (!zoneColors) {
+            console.warn('⚠️ Impossible de parser le bookmark, zones non synchronisées');
+            return;
+        }
+
+        // 3. Mettre à jour les dropdowns et le state
+        const zoneMap = {
+            zoneA: 'selectZoneA',
+            zoneB: 'selectZoneB',
+            zoneC: 'selectZoneC',
+            zoneD: 'selectZoneD',
+            zoneAPlus: 'selectZoneAPlus'
+        };
+
+        for (const [stateKey, selectId] of Object.entries(zoneMap)) {
+            const colorName = zoneColors[stateKey];
+            if (colorName) {
+                const select = document.getElementById(selectId);
+                if (select) {
+                    select.value = colorName;
+                    updateConfig(stateKey, colorName);
+                    console.log(`   ✅ ${stateKey}: ${colorName}`);
+                }
+            }
+        }
+
+        console.log('✅ Zones synchronisées avec succès');
+
+    } catch (error) {
+        console.error('❌ Erreur synchronisation zones:', error);
+    }
+}
+
+/**
  * Initialise l'interface utilisateur
  * Remplit tous les dropdowns avec les valeurs de config
  */
-function initUI() {
+async function initUI() {
     console.log('Initialisation de l\'interface...');
 
-    // Peupler les dropdowns
+    // US-019: Charger les bases de données en premier
+    await loadDatabases();
+
+    // Peupler les dropdowns principaux
     populateSelect('selectVersion', VERSION_LIST, DEFAULT_CONFIG.version);
     populateSelect('selectPaintScheme', PAINT_SCHEMES_LIST, DEFAULT_CONFIG.paintScheme);
     populateSelect('selectPrestige', PRESTIGE_LIST, DEFAULT_CONFIG.prestige);
@@ -77,6 +467,22 @@ function initUI() {
     // Peupler le dropdown Style selon le type de police par défaut
     updateStyleDropdown(DEFAULT_CONFIG.fontType);
 
+    // US-027 : Peupler les 10 dropdowns intérieur
+    const config = getConfig();
+    populateDropdown('carpet', CARPET_LIST, config.carpet);
+    populateDropdown('seat-covers', SEAT_COVERS_LIST, config.seatCovers);
+    populateDropdown('tablet-finish', TABLET_FINISH_LIST, config.tabletFinish);
+    populateDropdown('seatbelts', SEATBELTS_LIST, config.seatbelts);
+    populateDropdown('metal-finish', METAL_FINISH_LIST, config.metalFinish);
+    populateDropdown('upper-side-panel', UPPER_SIDE_PANEL_LIST, config.upperSidePanel);
+    populateDropdown('lower-side-panel', LOWER_SIDE_PANEL_LIST, config.lowerSidePanel);
+    populateDropdown('ultra-suede-ribbon', ULTRA_SUEDE_RIBBON_LIST, config.ultraSuedeRibbon);
+    populateDropdown('central-seat-material', CENTRAL_SEAT_MATERIAL_LIST, config.centralSeatMaterial);
+    populateDropdown('perforated-seat-options', PERFORATED_SEAT_OPTIONS_LIST, config.perforatedSeatOptions);
+
+    // Peupler les zones de couleurs personnalisées
+    await initColorZones();
+
     console.log('Interface initialisée avec succès');
 }
 
@@ -85,6 +491,8 @@ function initUI() {
 // ======================================
 
 let renderTimeout = null;
+// BUG-001 FIX: Variable pour détecter si la config a changé
+let lastConfigHash = null;
 
 /**
  * Déclenche le rendu avec debounce de 300ms
@@ -113,6 +521,14 @@ async function loadRender() {
         // 1. Récupérer la config actuelle
         const config = getConfig();
 
+        // BUG-001 FIX: Vérifier si la config a changé
+        const currentHash = hashConfig(config);
+        if (currentHash === lastConfigHash) {
+            console.log('Configuration identique à la dernière - API non appelée');
+            return;
+        }
+        lastConfigHash = currentHash;
+
         // 2. Afficher le loader
         showLoader('Génération en cours...');
         disableControls();
@@ -125,9 +541,13 @@ async function loadRender() {
         // 4. Mettre à jour le state
         setImages(imageUrls);
 
-        // 5. Afficher les images dans le carrousel
+        // 5. Afficher les images dans la mosaïque
         hideLoader();
-        updateCarousel(imageUrls);
+        const viewType = getViewType(); // Récupérer la vue courante (exterior/interior)
+        renderMosaic(imageUrls, viewType);
+
+        // BUG-002 FIX: Afficher le message de succès
+        showSuccessToast('Rendu généré avec succès !');
 
         console.log('Rendu chargé avec succès');
 
@@ -136,6 +556,9 @@ async function loadRender() {
         console.error('Erreur lors du chargement du rendu:', error);
 
         hideLoader();
+
+        // BUG-004 FIX: Afficher le placeholder avant l'erreur
+        showPlaceholder('Erreur lors de la génération du rendu');
 
         // Mapper les erreurs vers des messages user-friendly
         let errorMessage = 'Une erreur est survenue lors de la génération du rendu.';
@@ -161,6 +584,62 @@ async function loadRender() {
 }
 
 // ======================================
+// US-027 : Affichage conditionnel section intérieur
+// ======================================
+
+/**
+ * US-027 : Affiche ou masque la section intérieur selon le type de vue
+ * @param {string} viewType - "exterior" ou "interior"
+ */
+/**
+ * US-028 : Affichage conditionnel des contrôles selon la vue active
+ * @param {string} viewType - 'exterior' ou 'interior'
+ */
+function toggleViewControls(viewType) {
+    const controlsExterior = document.getElementById('controls-exterior');
+    const controlsInterior = document.getElementById('controls-interior');
+    const actionsExterior = document.getElementById('actions-exterior');
+    const actionsInterior = document.getElementById('actions-interior');
+
+    if (!controlsExterior || !controlsInterior) {
+        console.warn('Sections controls-exterior ou controls-interior non trouvées');
+        return;
+    }
+
+    if (viewType === 'exterior') {
+        // Afficher contrôles extérieur, masquer contrôles intérieur
+        controlsExterior.style.display = 'block';
+        controlsInterior.style.display = 'none';
+
+        // Afficher actions extérieur, masquer actions intérieur
+        if (actionsExterior) actionsExterior.style.display = 'flex';
+        if (actionsInterior) actionsInterior.style.display = 'none';
+
+        console.log('✅ Contrôles et actions EXTÉRIEUR affichés');
+    } else if (viewType === 'interior') {
+        // Masquer contrôles extérieur, afficher contrôles intérieur
+        controlsExterior.style.display = 'none';
+        controlsInterior.style.display = 'block';
+
+        // Masquer actions extérieur, afficher actions intérieur
+        if (actionsExterior) actionsExterior.style.display = 'none';
+        if (actionsInterior) actionsInterior.style.display = 'flex';
+
+        console.log('✅ Contrôles et actions INTÉRIEUR affichés');
+    }
+}
+
+/**
+ * DEPRECATED : Utiliser toggleViewControls() à la place
+ * US-027 : Toggle section configuration intérieur personnalisée
+ * @param {string} viewType - 'exterior' ou 'interior'
+ */
+function toggleInteriorConfig(viewType) {
+    console.warn('⚠️ toggleInteriorConfig() est DEPRECATED. Utilisez toggleViewControls() à la place.');
+    // Gardé pour compatibilité mais ne fait plus rien
+}
+
+// ======================================
 // Event Listeners sur les contrôles (US-003 + US-005)
 // ======================================
 
@@ -170,6 +649,22 @@ async function loadRender() {
  */
 function attachEventListeners() {
     console.log('Attachement des event listeners...');
+
+    // US-019: Dropdown Base de données
+    const selectDatabase = document.getElementById('selectDatabase');
+    if (selectDatabase) {
+        selectDatabase.addEventListener('change', (e) => {
+            const databaseId = e.target.value;
+            const databaseName = e.target.options[e.target.selectedIndex].text;
+
+            console.log(`🔄 Changement de base: ${databaseName} (${databaseId})`);
+            setDatabaseId(databaseId);
+
+            // Réinitialiser les images (la base a changé)
+            showPlaceholder('Base de données changée. Sélectionnez une configuration pour générer le rendu.');
+            setImages([]);
+        });
+    }
 
     // Dropdown Modèle Avion (version)
     const selectVersion = document.getElementById('selectVersion');
@@ -184,20 +679,71 @@ function attachEventListeners() {
     // Dropdown Schéma Peinture
     const selectPaintScheme = document.getElementById('selectPaintScheme');
     if (selectPaintScheme) {
-        selectPaintScheme.addEventListener('change', (e) => {
-            updateConfig('paintScheme', e.target.value);
-            console.log('Schéma peinture changé:', e.target.value);
+        selectPaintScheme.addEventListener('change', async (e) => {
+            const schemeName = e.target.value;
+            updateConfig('paintScheme', schemeName);
+            console.log('Schéma peinture changé:', schemeName);
+
+            // Synchroniser les zones de couleurs avec le schéma
+            await syncZonesWithPaintScheme(schemeName);
+
             triggerRender(); // US-005: Appel API automatique
         });
     }
 
     // Dropdown Intérieur (prestige)
+    // US-027 : Modifié pour parser le XML et mettre à jour les 10 dropdowns
     const selectPrestige = document.getElementById('selectPrestige');
     if (selectPrestige) {
-        selectPrestige.addEventListener('change', (e) => {
-            updateConfig('prestige', e.target.value);
-            console.log('Intérieur changé:', e.target.value);
-            triggerRender(); // US-005: Appel API automatique
+        selectPrestige.addEventListener('change', async (e) => {
+            const prestigeName = e.target.value;
+            console.log('🎨 Changement de prestige:', prestigeName);
+
+            updateConfig('prestige', prestigeName);
+
+            try {
+                // 1. Télécharger le XML
+                const xmlDoc = await getDatabaseXML();
+
+                // 2. Parser la config du prestige
+                const prestigeConfig = parsePrestigeConfig(xmlDoc, prestigeName);
+
+                // 3. Mettre à jour l'état
+                updateConfig('carpet', prestigeConfig.carpet);
+                updateConfig('seatCovers', prestigeConfig.seatCovers);
+                updateConfig('tabletFinish', prestigeConfig.tabletFinish);
+                updateConfig('seatbelts', prestigeConfig.seatbelts);
+                updateConfig('metalFinish', prestigeConfig.metalFinish);
+                updateConfig('upperSidePanel', prestigeConfig.upperSidePanel);
+                updateConfig('lowerSidePanel', prestigeConfig.lowerSidePanel);
+                updateConfig('ultraSuedeRibbon', prestigeConfig.ultraSuedeRibbon);
+                updateConfig('centralSeatMaterial', prestigeConfig.centralSeatMaterial);
+                updateConfig('perforatedSeatOptions', prestigeConfig.perforatedSeatOptions);
+
+                // 4. Mettre à jour les dropdowns visuellement
+                document.getElementById('carpet').value = prestigeConfig.carpet;
+                document.getElementById('seat-covers').value = prestigeConfig.seatCovers;
+                document.getElementById('tablet-finish').value = prestigeConfig.tabletFinish;
+                document.getElementById('seatbelts').value = prestigeConfig.seatbelts;
+                document.getElementById('metal-finish').value = prestigeConfig.metalFinish;
+                document.getElementById('upper-side-panel').value = prestigeConfig.upperSidePanel;
+                document.getElementById('lower-side-panel').value = prestigeConfig.lowerSidePanel;
+                document.getElementById('ultra-suede-ribbon').value = prestigeConfig.ultraSuedeRibbon;
+                document.getElementById('central-seat-material').value = prestigeConfig.centralSeatMaterial;
+                document.getElementById('perforated-seat-options').value = prestigeConfig.perforatedSeatOptions;
+
+                console.log('✅ Prestige config appliquée:', prestigeConfig);
+
+                // 5. Déclencher nouveau rendu
+                triggerRender();
+
+            } catch (error) {
+                console.error('❌ Erreur parsing prestige:', error);
+                showError('Erreur lors du chargement du prestige');
+                setTimeout(() => hideError(), 3000);
+                // Quand même déclencher le rendu avec les valeurs par défaut
+                triggerRender();
+            }
         });
     }
 
@@ -307,6 +853,270 @@ function attachEventListeners() {
         });
     }
 
+    // ======================================
+    // US-021 : Téléchargement JSON
+    // ======================================
+
+    const btnDownloadJSON = document.getElementById('btnDownloadJSON');
+    if (btnDownloadJSON) {
+        btnDownloadJSON.addEventListener('click', (e) => {
+            e.preventDefault();
+            downloadJSON();
+        });
+    }
+
+    // ======================================
+    // US-022 : Sélecteur Vue Ext/Int
+    // ======================================
+
+    const btnViewExterior = document.getElementById('btnViewExterior');
+    const btnViewInterior = document.getElementById('btnViewInterior');
+
+    if (btnViewExterior && btnViewInterior) {
+        btnViewExterior.addEventListener('click', () => {
+            // Mettre à jour l'UI
+            btnViewExterior.classList.add('active');
+            btnViewInterior.classList.remove('active');
+
+            // Mettre à jour le state
+            updateConfig('viewType', 'exterior');
+            console.log('Vue changée: exterior');
+
+            // US-028 : Affichage conditionnel des contrôles
+            toggleViewControls('exterior');
+
+            // Déclencher le rendu
+            triggerRender();
+        });
+
+        btnViewInterior.addEventListener('click', () => {
+            // Mettre à jour l'UI
+            btnViewInterior.classList.add('active');
+            btnViewExterior.classList.remove('active');
+
+            // Mettre à jour le state
+            updateConfig('viewType', 'interior');
+            console.log('Vue changée: interior');
+
+            // US-028 : Affichage conditionnel des contrôles
+            toggleViewControls('interior');
+
+            // Déclencher le rendu
+            triggerRender();
+        });
+    }
+
+    // US-024 : Event listeners Lunettes de soleil
+    const btnSunGlassOFF = document.getElementById('btnSunGlassOFF');
+    const btnSunGlassON = document.getElementById('btnSunGlassON');
+
+    if (btnSunGlassOFF && btnSunGlassON) {
+        btnSunGlassOFF.addEventListener('click', () => {
+            btnSunGlassOFF.classList.add('active');
+            btnSunGlassON.classList.remove('active');
+            updateConfig('sunglass', 'SunGlassOFF');
+            console.log('Lunettes de soleil: OFF');
+            triggerRender();
+        });
+
+        btnSunGlassON.addEventListener('click', () => {
+            btnSunGlassON.classList.add('active');
+            btnSunGlassOFF.classList.remove('active');
+            updateConfig('sunglass', 'SunGlassON');
+            console.log('Lunettes de soleil: ON');
+            triggerRender();
+        });
+    }
+
+    // US-023 : Event listeners Tablette
+    const btnTabletClosed = document.getElementById('btnTabletClosed');
+    const btnTabletOpen = document.getElementById('btnTabletOpen');
+
+    if (btnTabletClosed && btnTabletOpen) {
+        btnTabletClosed.addEventListener('click', () => {
+            btnTabletClosed.classList.add('active');
+            btnTabletOpen.classList.remove('active');
+            updateConfig('tablet', 'Closed');
+            console.log('Tablette: Fermée');
+            triggerRender();
+        });
+
+        btnTabletOpen.addEventListener('click', () => {
+            btnTabletOpen.classList.add('active');
+            btnTabletClosed.classList.remove('active');
+            updateConfig('tablet', 'Open');
+            console.log('Tablette: Ouverte');
+            triggerRender();
+        });
+    }
+
+    // US-025 : Event listeners Porte pilote
+    const btnDoorPilotClosed = document.getElementById('btnDoorPilotClosed');
+    const btnDoorPilotOpen = document.getElementById('btnDoorPilotOpen');
+
+    if (btnDoorPilotClosed && btnDoorPilotOpen) {
+        btnDoorPilotClosed.addEventListener('click', () => {
+            btnDoorPilotClosed.classList.add('active');
+            btnDoorPilotOpen.classList.remove('active');
+            updateConfig('doorPilot', 'Closed');
+            console.log('Porte pilote: Fermée');
+            triggerRender();
+        });
+
+        btnDoorPilotOpen.addEventListener('click', () => {
+            btnDoorPilotOpen.classList.add('active');
+            btnDoorPilotClosed.classList.remove('active');
+            updateConfig('doorPilot', 'Open');
+            console.log('Porte pilote: Ouverte');
+            triggerRender();
+        });
+    }
+
+    // US-026 : Event listeners Porte passager
+    const btnDoorPassengerClosed = document.getElementById('btnDoorPassengerClosed');
+    const btnDoorPassengerOpen = document.getElementById('btnDoorPassengerOpen');
+
+    if (btnDoorPassengerClosed && btnDoorPassengerOpen) {
+        btnDoorPassengerClosed.addEventListener('click', () => {
+            btnDoorPassengerClosed.classList.add('active');
+            btnDoorPassengerOpen.classList.remove('active');
+            updateConfig('doorPassenger', 'Closed');
+            console.log('Porte passager: Fermée');
+            triggerRender();
+        });
+
+        btnDoorPassengerOpen.addEventListener('click', () => {
+            btnDoorPassengerOpen.classList.add('active');
+            btnDoorPassengerClosed.classList.remove('active');
+            updateConfig('doorPassenger', 'Open');
+            console.log('Porte passager: Ouverte');
+            triggerRender();
+        });
+    }
+
+    // ======================================
+    // US-027 : Event listeners pour les 10 dropdowns intérieur
+    // ======================================
+
+    document.getElementById('carpet').addEventListener('change', (e) => {
+        updateConfig('carpet', e.target.value);
+        console.log('Tapis changé:', e.target.value);
+        triggerRender();
+    });
+
+    document.getElementById('seat-covers').addEventListener('change', (e) => {
+        updateConfig('seatCovers', e.target.value);
+        console.log('Cuir sièges changé:', e.target.value);
+        triggerRender();
+    });
+
+    document.getElementById('tablet-finish').addEventListener('change', (e) => {
+        updateConfig('tabletFinish', e.target.value);
+        console.log('Bois tablette changé:', e.target.value);
+        triggerRender();
+    });
+
+    document.getElementById('seatbelts').addEventListener('change', (e) => {
+        updateConfig('seatbelts', e.target.value);
+        console.log('Ceintures changées:', e.target.value);
+        triggerRender();
+    });
+
+    document.getElementById('metal-finish').addEventListener('change', (e) => {
+        updateConfig('metalFinish', e.target.value);
+        console.log('Finition métal changée:', e.target.value);
+        triggerRender();
+    });
+
+    document.getElementById('upper-side-panel').addEventListener('change', (e) => {
+        updateConfig('upperSidePanel', e.target.value);
+        console.log('Panneau latéral sup changé:', e.target.value);
+        triggerRender();
+    });
+
+    document.getElementById('lower-side-panel').addEventListener('change', (e) => {
+        updateConfig('lowerSidePanel', e.target.value);
+        console.log('Panneau latéral inf changé:', e.target.value);
+        triggerRender();
+    });
+
+    document.getElementById('ultra-suede-ribbon').addEventListener('change', (e) => {
+        updateConfig('ultraSuedeRibbon', e.target.value);
+        console.log('Ruban Ultra-Suede changé:', e.target.value);
+        triggerRender();
+    });
+
+    document.getElementById('central-seat-material').addEventListener('change', (e) => {
+        updateConfig('centralSeatMaterial', e.target.value);
+        console.log('Matériau siège central changé:', e.target.value);
+        triggerRender();
+    });
+
+    document.getElementById('perforated-seat-options').addEventListener('change', (e) => {
+        updateConfig('perforatedSeatOptions', e.target.value);
+        console.log('Perforation sièges changée:', e.target.value);
+        triggerRender();
+    });
+
+    // Zones de couleurs personnalisées
+    const selectZoneA = document.getElementById('selectZoneA');
+    const selectZoneB = document.getElementById('selectZoneB');
+    const selectZoneC = document.getElementById('selectZoneC');
+    const selectZoneD = document.getElementById('selectZoneD');
+    const selectZoneAPlus = document.getElementById('selectZoneAPlus');
+
+    if (selectZoneA) {
+        selectZoneA.addEventListener('change', (e) => {
+            const selectedOption = e.target.options[e.target.selectedIndex];
+            const colorName = selectedOption.value;
+            const colorTag = selectedOption.dataset.tag;
+
+            updateConfig('zoneA', colorName);
+            console.log(`Zone A changée: ${colorName} (tag: ${colorTag})`);
+
+            // Auto-sync: Si la couleur a le tag A+, mettre à jour Zone A+
+            if (colorTag === 'A+' && selectZoneAPlus) {
+                selectZoneAPlus.value = colorName;
+                updateConfig('zoneAPlus', colorName);
+                console.log(`   → Auto-sync Zone A+ → ${colorName}`);
+            }
+
+            triggerRender();
+        });
+    }
+
+    if (selectZoneB) {
+        selectZoneB.addEventListener('change', (e) => {
+            updateConfig('zoneB', e.target.value);
+            console.log('Zone B changée:', e.target.value);
+            triggerRender();
+        });
+    }
+
+    if (selectZoneC) {
+        selectZoneC.addEventListener('change', (e) => {
+            updateConfig('zoneC', e.target.value);
+            console.log('Zone C changée:', e.target.value);
+            triggerRender();
+        });
+    }
+
+    if (selectZoneD) {
+        selectZoneD.addEventListener('change', (e) => {
+            updateConfig('zoneD', e.target.value);
+            console.log('Zone D changée:', e.target.value);
+            triggerRender();
+        });
+    }
+
+    if (selectZoneAPlus) {
+        selectZoneAPlus.addEventListener('change', (e) => {
+            updateConfig('zoneAPlus', e.target.value);
+            console.log('Zone A+ changée:', e.target.value);
+            triggerRender();
+        });
+    }
+
     console.log('Event listeners attachés');
 }
 
@@ -330,21 +1140,69 @@ function updateStyleDropdown(fontType) {
 // ======================================
 // Initialisation de l'application
 // ======================================
+// Système d'Accordéon
+// ======================================
+
+/**
+ * Initialise le système d'accordéon pour les sections de configuration
+ * Permet d'ouvrir/fermer les sections en cliquant sur les headers
+ */
+function initAccordion() {
+    console.log('🎯 Initialisation accordéon');
+
+    // Récupérer tous les headers d'accordéon
+    const accordionHeaders = document.querySelectorAll('.accordion-header');
+
+    accordionHeaders.forEach(header => {
+        header.addEventListener('click', () => {
+            const section = header.parentElement;
+            const isActive = section.classList.contains('active');
+
+            // Récupérer tous les accordéons de la même section (ext ou int)
+            const parentSection = section.closest('.controls-view-section');
+            const allSections = parentSection.querySelectorAll('.accordion-section');
+
+            // Fermer tous les accordéons de cette section
+            allSections.forEach(s => s.classList.remove('active'));
+
+            // Si la section n'était pas active, l'ouvrir
+            if (!isActive) {
+                section.classList.add('active');
+                console.log(`✅ Accordéon ouvert: ${header.textContent.trim()}`);
+            } else {
+                console.log(`📁 Accordéon fermé: ${header.textContent.trim()}`);
+            }
+        });
+    });
+
+    console.log(`✅ ${accordionHeaders.length} accordéons initialisés`);
+}
+
+// ======================================
 
 /**
  * Point d'entrée principal de l'application
  * Appelé quand le DOM est prêt
  */
-function init() {
+async function init() {
     console.log('Configurateur TBM Daher - Initialisation');
     console.log('Version : 1.0');
     console.log('Configuration initiale :', getConfig());
 
-    // Initialiser l'UI
-    initUI();
+    // Initialiser l'UI (async car charge les bases de données)
+    await initUI();
 
-    // Initialiser le carrousel
-    initCarousel();
+    // Charger la config par défaut depuis le XML
+    const defaultConfigLoaded = await loadDefaultConfigFromXML();
+
+    // Initialiser le carrousel (US-029: Remplacé par mosaïque, plus besoin d'init)
+    // initCarousel();
+
+    // BUG-003 FIX: Initialiser l'indicateur de connexion
+    initConnectionStatus();
+
+    // US-020: Initialiser le plein écran
+    initFullscreen();
 
     // Initialiser le bouton Réessayer (US-005)
     initRetryButton(() => {
@@ -354,6 +1212,12 @@ function init() {
 
     // Attacher les event listeners sur les contrôles (US-003)
     attachEventListeners();
+
+    // Initialiser le système d'accordéon
+    initAccordion();
+
+    // US-027 : Afficher/masquer section intérieur selon vue initiale
+    toggleInteriorConfig(getConfig().viewType);
 
     // Modes de test
     if (window.location.search.includes('test-carousel')) {
@@ -369,10 +1233,14 @@ function init() {
         console.log('Mode test payload activé');
         testPayloadBuild();
     } else {
-        // Charger le rendu initial avec la config par défaut (US-005)
-        console.log('Chargement du rendu initial...');
-        // Désactiver temporairement pour éviter l'appel API au lancement
-        // Décommenter pour activer : loadRender();
+        // Charger automatiquement le rendu initial avec la config par défaut
+        console.log('🚀 Chargement automatique du rendu initial...');
+        if (defaultConfigLoaded) {
+            console.log('   > Config par défaut du XML chargée, génération du rendu...');
+        } else {
+            console.log('   > Utilisation de la config hardcodée, génération du rendu...');
+        }
+        loadRender();
     }
 
     console.log('Application prête');
@@ -391,11 +1259,11 @@ function testCarousel() {
         'https://picsum.photos/1920/1080?random=5'
     ];
 
-    console.log('Test carrousel avec', testImages.length, 'images');
+    console.log('Test mosaïque avec', testImages.length, 'images');
 
     setTimeout(() => {
-        updateCarousel(testImages);
-        console.log('Carrousel de test chargé');
+        renderMosaic(testImages, 'exterior');
+        console.log('Mosaïque de test chargée');
     }, 500);
 }
 

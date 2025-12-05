@@ -23,3 +23,13 @@ venv/
 # Sauvegardes
 *.backup
 *.bak
+
+# Claude Code settings locaux
+.claude/settings.local.json
+
+# Rendus générés (volumineux)
+Rendus_TBM_Output/
+
+# Database XML (fichier volumineux - optionnel)
+# Décommenter si vous ne voulez pas le versionner
+# database.xml
