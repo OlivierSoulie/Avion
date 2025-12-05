@@ -426,11 +426,18 @@ export function extractParameterOptions(xmlDoc, parameterLabel, formatLabel = tr
 
             let displayLabel;
             if (formatLabel) {
-                // Formatter le label : "Aegean_2242_Leather" → "Aegean"
-                // Prendre le premier segment (avant underscore + chiffres ou _belt/_Leather/etc.)
+                // US-038 : Formatter le label : "BlackOnyx_5557_Suede_Premium" → "Black Onyx"
+                // Prendre le premier segment (avant underscore)
                 const namePart = rawLabel.split('_')[0];
-                // Convertir CamelCase en espaces : "BeigeGray" → "Beige Gray"
-                displayLabel = namePart.replace(/([A-Z])/g, ' $1').trim();
+                // Enlever tout chiffre résiduel (ex: "WhiteSand2192" → "WhiteSand")
+                const cleanName = namePart.replace(/\d+/g, '');
+                // Convertir CamelCase en espaces : "BlackOnyx" → "Black Onyx"
+                displayLabel = cleanName.replace(/([A-Z])/g, ' $1').trim();
+
+                // Debug log pour tracer le formatage (US-038)
+                if (rawLabel.includes('Onyx') || rawLabel.includes('Sand') || rawLabel.includes('Suede')) {
+                    console.log(`[US-038 DEBUG] rawLabel: "${rawLabel}" → namePart: "${namePart}" → cleanName: "${cleanName}" → displayLabel: "${displayLabel}"`);
+                }
             } else {
                 // Utiliser le label brut
                 displayLabel = rawLabel;
