@@ -3,7 +3,7 @@
 **Projet** : 005-Configurateur_Daher
 **Date de creation** : 02/12/2025
 **PO** : Claude (PO Agent)
-**Derniere mise a jour** : 05/12/2025 - US-028 corrigée (Affichage conditionnel selon vue) + US-029 (Mosaïque d'images)
+**Derniere mise a jour** : 05/12/2025 - US-028 corrigée (Affichage conditionnel selon vue) + US-029 (Mosaïque d'images) + US-030 (Optimisation 1920x1080 sans scroll)
 
 ---
 
@@ -1143,6 +1143,123 @@ function openFullscreen(startIndex) {
 
 ---
 
+### [US-030] Optimisation affichage 1920x1080 sans scroll vertical
+
+**Priorité** : Haute
+**Story Points** : 3 SP
+**Sprint** : Sprint #7 (Prévu)
+**Status** : To Do
+
+**User Story :**
+En tant qu'utilisateur sur un écran 1920x1080,
+Je veux que toute l'interface soit visible sans avoir à scroller verticalement,
+Afin de voir l'ensemble des contrôles et du viewport en un seul coup d'œil.
+
+**Contexte actuel :**
+- L'interface nécessite du scroll vertical sur un écran 1920x1080
+- L'utilisateur doit scroller pour accéder à certains contrôles ou voir le viewport complet
+- Souhaité : Interface complètement optimisée pour 1920x1080 (FullHD) sans aucun scroll
+
+**Critères d'acceptation :**
+
+**A. Optimisation viewport et layout**
+- [ ] Toute l'interface (viewport + contrôles) visible sans scroll sur 1920x1080
+- [ ] Hauteur maximale du viewport adaptée pour tenir dans ~1000-1020px (compte tenu header/padding)
+- [ ] Largeur maximale du viewport adaptée pour ne pas empiéter sur les contrôles
+- [ ] Utilisation optimale de l'espace horizontal (viewport + panneau contrôles côte à côte)
+
+**B. Réduction de la hauteur des contrôles**
+- [ ] Réduire padding/margin des contrôles sans nuire à l'UX
+- [ ] Réduire hauteur des dropdowns et inputs (compact mode)
+- [ ] Réduire espacement entre groupes de contrôles
+- [ ] Réduire taille des labels (font-size plus petit mais lisible)
+- [ ] Optimiser sections "Sièges" et "Matériaux" pour réduire hauteur totale
+
+**C. Optimisation mosaïque d'images (US-029)**
+- [ ] Adapter taille des images de la mosaïque pour tenir dans le viewport optimisé
+- [ ] Vue Extérieur : 5 images en grille compacte (taille réduite)
+- [ ] Vue Intérieur : 6 images en grille compacte (taille réduite)
+- [ ] Images responsive mais avec max-height pour éviter débordement
+- [ ] Préserver aspect ratio mais limiter hauteur totale de la mosaïque
+
+**D. Layout général**
+- [ ] Layout flexible : viewport à gauche/centre, contrôles à droite (ou layout optimal)
+- [ ] Utiliser toute la largeur 1920px disponible
+- [ ] Hauteur totale interface ≤ 1080px (moins barre de titre navigateur ~60-80px)
+- [ ] Hauteur effective cible : ~1000-1020px
+- [ ] Pas de margin/padding excessif autour du viewport
+
+**E. Responsive breakpoints**
+- [ ] 1920x1080 : Interface complète sans scroll (priorité maximale)
+- [ ] 1680x1050 : Dégradation gracieuse acceptable
+- [ ] 1366x768 : Peut avoir scroll vertical (acceptable)
+- [ ] Tablette/Mobile : Comportement responsive existant conservé
+
+**F. Tests de validation**
+- [ ] Tester sur écran 1920x1080 (FullHD) :
+  - [ ] Vue Extérieur : Pas de scroll vertical
+  - [ ] Vue Intérieur : Pas de scroll vertical
+  - [ ] Avec tous les contrôles affichés
+  - [ ] Avec mosaïque 5 images (Ext) et 6 images (Int)
+- [ ] Vérifier que le viewport et les images restent visibles et utilisables
+- [ ] Vérifier que les contrôles restent accessibles et lisibles
+- [ ] Console sans erreurs
+- [ ] UX fluide : pas de sensation de compression excessive
+
+**G. Ajustements CSS spécifiques**
+Modifications recommandées :
+- [ ] `body, html` : `height: 100vh; overflow: hidden;` (désactiver scroll page)
+- [ ] Conteneur principal : `max-height: 100vh; overflow: hidden;`
+- [ ] Panneau contrôles : Réduire padding, margin, line-height
+- [ ] Viewport : `max-height: calc(100vh - 100px);` (ajuster selon header)
+- [ ] Mosaïque : `max-height: 70vh;` ou valeur optimale
+- [ ] Contrôles : `font-size: 0.875rem;` (14px) au lieu de 1rem (16px)
+- [ ] Dropdowns : `padding: 0.25rem 0.5rem;` au lieu de 0.5rem 1rem
+- [ ] Sections : `margin-bottom: 0.5rem;` au lieu de 1rem
+
+**H. Alternatives si nécessaire**
+- [ ] Option A : Layout 2 colonnes (viewport gauche + contrôles droite avec scroll interne)
+- [ ] Option B : Layout viewport centré + contrôles en 2 colonnes compactes
+- [ ] Option C : Réduire nombre de contrôles visibles simultanément (accordéon/collapse)
+- [ ] Prioriser Option A ou B avant d'envisager Option C
+
+**Notes techniques :**
+
+**Fichiers à modifier :**
+1. **main.css** : Ajustements globaux de layout et spacing
+   - Réduire padding/margin généraux
+   - Optimiser hauteur viewport et mosaïque
+   - Ajuster font-size et line-height
+   - Media query spécifique pour 1920x1080
+
+2. **index.html** : Structure layout (si nécessaire)
+   - Revoir structure conteneurs pour optimiser espace
+   - Possiblement layout 2 colonnes explicite
+
+3. **ui.js** : Ajustements taille mosaïque (si nécessaire)
+   - Adapter dimensions images selon espace disponible
+
+**Calcul de l'espace disponible (1920x1080) :**
+- Hauteur totale : 1080px
+- Barre de titre navigateur : ~60-80px
+- Header/titre application : ~40-60px
+- Padding/margin global : ~20-40px
+- **Hauteur disponible pour contenu** : ~880-960px
+
+**Répartition suggérée :**
+- Viewport + mosaïque : ~700-800px (80%)
+- Contrôles : ~100-160px (20%) OU scroll interne si nécessaire
+
+**Complexité :**
+- Ajustements CSS multiples (spacing, sizing)
+- Tests sur résolution spécifique
+- Équilibre entre compacité et UX
+- Adaptation mosaïque (US-029)
+
+**Estimation** : 3 Story Points (~1-2h de développement + tests)
+
+---
+
 ## Définition de terminé (DoD)
 
 - [ ] Code fonctionnel testé manuellement
@@ -1160,5 +1277,5 @@ function openFullscreen(startIndex) {
 **Total Sprint #4** : 9 Story Points ✅ (TERMINÉ)
 **Total Sprint #5** : 4 Story Points ✅ (TERMINÉ)
 **Total Sprint #6** : 10 Story Points (US-027: 10 SP - Configurateur intérieur complet)
-**Total Sprint #7** : 8 Story Points (US-028: 3 SP - Affichage conditionnel selon vue + US-029: 5 SP - Mosaïque d'images)
+**Total Sprint #7** : 11 Story Points (US-028: 3 SP - Affichage conditionnel selon vue + US-029: 5 SP - Mosaïque d'images + US-030: 3 SP - Optimisation 1920x1080)
 **Total Icebox** : ~22 Story Points (archivé, non demandé)

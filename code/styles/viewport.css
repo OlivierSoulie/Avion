@@ -107,16 +107,17 @@
 
 /* ========================================
    4. US-029 : Mosaïque d'images cliquables
+   US-030 : Optimisé pour 1920x1080
    ======================================== */
 
 /* Conteneur mosaïque */
 .mosaic-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 0.5rem;
-    width: 100%;
-    padding: var(--spacing-md);
-    overflow-y: auto;
+    gap: 0.4rem;
+    width: fit-content;
+    padding: var(--spacing-sm);
+    overflow: visible;
     align-content: start;
 }
 
@@ -136,12 +137,13 @@
     grid-auto-rows: auto;
 }
 
-/* Styles des images */
+/* Styles des images - US-030 : max-height pour éviter dépassement */
 .mosaic-grid img {
     width: 100%;
     height: auto;
+    max-height: 280px;
     object-fit: cover;
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     box-shadow: var(--shadow-md);

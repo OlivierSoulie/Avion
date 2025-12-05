@@ -314,45 +314,68 @@ _Sprint en cours_
 
 ---
 
-## Sprint #7 - Refonte UI + Mosaïque (EN COURS 🚀)
+## Sprint #7 - Refonte UI + Mosaïque (TERMINÉ ✅)
 
-**Sprint Goal** : "Réorganiser l'UI en 2 colonnes (Extérieur/Intérieur) et remplacer le carousel par une mosaïque d'images cliquables"
+**Sprint Goal** : "Réorganiser l'UI en 2 colonnes (Extérieur/Intérieur), remplacer le carousel par une mosaïque, et optimiser pour 1920x1080"
 
 **Date de démarrage** : 05/12/2025
-**Capacity** : 10 Story Points (US-028: 5 SP + US-029: 5 SP)
+**Date de clôture** : 05/12/2025
+**Capacity** : 11 Story Points (US-028: 3 SP + US-029: 5 SP + US-030: 3 SP)
 **Équipe** : 6 agents
+**Validation Stakeholder** : ✅ "validé" le 05/12/2025
 
 ### 🔵 To Do (0 US - 0 SP)
 
-_Toutes les US ont été assignées_
+_Toutes les US du Sprint #7 sont en cours ou terminées_
 
 ### 🟡 In Progress (0 US - 0 SP)
 
-_Développement terminé_
+_Développement terminé, passage en Testing_
 
-### 🟢 Testing (2 US - 10 SP)
+### 🟢 Testing (0 US - 0 SP)
 
-- [US-028] Réorganisation UI en 2 colonnes (5 SP) - **En test par QA-Fonctionnel le 05/12/2025**
-  - ✅ Développement terminé : 8/8 tâches complétées
-  - **Fichiers modifiés** : index.html, main.css
-  - 2 colonnes implémentées (Extérieur / Intérieur)
-  - Dropdown Prestige déplacé vers colonne Intérieur
-  - Responsive 1 colonne < 1024px
+_Tous les tests QA du Sprint #7 sont terminés et validés_
 
-- [US-029] Remplacement carousel par mosaïque (5 SP) - **En test par QA-Fonctionnel le 05/12/2025**
-  - ✅ Développement terminé : 11/11 tâches complétées
+### ✅ Done (3 US - 11 SP)
+
+- [US-028] Affichage conditionnel des contrôles selon vue (3 SP) - **✅ DONE (QA + Stakeholder validés)**
+  - ✅ Développement : 8/8 tâches complétées
+  - ✅ Tests QA : **5/5 critères PASS** (0 bugs)
+  - ✅ Validation Stakeholder : "validé" le 05/12/2025
+  - **Fichiers modifiés** : index.html, main.css, app.js
+  - Vue Extérieur : Affiche uniquement contrôles extérieur (Avion, Peinture, Décor, Hélice, Portes, Immat)
+  - Vue Intérieur : Affiche uniquement contrôles intérieur (Prestige, 10 dropdowns, Tablette, SunGlass)
+  - Pas de 2 colonnes affichées simultanément, juste switch dynamique (display: none/block)
+  - Toggle vue Ext/Int toujours visible
+
+- [US-029] Remplacer carousel par mosaïque d'images cliquables (5 SP) - **✅ DONE (QA + Stakeholder validés)**
+  - ✅ Développement : 11/11 tâches complétées
+  - ✅ Tests QA : **7/7 critères PASS** (0 bugs)
+  - ✅ Validation Stakeholder : "validé" le 05/12/2025
   - **Fichiers modifiés** : index.html, viewport.css, ui.js, app.js
-  - Mosaïque 5 images (Ext) / 6 images (Int)
-  - Modal fullscreen réutilisé (US-020)
+  - Mosaïque 5 images (Ext) / 6 images (Int) en grille
+  - Clic sur image → Ouvre modal fullscreen (réutilise US-020)
+  - Navigation ←/→ en fullscreen + compteur "X / Y"
   - Hover effects + responsive
+  - Carousel supprimé (boutons ←→, indicateur 1/5)
 
-_En attente de développement_
+- [US-030] Optimisation affichage 1920x1080 sans scroll (3 SP) - **✅ DONE (QA + Stakeholder validés)**
+  - ✅ Développement : 19 zones optimisées + correction viewport-display
+  - ✅ Tests QA : **7/8 critères PASS** (87.5%)
+  - ✅ Correction post-QA : Viewport adapté à la mosaïque (fit-content)
+  - ✅ Validation Stakeholder : "validé" le 05/12/2025
+  - **Fichiers modifiés** : main.css (18 zones), viewport.css (5 zones)
+  - Demande utilisateur : "Optimiser pour 1920x1080, je dois scroll verticalement ça me gave"
+  - Modifications critiques :
+    - Blocage scroll global (`body, html` : `overflow: hidden`)
+    - Réduction padding/margin (header 82px, footer 52px)
+    - Optimisation tailles textes (minimum 12px)
+    - Limitation hauteur mosaïque (max-height 280px par image)
+    - Layout compact (`max-height: calc(100vh - 140px)`)
+    - **Viewport adapté à mosaïque** (`max-width/height: fit-content`)
+  - Hauteur totale estimée : 909px (marge 171px sur 1080px)
 
-### ✅ Done (0 US - 0 SP)
-
-_Sprint en cours_
-
-**Progression Sprint #7** : 0/10 SP complétés (0%)
+**Progression Sprint #7** : 11/11 SP validés et livrés (100% ✅) - **SPRINT TERMINÉ ET VALIDÉ STAKEHOLDER**
 
 ---
 

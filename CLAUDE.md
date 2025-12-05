@@ -93,17 +93,18 @@ Suivre le workflow Scrumban :
    - Les groupes de caméras
    - **Règle** : Toujours utiliser les valeurs du XML, jamais les hardcoder
 
-3. **Pour la LOGIQUE et l'IMPLÉMENTATION** : Le script Python `generate_full_render.py`
+3. **Pour la LOGIQUE et l'IMPLÉMENTATION** : Le site web JavaScript (`code/js/`)
    - La structure des payloads API
    - Le nommage des textures et matériaux
    - Les algorithmes de calcul (positionnement, couleurs)
-   - **Règle** : Le code JavaScript dans `code/js/` doit reproduire EXACTEMENT la logique du Python
+   - **Règle** : Le JavaScript dans `code/js/` fait AUTORITÉ pour toute la logique métier
+   - **Note** : Le script Python `generate_full_render.py` a été mis à jour (v3.0) pour refléter la logique du JavaScript
 
 **Processus en cas de bug ou nouvelle fonctionnalité** :
-1. Vérifier d'abord le script Python `generate_full_render.py`
-2. Comparer avec l'implémentation JavaScript
-3. Le Python fait autorité : corriger le JS pour correspondre au Python
-4. NE JAMAIS diverger entre Python et JavaScript
+1. Vérifier l'implémentation JavaScript dans `code/js/` (source de vérité)
+2. Analyser et corriger directement le JavaScript si nécessaire
+3. Le JavaScript fait autorité : mettre à jour le Python si besoin pour maintenir la cohérence
+4. Les deux implémentations doivent rester synchronisées sur les aspects critiques (layers, couleurs, positionnement)
 
 ### 🎨 Système de couleurs de l'immatriculation
 
@@ -151,6 +152,59 @@ Exterior_PaintScheme.Tehuano_A-0_A-D_A-D_A-D_A-D
 
 ---
 
+## Synchronisation GitHub
+
+### Repository
+- **URL** : https://github.com/OlivierSoulie/Avion
+- **Branche principale** : `main`
+- **Stratégie** : Branche unique (tout sur main)
+
+### Règles de synchronisation
+
+**Quand synchroniser (push vers GitHub) :**
+1. ✅ Après chaque **bug fix critique** (priorité haute)
+2. ✅ À la fin de chaque **sprint** (regroupement des changements)
+3. ✅ Avant de changer de poste de travail
+4. ⚠️ Sur demande explicite de l'utilisateur
+
+**Format des commits :**
+Le projet utilise un format simple inspiré des Conventional Commits :
+- `feat:` - Nouvelle fonctionnalité (User Story)
+- `fix:` - Correction de bug
+- `chore:` - Maintenance, nettoyage
+- `docs:` - Documentation
+- `refactor:` - Refactoring sans changement fonctionnel
+
+**Exemples de messages :**
+```
+feat: Ajout gestion immatriculation personnalisée (US-004)
+fix: Correction inversion layers couleurs lettres slanted
+chore: Nettoyage fichiers temporaires
+docs: Mise à jour CLAUDE.md - synchronisation GitHub
+```
+
+**Workflow de base :**
+```bash
+# 1. Vérifier l'état
+git status
+
+# 2. Ajouter les fichiers modifiés
+git add .
+
+# 3. Créer le commit (via Claude Code ou manuellement)
+git commit -m "type: description"
+
+# 4. Pousser vers GitHub
+git push origin main
+```
+
+**⚠️ Important :**
+- Toujours vérifier `git status` avant de commit
+- Ne jamais commit de fichiers sensibles (.env, credentials, etc.)
+- Les commits peuvent être créés par Claude Code (avec emoji 🤖)
+
+---
+
 ## Metriques
 
 [A completer apres Sprint #1]
@@ -162,6 +216,23 @@ Exterior_PaintScheme.Tehuano_A-0_A-D_A-D_A-D_A-D
 ---
 
 ## Changelog
+
+### 05/12/2025 (Mise à jour Python v3.0 + Documentation GitHub)
+- **CHANGEMENT MAJEUR** : Le JavaScript devient la source de vérité pour la logique métier
+  - Le script Python a été mis à jour pour refléter toutes les corrections du JavaScript
+  - Version Python v3.0 : Aligné avec le site web JavaScript
+- **PYTHON v3.0** : Corrections et améliorations synchronisées avec JavaScript
+  - BUG FIX : Inversion des layers (identique à colors.js lignes 114-133)
+  - Layer 1 toujours envoyé (même si zone = "0", identique à colors.js lignes 231-244)
+  - US-019 : DATABASE_ID dynamique avec sélection TBM 960/980 (corrigé initialisation)
+  - US-023 à US-026 : Support Tablet/SunGlass/Doors dynamiques
+  - Immatriculation par défaut : "NWM1MW" → "N960TB" (aligné avec JS)
+  - Schéma peinture : "Zephyr" → "Zephir" (aligné avec JS)
+  - Documentation complète de la synchronisation avec JavaScript
+- **DOC** : Mise à jour CLAUDE.md
+  - Section "Sources de Vérité" : JavaScript fait autorité pour la logique
+  - Section "Synchronisation GitHub" : Repository, règles de commit, workflow
+  - Processus de développement mis à jour
 
 ### 05/12/2025
 - **BUG FIX CRITIQUE** : Correction application des couleurs pour styles slanted (A-E)

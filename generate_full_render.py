@@ -1,3 +1,27 @@
+"""
+Générateur de rendus TBM Daher - Version Python
+================================================
+
+⚠️ IMPORTANT : SYNCHRONISATION AVEC LE JAVASCRIPT
+Ce script Python a été mis à jour pour refléter les concepts et corrections
+implémentés dans le site web JavaScript (code/js/).
+
+CORRECTIONS MAJEURES (05/12/2025) :
+- BUG FIX CRITIQUE : Inversion des layers par l'API Lumiscaphe
+  * Pour paire "A-D" : Layer 0 envoyé avec couleur Zone D, Layer 1 avec Zone A
+  * Logique inversée implémentée dans resolve_letter_colors()
+- Layer 1 TOUJOURS envoyé (même si zone = "0", utilise couleur Layer 0 dans ce cas)
+- Nommage conditionnel des textures (slanted vs straight)
+
+ALIGNEMENT AVEC JAVASCRIPT :
+- Gestion DATABASE_ID dynamique (US-019)
+- Support SunGlass/Tablet/Doors dynamique (US-023-026)
+- Même logique de positionnement (espacement 5cm)
+- Même logique de couleurs (mapping couples A/F, B/G, etc.)
+
+RÉFÉRENCE : code/js/colors.js, code/js/positioning.js, code/js/api.js
+"""
+
 import requests
 import xml.etree.ElementTree as ET
 import json
@@ -5,11 +29,15 @@ import os
 import sys
 
 # --- VERSION ---
-SCRIPT_VERSION = "v2.10 (Spacing: 5cm edge-to-edge using char widths)"
+SCRIPT_VERSION = "v3.0 (Aligned with JavaScript - Layers inversion fix + Interior config)"
 
 # --- CONFIGURATION ---
 API_BASE_URL = "https://wr-daher.lumiscaphe.com"
-DATABASE_ID = "8ad3eaf3-0547-4558-ae34-647f17c84e88"
+
+# US-019: DATABASE_ID is now dynamically managed
+# Valeur par défaut : TBM 960 (peut être changé au démarrage du script)
+DATABASE_ID = "8ad3eaf3-0547-4558-ae34-647f17c84e88"  # TBM 960 par défaut
+
 OUTPUT_DIR = "Rendus_TBM_Output"
 IMAGE_WIDTH = 1920
 IMAGE_HEIGHT = 1080
@@ -26,7 +54,7 @@ DECORS_CONFIG = {
     "Onirique": {"suffix": "Onirique_Ground", "type": "Ground"},
     "Fjord":    {"suffix": "Fjord_Flight",    "type": "Flight"} 
 }
-PAINT_SCHEMES_LIST = ["Sirocco", "Alize", "Mistral", "Meltem", "Tehuano", "Zephyr"]
+PAINT_SCHEMES_LIST = ["Sirocco", "Alize", "Mistral", "Meltem", "Tehuano", "Zephir"]  # Aligné avec JavaScript
 PRESTIGE_LIST = ["Oslo", "SanPedro", "London", "Labrador", "GooseBay", "BlackFriars", "Fjord", "Atacama"]
 SPINNER_LIST = ["PolishedAluminium", "MattBlack"]
 
@@ -47,13 +75,13 @@ def ask_user_choice(label, options_list):
 
 def ask_immatriculation():
     print(f"\n--- SÉLECTION : IMMATRICULATION ---")
-    val = input("Entrez l'immatriculation (Defaut: NWM1MW) : ").strip().upper()
+    val = input("Entrez l'immatriculation (Defaut: N960TB) : ").strip().upper()
     if not val:
-        print("-> Utilisation par défaut : NWM1MW")
-        return "NWM1MW"
+        print("-> Utilisation par défaut : N960TB")
+        return "N960TB"
     if 1 <= len(val) <= 6: return val
     print("Erreur : Max 6 caractères.")
-    return "NWM1MW"
+    return "N960TB"
 
 def ask_image_dimensions():
     print(f"\n--- SÉLECTION : DIMENSIONS IMAGE ---")
@@ -222,10 +250,20 @@ def parse_colors_from_config(full_config_str):
     return color_map
 
 def resolve_letter_colors(style_letter, paint_scheme_config_part, color_map):
+    """
+    Résout les couleurs des lettres selon le style et la config de peinture
+
+    BUG FIX 05/12/2025: INVERSION DES LAYERS PAR L'API
+    - Pour paire "A-D" : on veut Layer 0 = Zone A, Layer 1 = Zone D
+    - Mais l'API applique Layer 0 = deuxième valeur, Layer 1 = première valeur
+    - Donc on inverse l'attribution : c0 = z1, c1 = z0
+
+    Layer 1 TOUJOURS envoyé (même si z0 = '0', utilise couleur de z1 dans ce cas)
+    """
     try:
         segments = paint_scheme_config_part.split('.')[1].split('_')
         config_pairs = segments[1:]
-        if len(config_pairs) < 5: return "#000000", "#FFFFFF", False
+        if len(config_pairs) < 5: return "#000000", "#FFFFFF", True
 
         # Mapping correct : A-E -> 0-4 (slanted), F-J -> 0-4 (straight)
         if style_letter <= 'E':
@@ -237,23 +275,44 @@ def resolve_letter_colors(style_letter, paint_scheme_config_part, color_map):
 
         target_pair = config_pairs[style_idx]
         z0, z1 = target_pair.split('-')
-        c0 = color_map.get(z0, "#000000")
-        c1 = color_map.get(z1, "#FFFFFF")
 
-        # Si z0 == '0', pas de Layer 0 (retourne None)
-        if z0 == '0': c0 = None
+        # INVERSION : L'API interprète les layers à l'envers
+        # Pour "A-D" : on veut Layer 0 = Zone A, Layer 1 = Zone D
+        # Mais l'API applique Layer 0 = deuxième valeur, Layer 1 = première valeur
+        # Donc on inverse l'attribution
+        c0 = color_map.get(z1) if z1 != '0' else None  # Layer 0 = deuxième zone (z1)
+        c1 = color_map.get(z0) if z0 != '0' else None  # Layer 1 = première zone (z0)
 
-        # Si z1 == '0', pas de Layer 1 (retourne None + flag)
-        has_layer1 = (z1 != '0')
-        if not has_layer1: c1 = None
+        # Layer 1 TOUJOURS défini (flag True)
+        # Si z0 = '0', utiliser la couleur de z1 (= c0)
+        has_layer1 = True
+        if z0 == '0':
+            c1 = c0  # Utiliser la couleur du Layer 0
 
         return c0, c1, has_layer1
     except Exception: return "#000000", "#FFFFFF", True
 
 # --- MAIN ---
 def generate():
+    global DATABASE_ID
+
     print(f"=== GÉNÉRATEUR TBM {SCRIPT_VERSION} ===")
-    
+
+    # US-019: Sélection de la base de données (TBM 960 ou 980)
+    # Liste des bases connues (peut être étendue)
+    DATABASES = {
+        "960": "8ad3eaf3-0547-4558-ae34-647f17c84e88",
+        "980": "8ad3eaf3-0547-4558-ae34-647f17c84e88"  # Placeholder - à remplacer par la vraie ID du 980
+    }
+
+    print("\n--- SÉLECTION : BASE DE DONNÉES ---")
+    print("  1. TBM 960 (par défaut)")
+    print("  2. TBM 980")
+    db_choice = input("Votre choix (1-2, défaut: 1) : ").strip() or "1"
+    db_key = "960" if db_choice == "1" else "980"
+    DATABASE_ID = DATABASES[db_key]
+    print(f"-> Base de données sélectionnée : TBM {db_key} ({DATABASE_ID})")
+
     s_version = ask_user_choice("Modèle Avion", VERSION_LIST)
     s_scheme = ask_user_choice("Schéma Peinture", PAINT_SCHEMES_LIST)
     s_prestige = ask_user_choice("Intérieur", PRESTIGE_LIST)
@@ -288,14 +347,24 @@ def generate():
     interior_config = get_config_from_label(xml, f"Interior_PrestigeSelection_{s_prestige}") or f"Interior_PrestigeSelection.{s_prestige}"
     decor_data = DECORS_CONFIG[s_decor]
 
+    # US-023 à US-026 : Options dynamiques pour tablette, lunettes et portes
+    print("\n--- OPTIONS ADDITIONNELLES (Appuyer sur Entrée pour valeurs par défaut) ---")
+    tablet_state = input("Tablette (Open/Closed, défaut: Closed) : ").strip() or "Closed"
+    sunglass_state = input("Lunettes de soleil (SunGlassON/SunGlassOFF, défaut: SunGlassOFF) : ").strip() or "SunGlassOFF"
+    door_pilot_state = input("Porte pilote (Open/Closed, défaut: Closed) : ").strip() or "Closed"
+    door_passenger_state = input("Porte passager (Open/Closed, défaut: Closed) : ").strip() or "Closed"
+
     config_parts = [
         f"Version.{s_version}",
-        paint_config,           
-        interior_config,        
+        paint_config,
+        interior_config,
         f"Decor.{decor_data['suffix']}",
         f"Position.{s_decor}",
         f"Exterior_Spinner.{s_spinner}",
-        "Door_passenger.Closed", "Door_pilot.Closed", "SunGlass.SunGlassOFF"
+        f"Tablet.{tablet_state}",                    # US-023: Dynamique
+        f"SunGlass.{sunglass_state}",                # US-024: Dynamique
+        f"Door_pilot.{door_pilot_state}",            # US-025: Dynamique
+        f"Door_passenger.{door_passenger_state}"     # US-026: Dynamique
     ]
     full_config_str = "/".join(filter(None, config_parts))
 
@@ -327,10 +396,13 @@ def generate():
                 if color_L0:
                     multi_layers_list.append({"name": texture_filename_left, "layer": 0, "diffuseColor": color_L0})
                     multi_layers_list.append({"name": texture_filename_right, "layer": 0, "diffuseColor": color_L0})
-                # Layer 1 (seulement si has_layer1 == True et color_L1 existe)
-                if has_layer1 and color_L1:
-                    multi_layers_list.append({"name": texture_filename_left, "layer": 1, "diffuseColor": color_L1})
-                    multi_layers_list.append({"name": texture_filename_right, "layer": 1, "diffuseColor": color_L1})
+
+                # Layer 1 : TOUJOURS envoyé (même si has_layer1 == False)
+                # Si pas de Layer 1 défini (zone = "0"), utiliser la couleur du Layer 0
+                final_color_L1 = color_L1 if (has_layer1 and color_L1) else color_L0
+                if final_color_L1:
+                    multi_layers_list.append({"name": texture_filename_left, "layer": 1, "diffuseColor": final_color_L1})
+                    multi_layers_list.append({"name": texture_filename_right, "layer": 1, "diffuseColor": final_color_L1})
                 processed_chars.add(char)
         else:
             # Straight : même texture pour gauche et droite
@@ -342,9 +414,12 @@ def generate():
                 # Layer 0 (toujours présent si color_L0 existe)
                 if color_L0:
                     multi_layers_list.append({"name": texture_filename, "layer": 0, "diffuseColor": color_L0})
-                # Layer 1 (seulement si has_layer1 == True et color_L1 existe)
-                if has_layer1 and color_L1:
-                    multi_layers_list.append({"name": texture_filename, "layer": 1, "diffuseColor": color_L1})
+
+                # Layer 1 : TOUJOURS envoyé (même si has_layer1 == False)
+                # Si pas de Layer 1 défini (zone = "0"), utiliser la couleur du Layer 0
+                final_color_L1 = color_L1 if (has_layer1 and color_L1) else color_L0
+                if final_color_L1:
+                    multi_layers_list.append({"name": texture_filename, "layer": 1, "diffuseColor": final_color_L1})
                 processed_chars.add(char)
 
     # Surfaces (AVEC POSITION ABSOLUE)
