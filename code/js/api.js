@@ -7,6 +7,7 @@ import { API_BASE_URL, DECORS_CONFIG } from './config.js';
 import { extractAnchors, generateSurfaces } from './positioning.js';
 import { generateMaterialsAndColors } from './colors.js';
 import { setLastPayload } from './state.js';
+import { log } from './logger.js';
 
 // ======================================
 // US-019 : Gestion dynamique DATABASE_ID
@@ -290,7 +291,9 @@ function getConfigString(xmlRoot, config) {
         paintConfig = `Exterior_PaintScheme.${config.paintScheme}`;
     }
 
-    // US-027 : Construire config intérieur personnalisée (10 parties)
+    // US-027 : Construire config intérieur personnalisée
+    // IMPORTANT: NE PAS envoyer Interior_PrestigeSelection
+    // On envoie SEULEMENT les 10 parties individuelles (le prestige sert juste à initialiser les valeurs)
     const interiorConfig = [
         `Interior_Carpet.${config.carpet}`,
         `Interior_CentralSeatMaterial.${config.centralSeatMaterial}`,
@@ -303,6 +306,10 @@ function getConfigString(xmlRoot, config) {
         `Interior_Ultra-SuedeRibbon.${config.ultraSuedeRibbon}`,
         `Interior_UpperSidePanel.${config.upperSidePanel}`
     ].join('/');
+
+    // DEBUG: Afficher ce qui est envoyé à l'API pour vérification
+    log.debug('Interior SeatCovers envoyé:', config.seatCovers);
+    log.debug('Interior Config complète:', interiorConfig);
 
     // US-022: Position dépend de la vue (exterior/interior)
     const positionValue = (config.viewType === "interior")
@@ -388,6 +395,172 @@ export function parsePrestigeConfig(xmlDoc, prestigeName) {
 
     console.log('   Prestige config parsed:', config);
     return config;
+}
+
+/**
+ * Fonction générique pour extraire les options d'un Parameter du XML
+ * Utilisable pour tous les dropdowns (intérieur ET extérieur)
+ *
+ * @param {XMLDocument} xmlDoc - Le document XML de la database
+ * @param {string} parameterLabel - Le label du Parameter (ex: "Interior_Carpet", "Exterior_Version")
+ * @param {boolean} formatLabel - Si true, formate le label (ex: "BeigeGray_2242" → "Beige Gray"). Si false, utilise le label brut
+ * @returns {Array} Tableau d'options [{label, value}]
+ */
+export function extractParameterOptions(xmlDoc, parameterLabel, formatLabel = true) {
+    const parameter = xmlDoc.querySelector(`Parameter[label="${parameterLabel}"]`);
+    if (!parameter) {
+        log.warn(`Parameter ${parameterLabel} non trouvé dans le XML`);
+        return [];
+    }
+
+    const values = parameter.querySelectorAll('Value');
+    const options = [];
+
+    values.forEach(value => {
+        const rawLabel = value.getAttribute('label');
+        const symbol = value.getAttribute('symbol');
+
+        if (rawLabel && symbol) {
+            // Extraire la valeur après le point : "Interior_Carpet.XXX" → "XXX"
+            const configValue = symbol.split('.')[1] || rawLabel;
+
+            let displayLabel;
+            if (formatLabel) {
+                // Formatter le label : "Aegean_2242_Leather" → "Aegean"
+                // Prendre le premier segment (avant underscore + chiffres ou _belt/_Leather/etc.)
+                const namePart = rawLabel.split('_')[0];
+                // Convertir CamelCase en espaces : "BeigeGray" → "Beige Gray"
+                displayLabel = namePart.replace(/([A-Z])/g, ' $1').trim();
+            } else {
+                // Utiliser le label brut
+                displayLabel = rawLabel;
+            }
+
+            options.push({ label: displayLabel, value: configValue });
+        }
+    });
+
+    log.debug(`${parameterLabel}: ${options.length} options extraites`);
+    return options;
+}
+
+/**
+ * Extrait les options disponibles pour les dropdowns intérieur depuis le XML
+ * Retourne un objet avec les listes pour chaque dropdown
+ *
+ * @param {XMLDocument} xmlDoc - Le document XML de la database
+ * @returns {Object} Objet contenant les listes d'options pour chaque dropdown
+ */
+export function getInteriorOptionsFromXML(xmlDoc) {
+    log.int('Extraction des options intérieur depuis XML...');
+
+    const options = {
+        carpet: extractParameterOptions(xmlDoc, 'Interior_Carpet'),
+        seatCovers: extractParameterOptions(xmlDoc, 'Interior_SeatCovers'),
+        tabletFinish: extractParameterOptions(xmlDoc, 'Interior_TabletFinish'),
+        seatbelts: extractParameterOptions(xmlDoc, 'Interior_Seatbelts'),
+        metalFinish: extractParameterOptions(xmlDoc, 'Interior_MetalFinish'),
+        upperSidePanel: extractParameterOptions(xmlDoc, 'Interior_UpperSidePanel'),
+        lowerSidePanel: extractParameterOptions(xmlDoc, 'Interior_LowerSidePanel'),
+        ultraSuedeRibbon: extractParameterOptions(xmlDoc, 'Interior_Ultra-SuedeRibbon'),
+        centralSeatMaterial: extractParameterOptions(xmlDoc, 'Interior_CentralSeatMaterial')
+    };
+
+    log.int('✓ Carpet:', options.carpet.length, 'options');
+    log.int('✓ SeatCovers:', options.seatCovers.length, 'options');
+    log.int('✓ Seatbelts:', options.seatbelts.length, 'options');
+    return options;
+}
+
+/**
+ * Extrait les options disponibles pour les dropdowns extérieur depuis le XML
+ * Retourne un objet avec les listes pour chaque dropdown
+ *
+ * @param {XMLDocument} xmlDoc - Le document XML de la database
+ * @returns {Object} Objet contenant les listes d'options pour chaque dropdown
+ */
+export function getExteriorOptionsFromXML(xmlDoc) {
+    log.ext('Extraction des options extérieur depuis XML...');
+
+    // Fonctions spéciales pour formater les labels
+
+    // "Alize_B-0_B-D_B-D_B-D_B-D" → "Alize"
+    const formatPaintSchemeLabel = (rawLabel) => {
+        return rawLabel.split('_')[0];
+    };
+
+    // "Studio_Ground" → "Studio", "Fjord_Flight" → "Fjord"
+    const formatDecorLabel = (rawLabel) => {
+        return rawLabel.replace('_Ground', '').replace('_Flight', '');
+    };
+
+    const options = {
+        version: [],
+        paintScheme: [],
+        prestige: [],
+        spinner: [],
+        decor: [],
+        styleSlanted: [],
+        styleStraight: []
+    };
+
+    // Version (TBM 960, 980)
+    options.version = extractParameterOptions(xmlDoc, 'Version', false);
+
+    // Paint Scheme - extraire et formater
+    const paintRaw = extractParameterOptions(xmlDoc, 'Exterior_PaintScheme', false);
+    options.paintScheme = paintRaw.map(opt => ({
+        label: formatPaintSchemeLabel(opt.label),
+        value: formatPaintSchemeLabel(opt.value)
+    }));
+
+    // Prestige - SPECIAL : Les prestiges sont des ConfigurationBookmark, pas des Parameters
+    const prestigeBookmarks = xmlDoc.querySelectorAll('ConfigurationBookmark[label^="Interior_PrestigeSelection_"]');
+    options.prestige = Array.from(prestigeBookmarks).map(bookmark => {
+        const label = bookmark.getAttribute('label').replace('Interior_PrestigeSelection_', '');
+        return { label, value: label };
+    });
+
+    // Spinner
+    options.spinner = extractParameterOptions(xmlDoc, 'Exterior_Spinner', false);
+
+    // Decor - extraire et formater (label ET value)
+    const decorRaw = extractParameterOptions(xmlDoc, 'Decor', false);
+    options.decor = decorRaw.map(opt => ({
+        label: formatDecorLabel(opt.label),
+        value: formatDecorLabel(opt.value)  // Formater aussi la value pour correspondre à DECORS_CONFIG
+    }));
+
+    // Extraire les styles d'immatriculation
+    const stylesParam = xmlDoc.querySelector('Parameter[label="Exterior_RegistrationNumber_Style"]');
+    if (stylesParam) {
+        const styleValues = stylesParam.querySelectorAll('Value');
+        styleValues.forEach(value => {
+            const label = value.getAttribute('label');
+            if (label) {
+                // Séparer slanted (A-E) et straight (F-J)
+                if (label >= 'A' && label <= 'E') {
+                    options.styleSlanted.push(label);
+                } else if (label >= 'F' && label <= 'J') {
+                    options.styleStraight.push(label);
+                }
+            }
+        });
+    } else {
+        // Fallback si le Parameter n'existe pas dans le XML
+        log.warn('Parameter Exterior_RegistrationNumber_Style non trouvé, utilisation des valeurs hardcodées');
+        options.styleSlanted = ['A', 'B', 'C', 'D', 'E'];
+        options.styleStraight = ['F', 'G', 'H', 'I', 'J'];
+    }
+
+    log.ext('✓ Version:', options.version.length, 'options');
+    log.ext('✓ PaintScheme:', options.paintScheme.length, 'options');
+    log.ext('✓ Prestige:', options.prestige.length, 'options');
+    log.ext('✓ Spinner:', options.spinner.length, 'options');
+    log.ext('✓ Decor:', options.decor.length, 'options');
+    log.ext('✓ Styles:', options.styleSlanted.length + options.styleStraight.length, 'options');
+
+    return options;
 }
 
 /**
@@ -752,13 +925,18 @@ function parseColorString(colorStr) {
     const rawTag = parts[4] || '';
     const tag = rawTag === 'A+' ? 'A+' : '';  // Seul "A+" est valide, "noA+" = pas de tag
 
+    // US-033 : Extraire les tags individuels depuis parts[5:]
+    // Exemple: ["29017", "socata", "white", "solid", "light"]
+    const tags = parts.slice(5).filter(t => t.length > 0);
+
     return {
         name: parts[0],              // AlbeilleBlack
-        code: parts[1],              // 22505 (non utilisé)
-        contrastColor: parts[2],     // #414142 (non utilisé)
-        htmlColor: parts[3],         // #424243 (pour immat)
-        tag: tag,                    // "A+" ou vide
-        keywords: parts.slice(5).join('-') // 22505-albeille-black-dark-metallic
+        code: parts[1],              // 22505
+        contrastColor: parts[2],     // #414142
+        htmlColor: parts[3],         // #424243
+        tag: tag,                    // "A+" ou ""
+        keywords: parts.slice(5).join('-'), // Gardé pour compatibilité
+        tags: tags                   // US-033 : ["22505", "albeille", "black", "dark", "metallic"]
     };
 }
 

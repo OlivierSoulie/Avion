@@ -120,3 +120,34 @@
         width: 100%;
     }
 }
+
+/* ========================================
+   US-033 : Inputs de recherche pour zones de couleurs
+   ======================================== */
+
+.search-input {
+    margin-bottom: var(--spacing-sm);
+    font-size: 14px;
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    transition: border-color 0.2s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    background: var(--color-bg-secondary);
+}
+
+.search-input::placeholder {
+    color: var(--color-text-secondary);
+    font-style: italic;
+}
+
+/* Ajuster l'espacement du dropdown qui suit */
+.search-input + .form-control {
+    margin-top: var(--spacing-xs);
+}

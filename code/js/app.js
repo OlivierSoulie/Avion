@@ -18,6 +18,18 @@ import { fetchRenderImages, testPayloadBuild, fetchDatabases, setDatabaseId, get
 import { log } from './logger.js';
 
 // ======================================
+// US-033 : Cache des couleurs avec tags pour le filtrage
+// ======================================
+
+let colorZonesData = {
+    zoneA: [],
+    zoneB: [],
+    zoneC: [],
+    zoneD: [],
+    zoneAPlus: []
+};
+
+// ======================================
 // Fonctions utilitaires UI
 // ======================================
 
@@ -314,6 +326,9 @@ async function initColorZones() {
     try {
         // Récupérer les zones depuis le XML
         const zones = await getExteriorColorZones();
+
+        // US-033 : Stocker les couleurs avec tags pour le filtrage
+        colorZonesData = zones;
 
         // Peupler les dropdowns
         populateColorZone('selectZoneA', zones.zoneA);
@@ -696,6 +711,77 @@ function updateDefaultImmatFromModel(model) {
             inputImmat.value = defaultImmat;
         }
     }
+}
+
+// ======================================
+// US-033 : Recherche par tags dans zones de couleurs
+// ======================================
+
+/**
+ * US-033 : Filtre un dropdown de zone de couleur selon le terme de recherche
+ * Recherche dans le nom de la couleur ET dans les tags
+ * Insensible à la casse
+ *
+ * @param {string} zoneId - ID du dropdown (ex: "selectZoneA")
+ * @param {string} searchTerm - Terme de recherche
+ */
+function filterColorDropdown(zoneId, searchTerm) {
+    const dropdown = document.getElementById(zoneId);
+    if (!dropdown) return;
+
+    // Déterminer quelle zone on filtre
+    const zoneMap = {
+        'selectZoneA': 'zoneA',
+        'selectZoneB': 'zoneB',
+        'selectZoneC': 'zoneC',
+        'selectZoneD': 'zoneD',
+        'selectZoneAPlus': 'zoneAPlus'
+    };
+
+    const zoneKey = zoneMap[zoneId];
+    if (!zoneKey || !colorZonesData[zoneKey]) {
+        console.error('Zone inconnue:', zoneId);
+        return;
+    }
+
+    const colors = colorZonesData[zoneKey];
+    const currentValue = dropdown.value; // Sauvegarder la valeur sélectionnée
+
+    // Normaliser le terme de recherche (lowercase, trim)
+    const term = searchTerm.toLowerCase().trim();
+
+    // Si pas de recherche, afficher tout
+    if (term === '') {
+        populateColorZone(zoneId, colors);
+        dropdown.value = currentValue; // Restaurer la sélection
+        return;
+    }
+
+    // Filtrer les couleurs
+    const filteredColors = colors.filter(color => {
+        // Recherche dans le nom (insensible à la casse)
+        if (color.name.toLowerCase().includes(term)) {
+            return true;
+        }
+
+        // Recherche dans les tags
+        if (color.tags && Array.isArray(color.tags)) {
+            return color.tags.some(tag => tag.toLowerCase().includes(term));
+        }
+
+        return false;
+    });
+
+    // Repeupler le dropdown avec les couleurs filtrées
+    if (filteredColors.length > 0) {
+        populateColorZone(zoneId, filteredColors);
+        dropdown.value = currentValue; // Restaurer la sélection si elle est dans les résultats
+    } else {
+        // Aucune correspondance : afficher un message
+        dropdown.innerHTML = '<option value="">Aucune correspondance</option>';
+    }
+
+    console.log(`🔍 Filtrage ${zoneKey}: "${term}" → ${filteredColors.length} résultats`);
 }
 
 // ======================================
@@ -1200,6 +1286,46 @@ function attachEventListeners() {
             updateConfig('zoneAPlus', e.target.value);
             console.log('Zone A+ changée:', e.target.value);
             triggerRender();
+        });
+    }
+
+    // ======================================
+    // US-033 : Recherche par tags dans zones de couleurs
+    // ======================================
+
+    const searchZoneA = document.getElementById('searchZoneA');
+    const searchZoneB = document.getElementById('searchZoneB');
+    const searchZoneC = document.getElementById('searchZoneC');
+    const searchZoneD = document.getElementById('searchZoneD');
+    const searchZoneAPlus = document.getElementById('searchZoneAPlus');
+
+    if (searchZoneA) {
+        searchZoneA.addEventListener('input', (e) => {
+            filterColorDropdown('selectZoneA', e.target.value);
+        });
+    }
+
+    if (searchZoneB) {
+        searchZoneB.addEventListener('input', (e) => {
+            filterColorDropdown('selectZoneB', e.target.value);
+        });
+    }
+
+    if (searchZoneC) {
+        searchZoneC.addEventListener('input', (e) => {
+            filterColorDropdown('selectZoneC', e.target.value);
+        });
+    }
+
+    if (searchZoneD) {
+        searchZoneD.addEventListener('input', (e) => {
+            filterColorDropdown('selectZoneD', e.target.value);
+        });
+    }
+
+    if (searchZoneAPlus) {
+        searchZoneAPlus.addEventListener('input', (e) => {
+            filterColorDropdown('selectZoneAPlus', e.target.value);
         });
     }
 
