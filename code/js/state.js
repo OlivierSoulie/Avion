@@ -39,6 +39,7 @@ const state = {
         lowerSidePanel: DEFAULT_CONFIG.lowerSidePanel,
         ultraSuedeRibbon: DEFAULT_CONFIG.ultraSuedeRibbon,
         centralSeatMaterial: DEFAULT_CONFIG.centralSeatMaterial,
+        stitching: DEFAULT_CONFIG.stitching, // US-036
         perforatedSeatOptions: DEFAULT_CONFIG.perforatedSeatOptions,
 
         // Zones de couleurs personnalisées

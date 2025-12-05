@@ -302,6 +302,7 @@ function getConfigString(xmlRoot, config) {
         `Interior_PerforatedSeatOptions.${config.perforatedSeatOptions}`,
         `Interior_SeatCovers.${config.seatCovers}`,
         `Interior_Seatbelts.${config.seatbelts}`,
+        `Interior_Stitching.${config.stitching}`, // US-036
         `Interior_TabletFinish.${config.tabletFinish}`,
         `Interior_Ultra-SuedeRibbon.${config.ultraSuedeRibbon}`,
         `Interior_UpperSidePanel.${config.upperSidePanel}`
@@ -384,6 +385,8 @@ export function parsePrestigeConfig(xmlDoc, prestigeName) {
             config.seatCovers = part.replace('Interior_SeatCovers.', '');
         } else if (part.startsWith('Interior_Seatbelts.')) {
             config.seatbelts = part.replace('Interior_Seatbelts.', '');
+        } else if (part.startsWith('Interior_Stitching.')) { // US-036
+            config.stitching = part.replace('Interior_Stitching.', '');
         } else if (part.startsWith('Interior_TabletFinish.')) {
             config.tabletFinish = part.replace('Interior_TabletFinish.', '');
         } else if (part.startsWith('Interior_Ultra-SuedeRibbon.')) {
@@ -470,12 +473,14 @@ export function getInteriorOptionsFromXML(xmlDoc) {
         upperSidePanel: extractParameterOptions(xmlDoc, 'Interior_UpperSidePanel'),
         lowerSidePanel: extractParameterOptions(xmlDoc, 'Interior_LowerSidePanel'),
         ultraSuedeRibbon: extractParameterOptions(xmlDoc, 'Interior_Ultra-SuedeRibbon'),
-        centralSeatMaterial: extractParameterOptions(xmlDoc, 'Interior_CentralSeatMaterial')
+        centralSeatMaterial: extractParameterOptions(xmlDoc, 'Interior_CentralSeatMaterial'),
+        stitching: extractParameterOptions(xmlDoc, 'Interior_Stitching') // US-036
     };
 
     log.int('✓ Carpet:', options.carpet.length, 'options');
     log.int('✓ SeatCovers:', options.seatCovers.length, 'options');
     log.int('✓ Seatbelts:', options.seatbelts.length, 'options');
+    log.int('✓ Stitching:', options.stitching.length, 'options'); // US-036
     return options;
 }
 

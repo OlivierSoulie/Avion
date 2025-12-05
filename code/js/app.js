@@ -492,6 +492,7 @@ async function initUI() {
         populateDropdown('upper-side-panel', interiorOptions.upperSidePanel, config.upperSidePanel);
         populateDropdown('lower-side-panel', interiorOptions.lowerSidePanel, config.lowerSidePanel);
         populateDropdown('ultra-suede-ribbon', interiorOptions.ultraSuedeRibbon, config.ultraSuedeRibbon);
+        populateDropdown('stitching', interiorOptions.stitching, config.stitching); // US-036
         populateDropdown('central-seat-material', interiorOptions.centralSeatMaterial, config.centralSeatMaterial);
 
         log.success('Tous les dropdowns peuplés depuis le XML');
@@ -1211,6 +1212,13 @@ function attachEventListeners() {
     document.getElementById('ultra-suede-ribbon').addEventListener('change', (e) => {
         updateConfig('ultraSuedeRibbon', e.target.value);
         console.log('Ruban Ultra-Suede changé:', e.target.value);
+        triggerRender();
+    });
+
+    // US-036 : Event listener Stitching
+    document.getElementById('stitching').addEventListener('change', (e) => {
+        updateConfig('stitching', e.target.value);
+        console.log('Stitching changé:', e.target.value);
         triggerRender();
     });
 
