@@ -288,17 +288,17 @@ a {
     background: var(--color-bg);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
-    padding: var(--spacing-md);
+    padding: var(--spacing-sm);
     height: 100%;
     overflow-y: auto;
 }
 
 .controls-container h2 {
-    font-size: 1.25rem;
+    font-size: 1.125rem;
     font-weight: 600;
     color: var(--color-text);
-    margin-bottom: var(--spacing-md);
-    padding-bottom: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+    padding-bottom: var(--spacing-xs);
     border-bottom: 1px solid var(--color-border);
 }
 
@@ -390,20 +390,21 @@ p {
 .form-group {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-xs);
+    gap: 0.15rem;
+    margin-bottom: var(--spacing-xs);
 }
 
 .form-group label {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 500;
     color: var(--color-text);
 }
 
 .form-control {
-    padding: 0.35rem var(--spacing-sm);
+    padding: 0.3rem 0.4rem;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: var(--color-text);
     background-color: var(--color-bg);
     transition: all var(--transition-base);
@@ -853,12 +854,13 @@ p {
 
 .toggle-btn {
     flex: 1;
-    padding: 0.75rem 1rem;
+    padding: 0.4rem 0.6rem;
     background-color: var(--color-bg-secondary);
     color: var(--color-text);
     border: none;
     border-right: 1px solid var(--color-border);
     cursor: pointer;
+    font-size: 0.8rem;
     font-weight: 500;
     transition: all var(--transition-fast);
 }
@@ -962,7 +964,7 @@ p {
 }
 
 .interior-subsection {
-    margin-bottom: var(--spacing-lg);
+    margin-bottom: var(--spacing-sm);
 }
 
 .interior-subsection:last-child {
@@ -971,8 +973,8 @@ p {
 
 .interior-subsection h4 {
     margin-top: 0;
-    margin-bottom: var(--spacing-md);
-    font-size: 0.95rem;
+    margin-bottom: var(--spacing-sm);
+    font-size: 0.875rem;
     color: var(--color-text-secondary);
     font-weight: 600;
     text-transform: uppercase;
@@ -980,7 +982,7 @@ p {
 }
 
 .interior-subsection .form-group {
-    margin-bottom: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
 }
 
 .interior-subsection .form-group:last-child {
