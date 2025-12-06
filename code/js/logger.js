@@ -1,6 +1,8 @@
-// Logger.js - Système de logging structuré
-// Configurateur TBM Daher
-// Permet de filtrer facilement les logs dans la console
+/**
+ * @fileoverview Système de logging avec emojis
+ * @module logger
+ * @version 1.0
+ */
 
 /**
  * Préfixes de logging :

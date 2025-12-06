@@ -1,7 +1,7 @@
-// App.js - Point d'entrée principal
-// Configurateur TBM Daher
-// Version : 1.0
-// Date : 02/12/2025
+/**
+ * @fileoverview Point d'entrée de l'application
+ * @version 1.0
+ */
 
 import { getConfig, updateConfig, setImages, setLoading, setError, hashConfig, getLastPayload, getViewType } from './state.js';
 import {
@@ -13,8 +13,27 @@ import {
     // sont maintenant extraites dynamiquement du XML via getExteriorOptionsFromXML() et getInteriorOptionsFromXML()
     // DECORS_CONFIG est conservé car il contient de la logique (type, suffix), pas seulement des données
 } from './config.js';
-import { initRetryButton, renderMosaic, renderConfigMosaic, showLoader, hideLoader, showError, hideError, disableControls, enableControls, showPlaceholder, showSuccessToast, initConnectionStatus, initFullscreen, enterSelectionMode, exitSelectionMode, downloadSelectedImages } from './ui.js';
-import { fetchRenderImages, fetchConfigurationImages, testPayloadBuild, fetchDatabases, setDatabaseId, getDefaultConfig, parsePrestigeConfig, getDatabaseXML, getExteriorColorZones, parsePaintSchemeBookmark, getInteriorOptionsFromXML, getExteriorOptionsFromXML, getCameraListFromGroup } from './api.js';
+import {
+    renderMosaic,
+    renderConfigMosaic,
+    initFullscreen,
+    showLoader,
+    hideLoader,
+    showError,
+    hideError,
+    showPlaceholder,
+    hidePlaceholder,
+    showSuccessToast,
+    initRetryButton,
+    initConnectionStatus,
+    disableControls,
+    enableControls,
+    downloadImage,
+    enterSelectionMode,
+    exitSelectionMode,
+    downloadSelectedImages
+} from './ui/index.js';
+import { fetchRenderImages, fetchConfigurationImages, fetchDatabases, setDatabaseId, getDefaultConfig, getInteriorPrestigeConfig as parsePrestigeConfig, getDatabaseXML, getExteriorColorZones, parsePaintSchemeBookmark, getInteriorOptionsFromXML, getExteriorOptionsFromXML, getCameraListFromGroup } from './api/index.js';
 import { log } from './logger.js';
 
 // ======================================
@@ -77,6 +96,11 @@ function populateDropdown(selectId, optionsList, defaultValue) {
         return;
     }
 
+    console.log(`📋 populateDropdown: ${selectId}, ${optionsList.length} options, défaut="${defaultValue}"`);
+
+    // Si pas de defaultValue et qu'on a des options, utiliser la première
+    const effectiveDefault = defaultValue || (optionsList.length > 0 ? optionsList[0].value : null);
+
     // Vider le select existant
     select.innerHTML = '';
 
@@ -85,11 +109,13 @@ function populateDropdown(selectId, optionsList, defaultValue) {
         const optionElement = document.createElement('option');
         optionElement.value = option.value;
         optionElement.textContent = option.label;
-        if (option.value === defaultValue) {
+        if (option.value === effectiveDefault) {
             optionElement.selected = true;
         }
         select.appendChild(optionElement);
     });
+
+    console.log(`✓ ${selectId}: ${select.options.length} options ajoutées (sélectionné: ${effectiveDefault})`);
 }
 
 /**
@@ -193,6 +219,9 @@ function parseDefaultConfigString(configString) {
         } else if (part.startsWith('Exterior_Spinner.')) {
             config.spinner = part.replace('Exterior_Spinner.', '');
             console.log('     ✅ Spinner:', config.spinner);
+        } else if (part.startsWith('Interior_Stitching.')) {
+            config.stitching = part.replace('Interior_Stitching.', '');
+            console.log('     ✅ Stitching:', config.stitching);
         }
     }
 
@@ -224,6 +253,7 @@ async function loadDefaultConfigFromXML() {
         if (parsedConfig.prestige) updateConfig('prestige', parsedConfig.prestige);
         if (parsedConfig.decor) updateConfig('decor', parsedConfig.decor);
         if (parsedConfig.spinner) updateConfig('spinner', parsedConfig.spinner);
+        if (parsedConfig.stitching) updateConfig('stitching', parsedConfig.stitching);
 
         // Mettre à jour les dropdowns pour refléter ces valeurs
         if (parsedConfig.version) {
@@ -245,6 +275,10 @@ async function loadDefaultConfigFromXML() {
         if (parsedConfig.spinner) {
             const selectSpinner = document.getElementById('selectSpinner');
             if (selectSpinner) selectSpinner.value = parsedConfig.spinner;
+        }
+        if (parsedConfig.stitching) {
+            const selectStitching = document.getElementById('stitching');
+            if (selectStitching) selectStitching.value = parsedConfig.stitching;
         }
 
         console.log('✅ Configuration par défaut appliquée depuis le XML');
@@ -1427,12 +1461,17 @@ function attachEventListeners() {
  * @param {string} fontType - 'slanted' ou 'straight'
  */
 function updateStyleDropdown(fontType, stylesSlanted = null, stylesStraight = null) {
+    console.log(`🎨 updateStyleDropdown appelée: fontType=${fontType}, slanted=${stylesSlanted}, straight=${stylesStraight}`);
+
     // Utiliser les styles fournis en paramètre, ou fallback sur les constantes
-    const slantedList = stylesSlanted || STYLES_SLANTED;
-    const straightList = stylesStraight || STYLES_STRAIGHT;
+    // BUGFIX: Gérer les chaînes vides (pas seulement null/undefined)
+    const slantedList = (stylesSlanted && stylesSlanted.length > 0) ? stylesSlanted : STYLES_SLANTED;
+    const straightList = (stylesStraight && stylesStraight.length > 0) ? stylesStraight : STYLES_STRAIGHT;
 
     const styles = fontType === 'slanted' ? slantedList : straightList;
     const defaultStyle = fontType === 'slanted' ? 'A' : 'F';
+
+    console.log(`🎨 Styles à peupler: ${styles.join(', ')} (défaut: ${defaultStyle})`);
 
     // Repeupler le dropdown
     populateSelect('selectStyle', styles, defaultStyle);
@@ -1540,7 +1579,7 @@ async function init() {
         testImmatriculation();
     } else if (window.location.search.includes('test-payload')) {
         console.log('Mode test payload activé');
-        testPayloadBuild();
+        console.warn('⚠️ testPayloadBuild() a été supprimé lors du refactoring');
     } else {
         // Charger automatiquement le rendu initial avec la config par défaut
         console.log('🚀 Chargement automatique du rendu initial...');
@@ -1647,5 +1686,5 @@ if (document.readyState === 'loading') {
 // Exposer les fonctions de test pour debug
 // ======================================
 
-window.testPayloadBuild = testPayloadBuild;
+// testPayloadBuild supprimé lors du refactoring
 window.loadRender = loadRender;

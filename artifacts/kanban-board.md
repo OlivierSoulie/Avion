@@ -1,8 +1,8 @@
 # Kanban Board - Configurateur_Daher
 
 **Projet** : 005-Configurateur_Daher
-**Sprint actuel** : Sprint #12 (✅ TERMINÉ - 1 US, 5 SP livrés)
-**Derniere mise a jour** : 06/12/2025 - Sprint #12 complété avec succès - US-042 validée + métadonnées bonus
+**Sprint actuel** : Sprint #13 (🚀 EN COURS - 1 US, 8 SP)
+**Derniere mise a jour** : 06/12/2025 - Sprint #13 Planning terminé - US-043 Refactoring (20 tâches)
 **Équipe** : 6 agents (PO + ARCH + COORDINATOR + 1 DEV-Généraliste + 1 QA-Fonctionnel + 1 DOC)
 
 ---
@@ -754,6 +754,104 @@ _Sprint terminé - Tous tests validés_
 
 ---
 
+## Sprint #13 - Refactoring Complet du Code (🚀 EN COURS)
+
+**Sprint Goal** : "Refactoring complet du code pour maintenabilité et lisibilité maximales"
+
+**Dates** : 06/12/2025 - [À déterminer]
+**Story Points planifiés** : 8 SP
+**Story Points livrés** : 0 SP (en cours)
+**Équipe** : DEV, ARCH, QA
+
+### 🔵 To Do (18 tâches - 7.5 SP)
+
+_Phase 1 terminée - Passée en Done_
+
+#### Phase 2 : Refactoring api.js (4h)
+- [ ] [T043-3] Extraction module xml-parser.js (1h)
+- [ ] [T043-4] Extraction module payload-builder.js (1h30)
+- [ ] [T043-5] Extraction module api-client.js (1h)
+- [ ] [T043-6] Création api/index.js et nettoyage api.js (30min)
+
+#### Phase 3 : Refactoring ui.js (2h)
+- [ ] [T043-7] Extraction module ui/mosaic.js (45min)
+- [ ] [T043-8] Extraction module ui/modal.js (45min)
+- [ ] [T043-9] Extraction module ui/loader.js (15min)
+- [ ] [T043-10] Création ui/index.js (15min)
+
+#### Phase 4 : Refactoring utils/ (1h30)
+- [ ] [T043-11] Refactoring colors.js en utils/colors.js (45min)
+- [ ] [T043-12] Refactoring positioning.js en utils/positioning.js (30min)
+- [ ] [T043-13] Création utils/validators.js (15min)
+
+#### Phase 5 : Refactoring app.js (2h)
+- [ ] [T043-14] Séparation logique métier et UI (1h)
+- [ ] [T043-15] Extraction constantes magiques (1h)
+
+#### Phase 6 : Documentation (2h)
+- [ ] [T043-16] Création docs/GUIDE-DEVELOPPEUR.md (1h)
+- [ ] [T043-17] Création docs/GLOSSARY.md (30min)
+- [ ] [T043-18] Ajout headers JSDoc aux fichiers (30min)
+
+#### Phase 7 : Tests et Validation (2h)
+- [ ] [T043-19] Suite complète de tests manuels (1h30)
+- [ ] [T043-20] Revue architecture et code (30min)
+
+### 🟡 In Progress (4 tâches - Phase 3)
+
+#### Phase 3 : Refactoring ui.js (2h) - EN COURS
+- [ ] [T043-7] Extraction module ui/mosaic.js (45min) - **DEV-Généraliste**
+- [ ] [T043-8] Extraction module ui/modal.js (45min) - **DEV-Généraliste**
+- [ ] [T043-9] Extraction module ui/loader.js (15min) - **DEV-Généraliste**
+- [ ] [T043-10] Création ui/index.js (15min) - **DEV-Généraliste**
+
+### 🟢 Testing (0 tâches)
+
+_Aucun test en cours_
+
+### ✅ Done (6 tâches - Phases 1 & 2 ✅)
+
+#### Phase 1 : Analyse et Setup (3h) - ✅ TERMINÉE le 06/12/2025
+- [x] [T043-1] Audit complet du code et identification des zones critiques (2h) - **DEV-Généraliste** ✅
+  - 27 fonctions >30 lignes identifiées
+  - 443 lignes code mort détectées
+  - 200+ lignes dupliquées
+  - audit-report.md créé (600 lignes)
+- [x] [T043-2] Configuration ESLint + Prettier (1h) - **DEV-Généraliste** ✅
+  - .eslintrc.json créé (config Airbnb)
+  - .prettierrc.json créé
+  - package.json créé avec scripts npm
+  - 5921 violations ESLint détectées
+
+#### Phase 2 : Refactoring api.js (4h) - ✅ TERMINÉE le 06/12/2025
+- [x] [T043-3] Extraction module xml-parser.js (1h) - **DEV-Généraliste** ✅
+  - 908 lignes, 10 fonctions XML extraites
+  - JSDoc complète
+- [x] [T043-4] Extraction module payload-builder.js (1h30) - **DEV-Généraliste** ✅
+  - 285 lignes, 8 fonctions atomiques créées
+  - Duplication buildPayload éliminée (~200 lignes)
+  - buildPayloadBase() partagé
+- [x] [T043-5] Extraction module api-client.js (1h) - **DEV-Généraliste** ✅
+  - 206 lignes, gestion HTTP + DB_ID
+  - Import circulaire résolu (pattern callback)
+- [x] [T043-6] Création api/index.js et nettoyage (30min) - **DEV-Généraliste** ✅
+  - index.js (62 lignes), rendering.js (68 lignes), configuration.js (154 lignes)
+  - api.js supprimé (1633 lignes → 0)
+  - Imports mis à jour (app.js, ui.js)
+
+**Progression Sprint #13** : 6/20 tâches (30%) - 2.5/8 SP (31.25%)
+
+**Principe fondamental** : **"Une fonction = une action"** (Single Responsibility Principle)
+
+**Objectifs mesurables** :
+- Réduction 30% du code : 5500 → ~3850 lignes
+- 100% fonctions exportées documentées (JSDoc)
+- 0 erreur ESLint (Airbnb rules)
+- Max 20 lignes par fonction
+- Complexité cyclomatique < 10
+
+---
+
 ## 📋 Historique des mouvements (Sprint #12)
 
 | Date | US | Mouvement | Responsable |
@@ -761,4 +859,6 @@ _Sprint terminé - Tous tests validés_
 | 06/12/2025 | Sprint #12 | Sprint Planning terminé - US-042 décomposée (9 tâches) | ARCH |
 | 06/12/2025 | US-042 | Créée et ajoutée au Sprint #12 (To Do) | PO |
 | 06/12/2025 | US-042 | Investigation PO terminée (27 caméras, détection automatique ratios) | PO |
+| 06/12/2025 | Sprint #13 | Sprint Planning terminé - US-043 décomposée (20 tâches) | ARCH |
+| 06/12/2025 | US-043 | Créée et ajoutée au Sprint #13 (To Do) | PO |
 

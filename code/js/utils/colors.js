@@ -1,9 +1,13 @@
-// Colors.js - Gestion des couleurs et matériaux
-// Configurateur TBM Daher
-// Version : 1.0
-// Date : 02/12/2025
+/**
+ * @fileoverview Gestion des couleurs d'immatriculation
+ * @module utils/colors
+ * @version 1.0
+ * @description Ce module gère la résolution des couleurs, la génération des matériaux
+ *              et des multi-layers pour les lettres d'immatriculation selon le schéma
+ *              de peinture sélectionné.
+ */
 
-import { STYLES_SLANTED } from './config.js';
+import { STYLES_SLANTED } from '../config.js';
 
 // ======================================
 // US-007 : Gestion des couleurs et matériaux
@@ -11,13 +15,17 @@ import { STYLES_SLANTED } from './config.js';
 
 /**
  * Parse la chaîne de configuration pour extraire les couleurs des zones
- * Analyse les parties "Exterior_Colors_Zone" pour extraire les couleurs hex
  *
- * Format attendu (du script Python lignes 210-222):
- * "...Exterior_Colors_Zone1.#FFFFFF-#000000/.../Exterior_Colors_Zone2.#123456-#ABCDEF/..."
+ * @description Analyse les parties "Exterior_Colors_Zone" de la config string
+ *              et extrait les codes couleur hexadécimaux.
+ *              IMPORTANT : Utilise le 2ème code hex (Code HTML Lumiscaphe)
  *
  * @param {string} fullConfigStr - La chaîne de configuration complète
- * @returns {Object} Map des zones vers couleurs hex { "1": "#FFFFFF", "2": "#123456", ... }
+ * @returns {Object<string, string>} Map des zones vers couleurs hex
+ *
+ * @example
+ *   // Input: "...Exterior_Colors_ZoneA.#FFFFFF-#000000/..."
+ *   // Output: { "A": "#000000" } (2ème couleur = Code HTML Lumiscaphe)
  */
 export function parseColorsFromConfig(fullConfigStr) {
     console.log('🎨 Parse des couleurs depuis config...');
@@ -42,7 +50,7 @@ export function parseColorsFromConfig(fullConfigStr) {
                 // Filtrer pour garder uniquement les couleurs hex
                 const hexCandidates = values.filter(v => v.startsWith('#'));
 
-                // Prioriser la deuxième couleur si elle existe, sinon prendre la première
+                // Prioriser la deuxième couleur si elle existe (Code HTML Lumiscaphe), sinon prendre la première
                 if (hexCandidates.length >= 2) {
                     colorMap[zoneKey] = hexCandidates[1];
                 } else if (hexCandidates.length === 1) {
@@ -64,15 +72,30 @@ export function parseColorsFromConfig(fullConfigStr) {
 /**
  * Résout les couleurs des lettres selon le style et la config de peinture
  *
- * Logique (du script Python lignes 224-251):
- * - Mapping par couple : A/F -> paire[0], B/G -> paire[1], C/H -> paire[2], D/I -> paire[3], E/J -> paire[4]
- * - Chaque paire "X-Y" : X = zone Layer 0, Y = zone Layer 1
- * - Si Y = "0" : pas de Layer 1 à envoyer
+ * @description Détermine les couleurs à appliquer aux lettres d'immatriculation
+ *              en fonction du style sélectionné et du schéma de peinture.
+ *              IMPORTANT : L'API Lumiscaphe inverse les layers !
+ *
+ * @logic
+ *   - Mapping par couple : A/F → paire[0], B/G → paire[1], C/H → paire[2], D/I → paire[3], E/J → paire[4]
+ *   - Chaque paire "X-Y" : X = première zone, Y = deuxième zone
+ *   - Layer 0 reçoit la couleur de la DEUXIÈME zone (inversion API)
+ *   - Layer 1 reçoit la couleur de la PREMIÈRE zone (inversion API)
+ *   - Si Y = "0" : pas de Layer 0 à envoyer
+ *   - Si X = "0" : hasLayer1 = false
  *
  * @param {string} styleLetter - La lettre du style (A-J)
  * @param {string} paintSchemeConfigPart - La partie config "Exterior_PaintScheme.Zephir_B-0_B-D_..."
- * @param {Object} colorMap - Map des zones vers couleurs (de parseColorsFromConfig)
- * @returns {Object} { colorL0, colorL1, hasLayer1 } - Les couleurs et le flag Layer 1
+ * @param {Object<string, string>} colorMap - Map des zones vers couleurs hex (de parseColorsFromConfig)
+ * @returns {Object} Objet contenant :
+ *   - {string|null} primaryColor - Couleur hex pour Layer 0 (ou null si zone = "0")
+ *   - {string|null} secondaryColor - Couleur hex pour Layer 1 (ou null si zone = "0")
+ *   - {boolean} hasLayer1 - true si Layer 1 doit être envoyé
+ *
+ * @example
+ *   // Pour style "A" avec config "Zephir_A-D_B-0_..."
+ *   // Paire[0] = "A-D"
+ *   // Retourne: { primaryColor: colorMap["D"], secondaryColor: colorMap["A"], hasLayer1: true }
  */
 export function resolveLetterColors(styleLetter, paintSchemeConfigPart, colorMap) {
     console.log(`🔍 Résolution couleurs pour style ${styleLetter}...`);
@@ -87,7 +110,7 @@ export function resolveLetterColors(styleLetter, paintSchemeConfigPart, colorMap
 
         if (configPairs.length < 5) {
             console.warn('  Config pairs insuffisantes, utilisation couleurs par défaut');
-            return { colorL0: "#000000", colorL1: "#FFFFFF", hasLayer1: true };
+            return { primaryColor: "#000000", secondaryColor: "#FFFFFF", hasLayer1: true };
         }
 
         // Mapping correct : A-E -> 0-4 (slanted), F-J -> 0-4 (straight)
@@ -115,35 +138,46 @@ export function resolveLetterColors(styleLetter, paintSchemeConfigPart, colorMap
         // Pour "A-D" : on veut Layer 0 = Zone A, Layer 1 = Zone D
         // Mais l'API applique Layer 0 = deuxième valeur, Layer 1 = première valeur
         // Donc on inverse l'attribution
-        let c0 = colorMap[z1] || null;  // Layer 0 = deuxième zone (z1)
-        let c1 = colorMap[z0] || null;  // Layer 1 = première zone (z0)
+        let primaryColor = colorMap[z1] || null;  // Layer 0 = deuxième zone (z1)
+        let secondaryColor = colorMap[z0] || null;  // Layer 1 = première zone (z0)
 
         // Si z1 = "0", pas de Layer 0 (retourne null)
         if (z1 === '0') {
-            c0 = null;
+            primaryColor = null;
         }
 
         // Si z0 = "0", pas de Layer 1
         const hasLayer1 = (z0 !== '0');
         if (!hasLayer1) {
-            c1 = null;
+            secondaryColor = null;
         }
 
-        console.log(`  Couleurs résolues (INVERSÉES): Layer0=${c0} (zone ${z1}), Layer1=${c1} (zone ${z0}), hasLayer1=${hasLayer1}`);
-        return { colorL0: c0, colorL1: c1, hasLayer1 };
+        console.log(`  Couleurs résolues (INVERSÉES): Layer0=${primaryColor} (zone ${z1}), Layer1=${secondaryColor} (zone ${z0}), hasLayer1=${hasLayer1}`);
+        return { primaryColor, secondaryColor, hasLayer1 };
 
     } catch (error) {
         console.error('  Erreur résolution couleurs:', error);
-        return { colorL0: "#000000", colorL1: "#FFFFFF", hasLayer1: true };
+        return { primaryColor: "#000000", secondaryColor: "#FFFFFF", hasLayer1: true };
     }
 }
 
 /**
  * Génère la liste des matériaux pour le payload API
  *
- * @param {string} immatString - L'immatriculation
+ * @description Crée les matériaux pour chaque lettre de l'immatriculation.
+ *              Les styles slanted utilisent Left/Right, les straight utilisent une texture unique.
+ *
+ * @param {string} immatString - L'immatriculation (ex: "N960TB")
  * @param {string} styleLetter - Le style (A-J)
- * @returns {Array<Object>} Liste des matériaux [{name: "RegL0", filename: "Style_A_Left_N"}, ...]
+ * @returns {Array<Object>} Liste des matériaux
+ *
+ * @example
+ *   // Style slanted "A" avec immat "N960"
+ *   // Retourne: [
+ *   //   { name: "RegL0", filename: "Style_A_Left_N" },
+ *   //   { name: "RegR0", filename: "Style_A_Right_N" },
+ *   //   ...
+ *   // ]
  */
 export function generateMaterials(immatString, styleLetter) {
     console.log('🎨 Génération des matériaux...');
@@ -190,16 +224,23 @@ export function generateMaterials(immatString, styleLetter) {
 
 /**
  * Génère la liste des material multi-layers pour le payload API
- * Évite les doublons : un seul multi-layer par caractère unique
+ *
+ * @description Crée les multi-layers pour appliquer les couleurs aux lettres.
+ *              Évite les doublons : un seul multi-layer par caractère unique.
+ *              IMPORTANT : Layer 1 toujours envoyé, même si zone = "0" (utilise primaryColor en fallback)
  *
  * @param {string} immatString - L'immatriculation
  * @param {string} styleLetter - Le style (A-J)
- * @param {string} colorL0 - Couleur du layer 0 (peut être null)
- * @param {string} colorL1 - Couleur du layer 1 (peut être null)
- * @param {boolean} hasLayer1 - Si false, ne pas générer de Layer 1
+ * @param {string|null} primaryColor - Couleur du layer 0 (peut être null)
+ * @param {string|null} secondaryColor - Couleur du layer 1 (peut être null)
+ * @param {boolean} hasLayer1 - Si false, utiliser primaryColor pour Layer 1
  * @returns {Array<Object>} Liste des multi-layers
+ *
+ * @example
+ *   // Style slanted "A", immat "N960", primaryColor="#C4C5C6", secondaryColor=null, hasLayer1=false
+ *   // Layer 1 utilisera primaryColor en fallback
  */
-export function generateMaterialMultiLayers(immatString, styleLetter, colorL0, colorL1, hasLayer1) {
+export function generateMaterialMultiLayers(immatString, styleLetter, primaryColor, secondaryColor, hasLayer1) {
     console.log('🎨 Génération des material multi-layers...');
 
     const multiLayersList = [];
@@ -214,56 +255,56 @@ export function generateMaterialMultiLayers(immatString, styleLetter, colorL0, c
                 const textureFilenameLeft = `Style_${styleLetter}_Left_${char}`;
                 const textureFilenameRight = `Style_${styleLetter}_Right_${char}`;
 
-                // Layer 0 (toujours présent si colorL0 existe)
-                if (colorL0) {
+                // Layer 0 (toujours présent si primaryColor existe)
+                if (primaryColor) {
                     multiLayersList.push({
                         name: textureFilenameLeft,
                         layer: 0,
-                        diffuseColor: colorL0
+                        diffuseColor: primaryColor
                     });
                     multiLayersList.push({
                         name: textureFilenameRight,
                         layer: 0,
-                        diffuseColor: colorL0
+                        diffuseColor: primaryColor
                     });
                 }
 
                 // Layer 1 : TOUJOURS envoyer, même si hasLayer1 == false
                 // Si pas de Layer 1 défini (zone = "0"), utiliser la couleur du Layer 0
-                const finalColorL1 = (hasLayer1 && colorL1) ? colorL1 : colorL0;
-                if (finalColorL1) {
+                const finalSecondaryColor = (hasLayer1 && secondaryColor) ? secondaryColor : primaryColor;
+                if (finalSecondaryColor) {
                     multiLayersList.push({
                         name: textureFilenameLeft,
                         layer: 1,
-                        diffuseColor: finalColorL1
+                        diffuseColor: finalSecondaryColor
                     });
                     multiLayersList.push({
                         name: textureFilenameRight,
                         layer: 1,
-                        diffuseColor: finalColorL1
+                        diffuseColor: finalSecondaryColor
                     });
                 }
             } else {
                 // Pour straight : SANS Left/Right dans materialMultiLayers
                 const textureFilename = `Style_${styleLetter}_${char}`;
 
-                // Layer 0 (toujours présent si colorL0 existe)
-                if (colorL0) {
+                // Layer 0 (toujours présent si primaryColor existe)
+                if (primaryColor) {
                     multiLayersList.push({
                         name: textureFilename,
                         layer: 0,
-                        diffuseColor: colorL0
+                        diffuseColor: primaryColor
                     });
                 }
 
                 // Layer 1 : TOUJOURS envoyer, même si hasLayer1 == false
                 // Si pas de Layer 1 défini (zone = "0"), utiliser la couleur du Layer 0
-                const finalColorL1 = (hasLayer1 && colorL1) ? colorL1 : colorL0;
-                if (finalColorL1) {
+                const finalSecondaryColor = (hasLayer1 && secondaryColor) ? secondaryColor : primaryColor;
+                if (finalSecondaryColor) {
                     multiLayersList.push({
                         name: textureFilename,
                         layer: 1,
-                        diffuseColor: finalColorL1
+                        diffuseColor: finalSecondaryColor
                     });
                 }
             }
@@ -279,11 +320,17 @@ export function generateMaterialMultiLayers(immatString, styleLetter, colorL0, c
 /**
  * Fonction principale : génère tous les matériaux et couleurs
  *
+ * @description Orchestre l'ensemble du processus de génération des matériaux et couleurs
+ *              pour l'immatriculation personnalisée.
+ *
  * @param {string} immatString - L'immatriculation
  * @param {string} styleLetter - Le style (A-J)
  * @param {string} fullConfigStr - La config complète pour parser les couleurs
  * @param {string} paintSchemeConfigPart - La partie "Exterior_PaintScheme...."
- * @returns {Object} { materials, materialMultiLayers }
+ * @returns {Object} Objet contenant :
+ *   - {Array<Object>} materials - Liste des matériaux
+ *   - {Array<Object>} materialMultiLayers - Liste des multi-layers
+ *   - {Object} colors - Couleurs résolues (pour debug)
  */
 export function generateMaterialsAndColors(immatString, styleLetter, fullConfigStr, paintSchemeConfigPart) {
     console.log('🎨 === Génération matériaux et couleurs ===');
@@ -292,20 +339,20 @@ export function generateMaterialsAndColors(immatString, styleLetter, fullConfigS
     const colorMap = parseColorsFromConfig(fullConfigStr);
 
     // 2. Résoudre les couleurs des lettres selon le style
-    const { colorL0, colorL1, hasLayer1 } = resolveLetterColors(styleLetter, paintSchemeConfigPart, colorMap);
+    const { primaryColor, secondaryColor, hasLayer1 } = resolveLetterColors(styleLetter, paintSchemeConfigPart, colorMap);
 
     // 3. Générer les matériaux
     const materials = generateMaterials(immatString, styleLetter);
 
     // 4. Générer les multi-layers
-    const materialMultiLayers = generateMaterialMultiLayers(immatString, styleLetter, colorL0, colorL1, hasLayer1);
+    const materialMultiLayers = generateMaterialMultiLayers(immatString, styleLetter, primaryColor, secondaryColor, hasLayer1);
 
     console.log('✅ Génération matériaux et couleurs terminée');
 
     return {
         materials,
         materialMultiLayers,
-        colors: { colorL0, colorL1, hasLayer1 } // Pour debug
+        colors: { primaryColor, secondaryColor, hasLayer1 } // Pour debug
     };
 }
 

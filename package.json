@@ -1,0 +1,28 @@
+{
+  "name": "configurateur-daher",
+  "version": "1.0.0",
+  "description": "Configurateur 3D TBM Daher avec API Lumiscaphe",
+  "type": "module",
+  "scripts": {
+    "lint": "eslint code/js/**/*.js",
+    "lint:fix": "eslint code/js/**/*.js --fix",
+    "format": "prettier --write 'code/js/**/*.js'",
+    "format:check": "prettier --check 'code/js/**/*.js'"
+  },
+  "keywords": [
+    "configurateur",
+    "3d",
+    "tbm",
+    "daher",
+    "lumiscaphe"
+  ],
+  "author": "Olivier Soulie",
+  "license": "UNLICENSED",
+  "private": true,
+  "devDependencies": {
+    "eslint": "^8.0.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.25.0",
+    "prettier": "^3.0.0"
+  }
+}

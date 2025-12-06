@@ -77,6 +77,43 @@ Suivre le workflow Scrumban :
 
 ## Règles de Développement
 
+### 📖 Glossaire Métier (IMPORTANT)
+
+**ATTENTION** : Ne pas confondre ces termes clés :
+
+#### Décor (Decor)
+- **Définition** : Environnement de fond pour la scène 3D
+- **Valeurs possibles** : Studio, Tarmac, Fjord, Hangar, Onirique
+- **Utilisation** :
+  - Position de l'avion (`Position.${decor}`)
+  - Groupe de caméras extérieur (`Exterieur_Decor${decor}`)
+  - Paramètre de configuration (`Decor.${decor}_Ground` ou `Decor.${decor}_Flight`)
+- **Exemple** : `Decor.Studio_Ground`, `Position.Studio`
+
+#### Paint Scheme (Schéma de Peinture)
+- **Définition** : Schéma de peinture de l'avion avec zones de couleur
+- **Valeurs possibles** : Zephir, Tehuano, Sirocco, Alize, Mistral, Meltem
+- **Utilisation** :
+  - Configuration de peinture (`Exterior_PaintScheme.${paintScheme}`)
+  - **IMPORTANT** : Les caméras RegistrationNumber sont nommées selon le paint scheme
+  - Exemple : `RegistrationNumber_Zephir`, `RegistrationNumber_Tehuano`
+- **Exemple** : `Exterior_PaintScheme.Zephir_B-0_B-D_B-D_B-D_B-D`
+
+#### ⚠️ Erreur courante
+```javascript
+// ❌ FAUX - Confusion décor/paint scheme
+const cameraName = `RegistrationNumber_${config.decor}`;
+// Cherche: RegistrationNumber_Studio (n'existe pas)
+
+// ✅ CORRECT
+const cameraName = `RegistrationNumber_${config.paintScheme}`;
+// Cherche: RegistrationNumber_Zephir (existe)
+```
+
+**Référence** : Sprint #12 - `sprints/sprint-12/sprint-12-suite-corrections.md` (Problème #2)
+
+---
+
 ### ⚠️ Sources de Vérité (CRITIQUE)
 
 **IMPORTANT** : Ce projet a trois sources de vérité distinctes :

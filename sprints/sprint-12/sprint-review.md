@@ -237,16 +237,59 @@ En plus de l'US-042 initiale, les améliorations suivantes ont été ajoutées :
 
 ---
 
+## 🔧 Corrections Post-Review (Sprint #12 Suite)
+
+**Date** : 06/12/2025 (après-midi)
+**Durée** : ~2h
+
+### Contexte
+
+Suite aux retours utilisateur, l'approche initiale a été simplifiée :
+- ❌ **Approche initiale** : Shooter toutes les caméras individuellement
+- ✅ **Approche finale** : Filtrer pour ne garder que la caméra RegistrationNumber du paint scheme actuel, dupliquée avec 10 styles A-J
+
+### Problèmes corrigés
+
+1. **Confusion décor vs paint scheme** → `RegistrationNumber_${config.paintScheme}` au lieu de `RegistrationNumber_${config.decor}`
+2. **buildInteriorConfig is not defined** → Construction directe de interiorConfig
+3. **Label paint scheme incorrect** → Préfixe "Exterior_" ajouté
+4. **Mode API "image" vs "images"** → Support des deux formats de réponse
+5. **Immatriculation vide** → Génération des materials et materialMultiLayers
+6. **Couleurs incorrectes** → Passage du bon paintSchemePart à generateMaterialsAndColors()
+
+### Modifications apportées
+
+**Fichier : `code/js/api.js`**
+- Nouvelle fonction `buildPayloadForSingleCamera()` (lignes 1031-1157)
+- Refactorisation `fetchConfigurationImages()` (lignes 1159-1300)
+- Modification `callLumiscapheAPI()` pour supporter mode "image" singulier (lignes 956-966)
+
+### Résultats
+
+✅ **Vue Configuration opérationnelle** :
+- Caméra `RegistrationNumber_${paintScheme}` trouvée et affichée
+- 10 vignettes générées avec tous les styles A à J
+- Immatriculation affichée avec les bonnes couleurs (identiques à la vue Extérieur)
+- ~16 autres caméras affichées une seule fois
+
+**Documentation** : Voir `sprints/sprint-12/sprint-12-suite-corrections.md` pour les détails complets
+
+---
+
 ## 🔮 Préparation Sprint #13
 
 ### Recommandations
-- Sprint #12 terminé avec succès ✅
+- Sprint #12 terminé avec succès ✅ (incluant corrections)
 - Prêt pour de nouvelles User Stories
 - Système de métadonnées réutilisable pour futures vues
+- Mode "image" singulier opérationnel pour futures fonctionnalités
 
 ---
 
 **Sprint #12 Status** : ✅ **COMPLÉTÉ AVEC SUCCÈS**
 **Date de fin** : 06/12/2025
-**Vélocité** : 5 SP
-**Bonus** : Métadonnées plein écran pour toutes les vues
+**Vélocité** : 5 SP (+ 2h corrections)
+**Bonus** :
+- Métadonnées plein écran pour toutes les vues
+- Support mode "image" API singulier
+- Génération multi-styles pour RegistrationNumber

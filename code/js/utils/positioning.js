@@ -1,9 +1,12 @@
-// Positioning.js - Calculs des positions d'immatriculation
-// Configurateur TBM Daher
-// Version : 1.0
-// Date : 02/12/2025
+/**
+ * @fileoverview Calculs des positions d'immatriculation
+ * @module utils/positioning
+ * @version 1.0
+ * @description Ce module gère l'extraction des points d'ancrage depuis le XML
+ *              et le calcul des positions absolues des lettres d'immatriculation.
+ */
 
-import { CHAR_WIDTHS, SPACING } from './config.js';
+import { CHAR_WIDTHS, SPACING } from '../config.js';
 
 // ======================================
 // US-006 : Logique de calcul des positions

@@ -3,7 +3,7 @@
 **Projet** : 005-Configurateur_Daher
 **Date de creation** : 02/12/2025
 **PO** : Claude (PO Agent)
-**Derniere mise a jour** : 05/12/2025 - US-034 (Immatriculation dynamique selon modèle) ajoutée au Sprint #9
+**Derniere mise a jour** : 06/12/2025 - US-043 (Refactoring complet) ajoutée au Sprint #13
 
 ---
 
@@ -2285,3 +2285,303 @@ function updateCompatibilityBadge() {
 **Total Sprint #10** : 5 Story Points ✅ (US-038: 1 SP - Corriger formatage noms dropdowns + US-035: 1 SP - Réorganiser section Sièges + US-036: 2 SP - Ajouter Stitching + US-037: 1 SP - Toggle buttons Matériau Central)
 **Total Sprint #11** : 7 Story Points (US-039: 2 SP - Recharger defaults au changement de base + US-040: 3 SP - Validation des valeurs avant rendu + US-041: 2 SP - Indicateur de compatibilité base)
 **Total Icebox** : ~22 Story Points (archivé, non demandé)
+
+---
+
+## User Stories - Sprint #12 (Backlog)
+
+### [US-042] Mosaïque "Configuration" avec vignettes adaptatives (16:9 et 1:1)
+
+**Priorité** : Haute
+**Story Points** : 5 SP
+**Sprint** : Sprint #12 (Prévu)
+**Status** : To Do
+
+**User Story :**
+En tant qu'utilisateur,
+Je veux visualiser toutes les caméras du groupe "Configuration" sous forme de mosaïque d'illustrations,
+Afin d'avoir un aperçu visuel rapide de différentes vues de configuration.
+
+**Contexte métier :**
+Le groupe de caméras "Configuration" dans le XML contient plusieurs caméras avec des ratios différents (16:9 et 1:1) destinées à créer des vignettes d'illustration. Ces vignettes ne sont pas en 1920x1080 mais en résolutions plus petites optimisées pour tenir sur une page.
+
+**Critères d'acceptation :**
+
+**1. Nouvelle vue "Configuration"**
+- [ ] Nouvel onglet "CONFIGURATION" ajouté aux onglets existants (EXTÉRIEUR | INTÉRIEUR | CONFIGURATION)
+- [ ] Clic sur l'onglet charge les caméras du groupe "Configuration" depuis le XML
+- [ ] La vue Configuration affiche une mosaïque de vignettes (pas de mode carousel)
+
+**2. Gestion des ratios multiples**
+- [ ] Les caméras 16:9 s'affichent en vignettes petit format (~266x150px ou équivalent)
+- [ ] Les caméras 1:1 s'affichent en vignettes 100x100px
+- [ ] Le système détecte automatiquement le ratio de chaque caméra (investigation nécessaire : XML ou config manuelle)
+- [ ] Si le ratio n'est pas détectable dans le XML, utiliser un mapping manuel dans `config.js`
+
+**3. Organisation en grille adaptative**
+- [ ] Grille CSS Grid avec colonnes auto-adaptatives (2, 3 ou 4 colonnes selon le nombre de vignettes)
+- [ ] Toutes les vignettes tiennent sur une seule page (pas de scroll excessif)
+- [ ] Les vignettes respectent leur ratio sans déformation
+- [ ] Espacement homogène entre les vignettes (gap: 10-15px)
+
+**4. Interaction utilisateur**
+- [ ] Au clic sur une vignette → Affichage en plein écran (modal, comme les vues Extérieur/Intérieur)
+- [ ] Modal affiche l'image en résolution native ou 1920x1080 (selon disponibilité)
+- [ ] Fermeture du modal avec bouton ✕ ou touche Echap
+- [ ] Navigation au clavier possible (flèches gauche/droite pour changer de vignette dans le modal)
+
+**5. Appel API optimisé**
+- [ ] Les rendus utilisent le groupe "Configuration" du XML (cameraGroupId dynamique)
+- [ ] Les tailles de rendu sont optimisées selon le ratio :
+  - 16:9 → width: 266px, height: 150px (ou 533x300)
+  - 1:1 → width: 100px, height: 100px (ou 200x200)
+- [ ] Un seul appel API pour générer toutes les vignettes du groupe
+
+**6. Intégration UI**
+- [ ] L'onglet "CONFIGURATION" suit le style visuel des onglets existants
+- [ ] La mosaïque réutilise le CSS existant de US-029 (`.mosaic-grid`)
+- [ ] Pas de régression sur les vues EXTÉRIEUR et INTÉRIEUR
+
+**Notes techniques :**
+
+**Investigation requise** :
+1. Vérifier si le XML expose le ratio des caméras (attributs `width`, `height`, ou `aspectRatio`)
+2. Si non disponible, créer un mapping manuel dans `config.js` :
+   ```javascript
+   CAMERA_CONFIG_RATIOS: {
+       "Configuration": [
+           { name: "Camera_1", ratio: "16:9", width: 266, height: 150 },
+           { name: "Camera_2", ratio: "1:1", width: 100, height: 100 },
+           // ...
+       ]
+   }
+   ```
+
+**Fichiers impactés** :
+- `code/index.html` : Ajout onglet "CONFIGURATION"
+- `code/js/config.js` : Mapping ratios caméras (si nécessaire)
+- `code/js/api.js` : Support viewType="configuration", gestion tailles multiples
+- `code/js/ui.js` : Fonction `renderConfigMosaic()` avec gestion ratios mixtes
+- `code/styles/viewport.css` : Styles pour vignettes 16:9 et 1:1
+
+**Dépendances** :
+- US-029 (Mosaïque d'images) - réutilisation du système existant
+- US-022 (Sélecteur de vue) - extension avec 3ème vue
+
+**Estimation** : 5 Story Points (~2.5-3h de développement)
+- Investigation XML/API : 30min
+- Logique détection ratio : 30min
+- UI onglet + mosaïque : 1h
+- Appel API multi-tailles : 45min
+- Tests et ajustements : 30min
+
+---
+
+**Total Sprint #12** : 5 Story Points (US-042: 5 SP - Mosaïque Configuration avec vignettes adaptatives)
+
+---
+
+## User Stories - Sprint #13 (Dette Technique)
+
+### [US-043] Refactoring complet du code pour maintenabilité et lisibilité
+
+**Priorité** : Haute
+**Story Points** : 8 SP
+**Sprint** : Sprint #13 (Prévu)
+**Status** : To Do
+**Type** : Dette Technique
+
+**User Story :**
+En tant que développeur,
+Je veux refactoriser et améliorer la qualité du code existant,
+Afin de le rendre plus maintenable, lisible et facile à faire évoluer.
+
+**Contexte :**
+Suite aux 12 sprints précédents, le code a été développé rapidement avec des corrections successives. Il est temps de consolider et améliorer la qualité pour faciliter les futurs développements.
+
+**Principe fondamental demandé par l'utilisateur :**
+> **"Une fonction = une action"**
+>
+> Code super clean, simple, factorisé au maximum. Chaque fonction doit avoir une seule responsabilité clairement définie (Single Responsibility Principle).
+
+**Standards de code choisis :**
+- **Convention de nommage** : Airbnb JavaScript Style Guide (le plus populaire - 144k⭐ GitHub)
+- **Formatage** : Prettier (standard de facto - 49k⭐ GitHub)
+- **Linting** : ESLint avec config Airbnb (détection erreurs + best practices)
+- **Documentation** : JSDoc (standard JavaScript pour la documentation)
+
+**Critères d'acceptation :**
+
+### A. Simplification du code (DRY - Don't Repeat Yourself) + Single Responsibility Principle
+- [ ] **Une fonction = une action** : Chaque fonction a UNE SEULE responsabilité clairement définie
+- [ ] Éliminer toute duplication de code entre `buildPayload()` et `buildPayloadForSingleCamera()`
+- [ ] Créer des fonctions atomiques réutilisables :
+  - `extractPaintConfig(xmlDoc, paintScheme)` → extrait config peinture
+  - `buildInteriorConfigString(config)` → construit string intérieur
+  - `buildDecorConfig(decor)` → construit config décor
+  - `extractPaintSchemePart(configString)` → extrait partie paint scheme
+- [ ] Simplifier les fonctions >30 lignes (objectif : max 20 lignes par fonction)
+- [ ] Supprimer le code mort (variables, fonctions non utilisées)
+- [ ] Regrouper la logique similaire dans des modules dédiés
+- [ ] Chaque fonction doit avoir un nom de verbe d'action (`get`, `build`, `extract`, `validate`, `render`, etc.)
+
+### B. Canonisation et standards (Airbnb Style Guide)
+- [ ] Appliquer camelCase pour les variables/fonctions, PascalCase pour les classes
+- [ ] Standardiser le format des objets retournés (toujours `{url, cameraId, cameraName, groupName}`)
+- [ ] Uniformiser la gestion des erreurs (`try/catch` avec messages explicites)
+- [ ] Standardiser les logs :
+  - 🎬 Info : Début d'opération
+  - ✅ Success : Opération réussie
+  - ⚠️ Warning : Attention mais non bloquant
+  - ❌ Error : Erreur bloquante
+- [ ] Utiliser `const` par défaut, `let` seulement si réassignation nécessaire
+
+### C. Maintenabilité (JSDoc)
+- [ ] Ajouter JSDoc pour **TOUTES** les fonctions exportées
+- [ ] Documenter les paramètres avec types TypeScript (`@param {string} name - Description`)
+- [ ] Documenter les valeurs de retour (`@returns {Promise<Array>} Description`)
+- [ ] Ajouter des exemples d'utilisation dans JSDoc pour fonctions complexes
+- [ ] Documenter les exceptions possibles (`@throws {Error} Description`)
+- [ ] Commenter uniquement la logique non évidente (pas de commentaires évidents)
+
+### D. Lisibilité (Clean Code)
+- [ ] Structure des fichiers améliorée :
+  - `api.js` : Fonctions regroupées par domaine (XML, Payload, API Calls)
+  - `colors.js` : Fonctions regroupées par étape (Parsing, Résolution, Génération)
+  - `ui.js` : Fonctions regroupées par composant (Mosaic, Modal, Loader)
+  - `app.js` : Séparation claire (Init, Event Handlers, State Management)
+- [ ] Réduire la complexité cyclomatique (max 10 par fonction)
+- [ ] Extraire les constantes magiques :
+  - Nombres : Créer des constantes nommées (ex: `MAX_RETRIES = 3`)
+  - Strings : Créer des enums ou constantes
+- [ ] Noms de variables descriptifs (pas de `x`, `i` sauf boucles courtes)
+- [ ] Éviter les imbrications profondes (max 3 niveaux)
+
+### E. Accessibilité (Guide développeur)
+- [ ] Créer `docs/GUIDE-DEVELOPPEUR.md` avec :
+  - Architecture globale (diagramme de flux)
+  - Points d'entrée principaux (`loadRender()`, `fetchRenderImages()`)
+  - Explication du flux de données (User Input → Config → API → Render)
+  - Exemples d'ajout de nouvelle fonctionnalité
+- [ ] Documenter chaque fichier avec un header :
+  ```javascript
+  /**
+   * @fileoverview Description du rôle du fichier
+   * @author DEV
+   * @version 1.0
+   */
+  ```
+- [ ] Créer `docs/GLOSSARY.md` avec les termes métier (déjà commencé dans CLAUDE.md)
+
+### F. Organisation des fichiers
+- [ ] Créer une architecture modulaire :
+  ```
+  code/js/
+  ├── api/
+  │   ├── xml-parser.js       (getDatabaseXML, parseXML, findXXX)
+  │   ├── payload-builder.js  (buildPayload, buildConfigString)
+  │   ├── api-client.js       (callLumiscapheAPI, retry logic)
+  │   └── index.js            (exports publics)
+  ├── ui/
+  │   ├── mosaic.js           (renderMosaic, renderConfigMosaic)
+  │   ├── modal.js            (openFullscreenModal, navigation)
+  │   ├── loader.js           (showLoader, hideLoader)
+  │   └── index.js            (exports publics)
+  ├── utils/
+  │   ├── colors.js           (parseColorsFromConfig, resolveLetterColors)
+  │   ├── positioning.js      (calculateCharPositions)
+  │   └── validators.js       (validation functions)
+  ├── state.js                (State management centralisé)
+  ├── config.js               (Configuration et constantes)
+  └── app.js                  (Point d'entrée, orchestration)
+  ```
+
+### G. Réduction du nombre de lignes
+- [ ] **Objectif** : Réduire le code de **30%** minimum
+- [ ] Avant refactoring : ~3000 lignes total
+- [ ] Après refactoring : ~2000 lignes maximum
+- [ ] Techniques :
+  - Éliminer duplication → -400 lignes
+  - Simplifier fonctions complexes → -300 lignes
+  - Supprimer code mort → -200 lignes
+  - Meilleure organisation → -100 lignes
+
+### H. Tests et validation
+- [ ] Tous les tests manuels passent après refactoring :
+  - Vue Extérieur : Rendu correct avec toutes les options
+  - Vue Intérieur : Rendu correct avec tous les Prestiges
+  - Vue Configuration : 10 vignettes RegistrationNumber + autres
+  - Modal plein écran : Navigation, métadonnées
+  - Téléchargements : JSON payload, images individuelles
+- [ ] Aucune régression fonctionnelle détectée
+- [ ] Performance maintenue ou améliorée (temps de chargement ≤ actuel)
+- [ ] Aucune erreur console
+- [ ] Code validé par revue ARCH
+
+### I. Standards appliqués (ESLint + Prettier)
+- [ ] Configuration ESLint avec règles Airbnb :
+  ```json
+  {
+    "extends": "airbnb-base",
+    "rules": {
+      "no-console": "off",
+      "max-len": ["error", { "code": 120 }],
+      "complexity": ["error", 10]
+    }
+  }
+  ```
+- [ ] Configuration Prettier :
+  ```json
+  {
+    "singleQuote": true,
+    "trailingComma": "es5",
+    "printWidth": 120,
+    "tabWidth": 4
+  }
+  ```
+- [ ] Tous les fichiers `.js` passent ESLint sans erreur
+- [ ] Tous les fichiers `.js` formatés avec Prettier
+
+---
+
+**Dépendances :**
+- Bloque : Nouvelles fonctionnalités majeures (recommandé de faire avant)
+- Bloqué par : Aucun
+
+**Impact :**
+- Positif : Code plus maintenable, onboarding plus facile, moins de bugs
+- Risque : Régression si mal testé (mitigé par tests manuels complets)
+
+**Alternatives considérées :**
+- Option B (Refactoring incrémental) : Rejetée car préférence pour Option A
+- Option C (Boy Scout Rule) : Rejetée car trop lent
+
+**Estimation détaillée :**
+
+| Phase | Durée | Détails |
+|-------|-------|---------|
+| Analyse et planification | 2h | Audit du code, identification zones critiques |
+| Setup ESLint/Prettier | 1h | Configuration, ajout scripts npm si besoin |
+| Refactoring `api.js` | 4h | Extraction modules, JSDoc, simplification |
+| Refactoring `colors.js` | 2h | Renommage, documentation, exemples |
+| Refactoring `ui.js` | 2h | Regroupement par composant, JSDoc |
+| Refactoring `app.js` | 2h | Séparation logique métier/UI, event handlers |
+| Organisation fichiers | 2h | Création structure modulaire, imports/exports |
+| Documentation | 2h | GUIDE-DEVELOPPEUR.md, headers, JSDoc |
+| Tests manuels | 2h | Suite complète de tests de non-régression |
+| Revue ARCH | 1h | Validation architecture, code review |
+| **Total** | **20h** | **~8 SP (2.5h/SP)** |
+
+---
+
+**Métriques de succès :**
+- ✅ Réduction de 30% du nombre de lignes de code
+- ✅ 100% des fonctions exportées documentées (JSDoc)
+- ✅ 0 erreur ESLint
+- ✅ Complexité cyclomatique moyenne < 5
+- ✅ Temps de chargement ≤ temps actuel
+- ✅ 0 régression fonctionnelle
+
+---
+
+**Total Sprint #13** : 8 Story Points (US-043: 8 SP - Refactoring complet pour maintenabilité)

@@ -1,7 +1,8 @@
-// State.js - Gestion de l'état global
-// Configurateur TBM Daher
-// Version : 1.0
-// Date : 02/12/2025
+/**
+ * @fileoverview Gestion de l'état global de l'application
+ * @module state
+ * @version 1.0
+ */
 
 import { DEFAULT_CONFIG } from './config.js';
 
