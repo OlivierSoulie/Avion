@@ -1,8 +1,8 @@
 # Kanban Board - Configurateur_Daher
 
 **Projet** : 005-Configurateur_Daher
-**Sprint actuel** : Sprint #10 (TERMINÉ ✅ - 5 SP livrés, 26/26 critères QA validés)
-**Derniere mise a jour** : 06/12/2025 - Sprint #10 Review complété (4 US, 5 SP, 100% validés)
+**Sprint actuel** : Sprint #11 (Prévu - Compatibilité multi-bases de données - 3 US, 7 SP)
+**Derniere mise a jour** : 06/12/2025 - Sprint #11 créé par PO (US-039, US-040, US-041)
 **Équipe** : 6 agents (PO + ARCH + COORDINATOR + 1 DEV-Généraliste + 1 QA-Fonctionnel + 1 DOC)
 
 ---
@@ -534,6 +534,46 @@ _Sprint terminé_
 
 ---
 
+## Sprint #11 - Compatibilité multi-bases de données (Prévu)
+
+**Sprint Goal** : "Garantir que le configurateur fonctionne correctement avec toutes les versions de bases de données, en gérant automatiquement les changements de schéma XML et de valeurs"
+
+**Date de démarrage** : Non démarré
+**Capacity** : 7 Story Points (US-039: 2 SP + US-040: 3 SP + US-041: 2 SP)
+**Équipe** : 6 agents
+
+### 🔵 To Do (3 US - 7 SP)
+
+- [US-039] Recharger configuration par défaut lors du changement de base (2 SP) - **CRITIQUE** 🔴
+  - Problème : Quand user change de base, les defaults restent ceux de l'ancienne base
+  - Objectif : Appeler `loadDefaultConfigFromXML()` après changement de base
+  - Fichier concerné : code/js/app.js (event listener selectDatabase)
+
+- [US-040] Validation des valeurs avant génération du rendu (3 SP) - **IMPORTANTE** ⚠️
+  - Problème : Config peut contenir valeurs invalides pour la base actuelle
+  - Objectif : Valider config avant buildPayload(), corriger auto les valeurs invalides
+  - Fichier concerné : code/js/app.js (nouvelle fonction validateConfigBeforeRender)
+
+- [US-041] Indicateur visuel de compatibilité base de données (2 SP) - **NICE TO HAVE** ℹ️
+  - Objectif : Badge vert/orange/rouge pour indiquer compatibilité config vs base
+  - Fichiers concernés : code/index.html, code/styles/controls.css, code/js/app.js
+
+### 🟡 In Progress (0 US - 0 SP)
+
+_Aucune US en cours_
+
+### 🟢 Testing (0 US - 0 SP)
+
+_Aucun test en cours_
+
+### ✅ Done (0 US - 0 SP)
+
+_Sprint pas encore démarré_
+
+**Progression Sprint #11** : 0/7 SP (0%)
+
+---
+
 ## Backlog Icebox (ARCHIVÉ - Non demandé)
 
 US créées automatiquement mais jamais demandées par l'utilisateur :
@@ -616,6 +656,9 @@ US créées automatiquement mais jamais demandées par l'utilisateur :
 | 05/12/2025 | Sprint #9 | TERMINÉ - 6 SP complétés (US-033 + US-034) | COORDINATOR |
 | 06/12/2025 | Sprint #10 | Sprint Planning terminé - 4 US prêtes (5 SP) | ARCH |
 | 06/12/2025 | US-038, US-035, US-036, US-037 | Créées et ajoutées au Sprint #10 (To Do) | PO |
+| 06/12/2025 | Sprint #10 | TERMINÉ - 5 SP complétés (100% validés) | COORDINATOR |
+| 06/12/2025 | Sprint #11 | Créé par PO - Compatibilité multi-bases (7 SP) | PO |
+| 06/12/2025 | US-039, US-040, US-041 | Créées et ajoutées au Sprint #11 (To Do) | PO |
 
 ---
 

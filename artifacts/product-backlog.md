@@ -2014,6 +2014,254 @@ Afin d'avoir une cohérence entre le modèle et l'immatriculation affichée.
 
 ---
 
+## Sprint #11 - Compatibilité multi-bases de données (7 SP)
+
+### US-039 : Recharger configuration par défaut lors du changement de base
+
+**Priorité** : CRITIQUE 🔴
+**Story Points** : 2 SP
+**Sprint** : Sprint #11 (Prévu)
+**Status** : To Do
+
+**User Story :**
+En tant qu'utilisateur,
+Je veux que la configuration se réinitialise automatiquement quand je change de base de données,
+Afin d'éviter les erreurs dues à des valeurs incompatibles entre bases.
+
+**Contexte technique :**
+Actuellement, quand l'utilisateur change de base de données via le dropdown :
+- ✅ Le DATABASE_ID change
+- ✅ Les images sont reset
+- ❌ Les defaults restent ceux de l'ancienne base
+- ❌ Les valeurs sélectionnées peuvent être invalides pour la nouvelle base
+
+**Critères d'acceptation :**
+- [ ] Event listener sur selectDatabase appelle `loadDefaultConfigFromXML()` après changement
+- [ ] Tous les dropdowns (Version, PaintScheme, Prestige, Decor, Spinner) sont rechargés depuis nouveau XML
+- [ ] Les dropdowns intérieur (Prestige + 10 paramètres) sont rechargés
+- [ ] Les valeurs sélectionnées sont mises à jour avec les defaults de la nouvelle base
+- [ ] Toast info affiché : "Base de données changée. Configuration réinitialisée."
+- [ ] Config intérieur (carpet, seatCovers, etc.) réinitialisée si prestige incompatible
+- [ ] Tests : changer entre 2 bases différentes → valeurs toujours valides
+
+**Fichiers concernés :**
+- `code/js/app.js` : Modifier event listener `selectDatabase.addEventListener('change')` (ligne ~802)
+- `code/js/app.js` : Appeler `loadDefaultConfigFromXML()` après changement
+- `code/js/app.js` : Appeler `initUI()` pour recharger tous les dropdowns
+
+**Implémentation suggérée :**
+```javascript
+selectDatabase.addEventListener('change', async (e) => {
+    const databaseId = e.target.value;
+    const databaseName = e.target.options[e.target.selectedIndex].text;
+
+    console.log(`🔄 Changement de base: ${databaseName} (${databaseId})`);
+    setDatabaseId(databaseId);
+
+    // Réinitialiser les images
+    showPlaceholder(`Base changée : ${databaseName}. Chargement...`);
+    setImages([]);
+
+    // Recharger la config par défaut depuis le nouveau XML
+    await loadDefaultConfigFromXML();
+
+    // Recharger tous les dropdowns depuis le nouveau XML
+    await populateExteriorDropdowns();
+    await populateInteriorDropdowns();
+
+    // Toast info
+    showToast(`Base de données changée : ${databaseName}. Configuration réinitialisée.`, 'info');
+
+    showPlaceholder('Sélectionnez une configuration pour générer le rendu.');
+});
+```
+
+**Complexité :**
+- Event listener modification simple
+- Réutilise fonctions existantes (`loadDefaultConfigFromXML()`)
+- Pas de nouvelle logique complexe
+
+**Estimation** : 2 Story Points (~1h de développement)
+
+---
+
+### US-040 : Validation des valeurs avant génération du rendu
+
+**Priorité** : IMPORTANTE ⚠️
+**Story Points** : 3 SP
+**Sprint** : Sprint #11 (Prévu)
+**Status** : To Do
+
+**User Story :**
+En tant qu'utilisateur,
+Je veux que le système valide automatiquement ma configuration avant de générer le rendu,
+Afin d'éviter les erreurs API dues à des valeurs incompatibles avec la base de données actuelle.
+
+**Contexte technique :**
+Si l'utilisateur :
+1. Sélectionne une config avec base A
+2. Change pour base B (qui n'a pas les mêmes valeurs)
+3. Clique "Générer" SANS changer les dropdowns
+
+→ Le payload envoyé contient des valeurs invalides pour base B → ERROR 400/500
+
+**Critères d'acceptation :**
+- [ ] Fonction `validateConfigBeforeRender()` créée dans `api.js` ou `app.js`
+- [ ] Validation de `paintScheme` : existe dans les options du dropdown actuel
+- [ ] Validation de `prestige` : existe dans les options du dropdown actuel
+- [ ] Validation de `decor` : existe dans les options du dropdown actuel
+- [ ] Validation de `version` : existe dans les options du dropdown actuel
+- [ ] Validation de `spinner` : existe dans les options du dropdown actuel
+- [ ] Si valeur invalide détectée : remplacement automatique par première option disponible
+- [ ] Toast warning affiché si corrections automatiques : "Certaines valeurs ont été ajustées pour compatibilité"
+- [ ] Log console détaillé des corrections effectuées
+- [ ] Fonction appelée dans `loadRender()` AVANT `buildPayload()`
+- [ ] Tests : config invalide → correction auto → rendu fonctionne
+
+**Fichiers concernés :**
+- `code/js/app.js` : Créer fonction `validateConfigBeforeRender()`
+- `code/js/app.js` : Appeler validation dans `loadRender()` (ligne ~1489)
+
+**Implémentation suggérée :**
+```javascript
+/**
+ * Valide que toutes les valeurs de config existent dans les options actuelles
+ * Corrige automatiquement les valeurs invalides
+ * @returns {Object} Rapport { corrected: boolean, corrections: [] }
+ */
+function validateConfigBeforeRender() {
+    const config = getConfig();
+    const corrections = [];
+
+    // Vérifier paintScheme
+    const paintSchemeSelect = document.getElementById('selectPaintScheme');
+    if (paintSchemeSelect && !hasOption(paintSchemeSelect, config.paintScheme)) {
+        const firstOption = paintSchemeSelect.options[0]?.value;
+        if (firstOption) {
+            updateConfig('paintScheme', firstOption);
+            paintSchemeSelect.value = firstOption;
+            corrections.push(`paintScheme: ${config.paintScheme} → ${firstOption}`);
+        }
+    }
+
+    // Répéter pour prestige, decor, version, spinner...
+
+    // Si corrections effectuées
+    if (corrections.length > 0) {
+        console.warn('⚠️ Corrections automatiques appliquées:', corrections);
+        showToast('Certaines valeurs ont été ajustées pour compatibilité', 'warning');
+    }
+
+    return { corrected: corrections.length > 0, corrections };
+}
+
+function hasOption(selectElement, value) {
+    return Array.from(selectElement.options).some(opt => opt.value === value);
+}
+```
+
+**Complexité :**
+- Nouvelle fonction de validation
+- Vérification de 5 dropdowns
+- Logique de correction simple (première option)
+- Gestion des toasts et logs
+
+**Estimation** : 3 Story Points (~1h30 de développement)
+
+---
+
+### US-041 : Indicateur visuel de compatibilité base de données
+
+**Priorité** : NICE TO HAVE ℹ️
+**Story Points** : 2 SP
+**Sprint** : Sprint #12 (Optionnel)
+**Status** : To Do
+
+**User Story :**
+En tant qu'utilisateur,
+Je veux voir un indicateur visuel de compatibilité de ma configuration avec la base de données sélectionnée,
+Afin de savoir rapidement si ma config actuelle fonctionnera ou nécessite des ajustements.
+
+**Contexte technique :**
+Amélioration UX pour rendre visible la compatibilité :
+- Badge vert ✓ Compatible : Toutes les valeurs existent dans la base actuelle
+- Badge orange ⚠ Partiellement compatible : Certaines valeurs seront corrigées
+- Badge rouge ✗ Incompatible : Trop de valeurs manquantes
+
+**Critères d'acceptation :**
+- [ ] Badge de compatibilité affiché à côté du dropdown "Base de données"
+- [ ] Badge vert "✓ Compatible" si tous les paramètres (paintScheme, prestige, decor, version, spinner) existent dans options actuelles
+- [ ] Badge orange "⚠ Partiel" si 1-2 paramètres invalides
+- [ ] Badge rouge "✗ Incompatible" si 3+ paramètres invalides
+- [ ] Tooltip au survol : détails des incompatibilités (ex: "PaintScheme: Sirocco introuvable")
+- [ ] Badge mis à jour automatiquement quand user change un dropdown
+- [ ] Badge mis à jour automatiquement quand user change de base
+- [ ] Clic sur badge orange/rouge → modal avec détails + bouton "Corriger automatiquement"
+- [ ] Bouton "Corriger automatiquement" appelle `validateConfigBeforeRender()`
+- [ ] Tests : changer base → badge reflète correctement la compatibilité
+
+**Fichiers concernés :**
+- `code/index.html` : Ajouter badge HTML à côté du dropdown base
+- `code/styles/controls.css` : Styles pour badges (vert/orange/rouge)
+- `code/js/app.js` : Fonction `updateCompatibilityBadge()`
+- `code/js/app.js` : Appeler mise à jour badge après changements
+
+**Implémentation suggérée :**
+```html
+<!-- Dans index.html, à côté de selectDatabase -->
+<div class="form-group">
+    <label for="selectDatabase">Base de données</label>
+    <div style="display: flex; gap: 0.5rem; align-items: center;">
+        <select id="selectDatabase" class="form-control"></select>
+        <span id="compatibilityBadge" class="badge badge-success" title="Configuration compatible">
+            ✓ Compatible
+        </span>
+    </div>
+</div>
+```
+
+```javascript
+function updateCompatibilityBadge() {
+    const config = getConfig();
+    const badge = document.getElementById('compatibilityBadge');
+
+    const invalidParams = [];
+
+    // Check paintScheme
+    const paintSchemeSelect = document.getElementById('selectPaintScheme');
+    if (paintSchemeSelect && !hasOption(paintSchemeSelect, config.paintScheme)) {
+        invalidParams.push('PaintScheme');
+    }
+
+    // Check autres paramètres...
+
+    // Mettre à jour badge
+    if (invalidParams.length === 0) {
+        badge.className = 'badge badge-success';
+        badge.textContent = '✓ Compatible';
+        badge.title = 'Configuration compatible avec la base actuelle';
+    } else if (invalidParams.length <= 2) {
+        badge.className = 'badge badge-warning';
+        badge.textContent = '⚠ Partiel';
+        badge.title = `Paramètres incompatibles : ${invalidParams.join(', ')}`;
+    } else {
+        badge.className = 'badge badge-error';
+        badge.textContent = '✗ Incompatible';
+        badge.title = `Paramètres incompatibles : ${invalidParams.join(', ')}`;
+    }
+}
+```
+
+**Complexité :**
+- HTML/CSS pour badge simple
+- Fonction de vérification (réutilise logique US-040)
+- Event listeners pour mise à jour automatique
+- Modal optionnelle pour détails
+
+**Estimation** : 2 Story Points (~1h de développement)
+
+---
+
 ## Définition de terminé (DoD)
 
 - [ ] Code fonctionnel testé manuellement
@@ -2035,4 +2283,5 @@ Afin d'avoir une cohérence entre le modèle et l'immatriculation affichée.
 **Total Sprint #8** : 7 Story Points (US-031: 2 SP - Téléchargement individuel images + US-032: 5 SP - Téléchargement par lot)
 **Total Sprint #9** : 4 Story Points (US-033: 3 SP - Barre de recherche pour filtrer dropdowns + US-034: 1 SP - Immatriculation dynamique selon modèle)
 **Total Sprint #10** : 5 Story Points ✅ (US-038: 1 SP - Corriger formatage noms dropdowns + US-035: 1 SP - Réorganiser section Sièges + US-036: 2 SP - Ajouter Stitching + US-037: 1 SP - Toggle buttons Matériau Central)
+**Total Sprint #11** : 7 Story Points (US-039: 2 SP - Recharger defaults au changement de base + US-040: 3 SP - Validation des valeurs avant rendu + US-041: 2 SP - Indicateur de compatibilité base)
 **Total Icebox** : ~22 Story Points (archivé, non demandé)
