@@ -4,6 +4,7 @@
 // Date : 02/12/2025
 
 import { setCurrentImageIndex, getCurrentImageIndex, getImages } from './state.js';
+import { getCameraSensorInfo } from './api.js';
 
 // ======================================
 // État du carrousel
@@ -184,8 +185,8 @@ function updateButtons(currentIndex, totalImages) {
  * @param {Array<string>} imageUrls - Tableau d'URLs d'images
  * @param {string} viewType - Type de vue ('exterior' ou 'interior')
  */
-export function renderMosaic(imageUrls, viewType = 'exterior') {
-    console.log(`🖼️ Affichage mosaïque avec ${imageUrls.length} images (vue: ${viewType})`);
+export function renderMosaic(imageData, viewType = 'exterior') {
+    console.log(`🖼️ Affichage mosaïque avec ${imageData.length} images (vue: ${viewType})`);
 
     const mosaicGrid = document.getElementById('mosaicGrid');
     if (!mosaicGrid) {
@@ -193,7 +194,7 @@ export function renderMosaic(imageUrls, viewType = 'exterior') {
         return;
     }
 
-    if (!imageUrls || imageUrls.length === 0) {
+    if (!imageData || imageData.length === 0) {
         showPlaceholder('Aucune image disponible');
         return;
     }
@@ -206,11 +207,17 @@ export function renderMosaic(imageUrls, viewType = 'exterior') {
     mosaicGrid.innerHTML = '';
 
     // Ajouter la classe correspondant à la vue
-    mosaicGrid.classList.remove('exterior', 'interior');
+    mosaicGrid.classList.remove('exterior', 'interior', 'configuration');
     mosaicGrid.classList.add(viewType);
 
     // Créer les images avec event listeners
-    imageUrls.forEach((url, index) => {
+    imageData.forEach((item, index) => {
+        // Support ancien format (string URL) et nouveau format (objet)
+        const url = typeof item === 'string' ? item : item.url;
+        const cameraId = typeof item === 'object' ? item.cameraId : '';
+        const cameraName = typeof item === 'object' ? item.cameraName : '';
+        const groupName = typeof item === 'object' ? item.groupName : '';
+
         // US-031: Créer un wrapper pour image + bouton download
         const wrapper = document.createElement('div');
         wrapper.classList.add('mosaic-item');
@@ -219,6 +226,11 @@ export function renderMosaic(imageUrls, viewType = 'exterior') {
         img.src = url;
         img.alt = `Vue TBM ${index + 1}`;
         img.loading = 'lazy';
+
+        // Ajouter les métadonnées dans data-attributes
+        if (groupName) img.dataset.groupName = groupName;
+        if (cameraName) img.dataset.cameraName = cameraName;
+        if (cameraId) img.dataset.cameraId = cameraId;
 
         // Clic sur image → ouvre en plein écran
         img.addEventListener('click', () => {
@@ -269,6 +281,120 @@ export function renderMosaic(imageUrls, viewType = 'exterior') {
     mosaicGrid.classList.remove('hidden');
 
     console.log('✅ Mosaïque affichée');
+}
+
+// ======================================
+// US-042 : Mosaïque Configuration avec ratios mixtes
+// ======================================
+
+/**
+ * Affiche la mosaïque des vignettes Configuration avec ratios adaptatifs
+ * @param {Array<Object>} imagesData - Tableau d'objets { url, cameraId }
+ */
+export async function renderConfigMosaic(imagesData) {
+    console.log(`🖼️ Affichage mosaïque Configuration avec ${imagesData.length} vignettes`);
+
+    const mosaicGrid = document.getElementById('mosaicGrid');
+    if (!mosaicGrid) {
+        console.error('Élément mosaïque manquant dans le DOM');
+        return;
+    }
+
+    if (!imagesData || imagesData.length === 0) {
+        showPlaceholder('Aucune image disponible');
+        return;
+    }
+
+    // Masquer placeholder et erreur
+    hidePlaceholder();
+    hideError();
+
+    // Vider la mosaïque
+    mosaicGrid.innerHTML = '';
+
+    // Ajouter la classe configuration
+    mosaicGrid.classList.remove('exterior', 'interior');
+    mosaicGrid.classList.add('configuration');
+
+    // Créer les vignettes avec détection de ratio
+    for (let i = 0; i < imagesData.length; i++) {
+        const { url, cameraId, cameraName, groupName, ratioType } = imagesData[i];
+
+        // Utiliser le ratioType fourni ou par défaut '1:1'
+        const finalRatioType = ratioType || '1:1';
+
+        console.log(`📸 Image ${i + 1}: ratio=${finalRatioType}, camera=${cameraName || 'NULL'}`);
+
+        // Créer wrapper
+        const wrapper = document.createElement('div');
+        wrapper.classList.add('mosaic-item');
+
+        // Ajouter classe selon ratio
+        if (finalRatioType === '16:9') {
+            wrapper.classList.add('vignette-16-9');
+        } else {
+            wrapper.classList.add('vignette-1-1');
+        }
+
+        const img = document.createElement('img');
+        img.src = url;
+        img.alt = `Configuration ${i + 1} (${finalRatioType})`;
+        img.loading = 'lazy';
+
+        // Ajouter les métadonnées dans data-attributes
+        if (groupName) img.dataset.groupName = groupName;
+        if (cameraName) img.dataset.cameraName = cameraName;
+        if (cameraId) img.dataset.cameraId = cameraId;
+
+        // Clic sur image → ouvre en plein écran
+        img.addEventListener('click', () => {
+            openFullscreen(i);
+        });
+
+        // Bouton download
+        const downloadBtn = document.createElement('button');
+        downloadBtn.classList.add('download-btn');
+        downloadBtn.innerHTML = '⬇️';
+        downloadBtn.setAttribute('aria-label', 'Télécharger cette vignette');
+        downloadBtn.setAttribute('title', 'Télécharger cette vignette');
+
+        // Event listener sur bouton download
+        downloadBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const filename = `configuration_${i + 1}_${ratioType.replace(':', 'x')}.png`;
+            try {
+                await downloadImage(url, filename);
+                showSuccessToast(`Vignette téléchargée : ${filename}`);
+            } catch (error) {
+                showError(`Erreur lors du téléchargement de ${filename}`);
+            }
+        });
+
+        // Checkbox pour sélection multiple
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.classList.add('image-checkbox');
+        checkbox.dataset.index = i;
+        checkbox.dataset.url = url;
+        checkbox.dataset.filename = `configuration_${i + 1}_${ratioType.replace(':', 'x')}.png`;
+
+        // Empêcher l'ouverture fullscreen lors du clic sur checkbox
+        checkbox.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
+        // Ajouter image, bouton et checkbox au wrapper
+        wrapper.appendChild(img);
+        wrapper.appendChild(downloadBtn);
+        wrapper.appendChild(checkbox);
+
+        mosaicGrid.appendChild(wrapper);
+    }
+
+    // Afficher la mosaïque
+    mosaicGrid.classList.remove('hidden');
+
+    console.log('✅ Mosaïque Configuration affichée');
 }
 
 // ======================================
@@ -553,6 +679,7 @@ export function enableControls() {
 // ======================================
 
 let fullscreenImages = [];
+let fullscreenMetadata = [];
 let fullscreenCurrentIndex = 0;
 
 /**
@@ -563,6 +690,7 @@ export function openFullscreen(imageIndex) {
     const modal = document.getElementById('fullscreenModal');
     const image = document.getElementById('fullscreenImage');
     const counter = document.getElementById('fullscreenCounter');
+    const metadata = document.getElementById('fullscreenMetadata');
 
     // Récupérer les images de la mosaïque
     const mosaicGrid = document.getElementById('mosaicGrid');
@@ -571,13 +699,31 @@ export function openFullscreen(imageIndex) {
     const images = mosaicGrid.querySelectorAll('img');
     if (images.length === 0) return;
 
-    // Stocker les URLs
+    // Stocker les URLs et métadonnées
     fullscreenImages = Array.from(images).map(img => img.src);
+    fullscreenMetadata = Array.from(images).map(img => ({
+        groupName: img.dataset.groupName || '',
+        cameraName: img.dataset.cameraName || '',
+        cameraId: img.dataset.cameraId || ''
+    }));
     fullscreenCurrentIndex = imageIndex;
 
     // Afficher l'image
     image.src = fullscreenImages[fullscreenCurrentIndex];
     counter.textContent = `${fullscreenCurrentIndex + 1} / ${fullscreenImages.length}`;
+
+    // Afficher les métadonnées
+    const meta = fullscreenMetadata[fullscreenCurrentIndex];
+    if (meta.groupName || meta.cameraName || meta.cameraId) {
+        metadata.innerHTML = `
+            ${meta.groupName ? `<div><strong>Groupe:</strong> ${meta.groupName}</div>` : ''}
+            ${meta.cameraName ? `<div><strong>Caméra:</strong> ${meta.cameraName}</div>` : ''}
+            ${meta.cameraId ? `<div><strong>ID:</strong> ${meta.cameraId}</div>` : ''}
+        `;
+        metadata.style.display = 'block';
+    } else {
+        metadata.style.display = 'none';
+    }
 
     // Afficher la modal
     modal.classList.remove('hidden');
@@ -611,9 +757,23 @@ export function fullscreenPrev() {
 
     const image = document.getElementById('fullscreenImage');
     const counter = document.getElementById('fullscreenCounter');
+    const metadata = document.getElementById('fullscreenMetadata');
 
     image.src = fullscreenImages[fullscreenCurrentIndex];
     counter.textContent = `${fullscreenCurrentIndex + 1} / ${fullscreenImages.length}`;
+
+    // Mettre à jour les métadonnées
+    const meta = fullscreenMetadata[fullscreenCurrentIndex];
+    if (meta && (meta.groupName || meta.cameraName || meta.cameraId)) {
+        metadata.innerHTML = `
+            ${meta.groupName ? `<div><strong>Groupe:</strong> ${meta.groupName}</div>` : ''}
+            ${meta.cameraName ? `<div><strong>Caméra:</strong> ${meta.cameraName}</div>` : ''}
+            ${meta.cameraId ? `<div><strong>ID:</strong> ${meta.cameraId}</div>` : ''}
+        `;
+        metadata.style.display = 'block';
+    } else {
+        metadata.style.display = 'none';
+    }
 
     console.log(`Navigation plein écran : image ${fullscreenCurrentIndex + 1}/${fullscreenImages.length}`);
 }
@@ -628,9 +788,23 @@ export function fullscreenNext() {
 
     const image = document.getElementById('fullscreenImage');
     const counter = document.getElementById('fullscreenCounter');
+    const metadata = document.getElementById('fullscreenMetadata');
 
     image.src = fullscreenImages[fullscreenCurrentIndex];
     counter.textContent = `${fullscreenCurrentIndex + 1} / ${fullscreenImages.length}`;
+
+    // Mettre à jour les métadonnées
+    const meta = fullscreenMetadata[fullscreenCurrentIndex];
+    if (meta && (meta.groupName || meta.cameraName || meta.cameraId)) {
+        metadata.innerHTML = `
+            ${meta.groupName ? `<div><strong>Groupe:</strong> ${meta.groupName}</div>` : ''}
+            ${meta.cameraName ? `<div><strong>Caméra:</strong> ${meta.cameraName}</div>` : ''}
+            ${meta.cameraId ? `<div><strong>ID:</strong> ${meta.cameraId}</div>` : ''}
+        `;
+        metadata.style.display = 'block';
+    } else {
+        metadata.style.display = 'none';
+    }
 
     console.log(`Navigation plein écran : image ${fullscreenCurrentIndex + 1}/${fullscreenImages.length}`);
 }
@@ -906,6 +1080,7 @@ export default {
     initCarousel,
     updateCarousel,
     renderMosaic,
+    renderConfigMosaic,
     showPlaceholder,
     showLoader,
     hideLoader,

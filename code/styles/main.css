@@ -794,6 +794,30 @@ p {
     z-index: 10001;
 }
 
+.fullscreen-metadata {
+    position: absolute;
+    top: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    z-index: 10001;
+    text-align: center;
+    min-width: 300px;
+}
+
+.fullscreen-metadata div {
+    margin: 0.25rem 0;
+}
+
+.fullscreen-metadata strong {
+    font-weight: 600;
+    color: #4A90E2;
+}
+
 /* Bouton icône plein écran dans viewport */
 .btn-icon {
     background-color: var(--color-bg-secondary);

@@ -1,8 +1,8 @@
 # Kanban Board - Configurateur_Daher
 
 **Projet** : 005-Configurateur_Daher
-**Sprint actuel** : Sprint #11 (Prévu - Compatibilité multi-bases de données - 3 US, 7 SP)
-**Derniere mise a jour** : 06/12/2025 - Sprint #11 créé par PO (US-039, US-040, US-041)
+**Sprint actuel** : Sprint #12 (✅ TERMINÉ - 1 US, 5 SP livrés)
+**Derniere mise a jour** : 06/12/2025 - Sprint #12 complété avec succès - US-042 validée + métadonnées bonus
 **Équipe** : 6 agents (PO + ARCH + COORDINATOR + 1 DEV-Généraliste + 1 QA-Fonctionnel + 1 DOC)
 
 ---
@@ -681,3 +681,84 @@ US créées automatiquement mais jamais demandées par l'utilisateur :
 ---
 
 **Rappel Double Tracking** : Toujours synchroniser TodoWrite + kanban-board.md
+
+---
+
+## Sprint #12 - Mosaïque Configuration (✅ TERMINÉ)
+
+**Sprint Goal** : "Ajouter une vue Configuration avec mosaïque adaptative de 26 vignettes + métadonnées plein écran"
+
+**Dates** : 06/12/2025 - 06/12/2025 (Sprint court - 1 US)
+**Story Points planifiés** : 5 SP
+**Story Points livrés** : 5 SP ✅
+**Équipe** : DEV, QA, ARCH, DOC
+
+### 🔵 To Do (0 tâches)
+
+_Sprint terminé - Toutes les tâches complétées_
+
+### 🟡 In Progress (0 tâches)
+
+_Sprint terminé_
+
+### 🟢 Testing (0 US)
+
+_Sprint terminé - Tous tests validés_
+
+### ✅ Done (1 US - 5 SP)
+
+#### [US-042] Mosaïque "Configuration" avec vignettes adaptatives (5 SP) - ✅ **VALIDÉ par QA le 06/12/2025**
+
+**Statut** : ✅ Complété avec succès + métadonnées bonus
+
+**Phase 1 : Backend - API et détection ratios** ✅ TERMINÉ
+- [x] [T042-1] Fonction getCameraSensorInfo() dans api.js (30 min) - **DONE**
+- [x] [T042-2] Support viewType="configuration" dans findCameraGroupId() (30 min) - **DONE**
+- [x] [T042-EXTRA] Fonction getCameraListFromGroup() dans api.js - **DONE** (bug corrigé)
+- [x] [T042-EXTRA] Fonction fetchConfigurationImages() pour 2 appels API - **DONE**
+- [x] [T042-EXTRA] Enrichissement métadonnées (cameraName, groupName) - **DONE**
+
+**Phase 2 : Frontend - UI et mosaïque** ✅ TERMINÉ
+- [x] [T042-3] Ajout onglet "CONFIGURATION" dans index.html (15 min) - **DONE**
+- [x] [T042-4] Fonction renderConfigMosaic() dans ui.js (45 min) - **DONE**
+- [x] [T042-5] CSS Flexbox adaptatif dans viewport.css (30 min) - **DONE**
+- [x] [T042-EXTRA] Affichage métadonnées plein écran (HTML + CSS + JS) - **DONE**
+
+**Phase 3 : Intégration et appel API** ✅ TERMINÉ
+- [x] [T042-6] Intégration appel API avec viewType="configuration" (30 min) - **DONE**
+- [x] [T042-7] Event listeners et navigation onglets (15 min) - **DONE**
+
+**Phase 4 : Tests et ajustements** ✅ TERMINÉ
+- [x] [T042-8] Tests manuels end-to-end (20 min) - **DONE**
+- [x] [T042-9] Ajustements visuels et optimisations (10 min) - **DONE**
+
+**🐛 Bug Résolu** :
+- ❌ Bug initial : `querySelectorAll('CameraRef')` retournait 0 caméras
+- ✅ Solution : `querySelectorAll('Camera')` pour parsing direct
+- ✅ Résultat : 26 caméras détectées et affichées correctement
+
+**🎁 Améliorations Bonus** :
+- ✅ Métadonnées en plein écran (Groupe, Caméra, ID) pour toutes les vues
+- ✅ Support backward compatible (ancien format URL + nouveau format objet)
+- ✅ Interface élégante avec fond semi-transparent
+
+**Tests QA** : 12/12 tests passés (100%) - Voir `sprints/sprint-12/qa-test-report.md`
+
+**Fichiers modifiés** :
+- `code/js/api.js` : getCameraSensorInfo(), getCameraListFromGroup(), fetchConfigurationImages(), fetchRenderImages()
+- `code/index.html` : Onglet CONFIGURATION + div métadonnées
+- `code/js/ui.js` : renderConfigMosaic(), openFullscreen(), fullscreenPrev(), fullscreenNext()
+- `code/js/app.js` : Event listeners Configuration
+- `code/styles/main.css` : Styles métadonnées plein écran
+- `code/styles/viewport.css` : Classes vignettes 16:9 et 1:1
+
+---
+
+## 📋 Historique des mouvements (Sprint #12)
+
+| Date | US | Mouvement | Responsable |
+|------|----|-----------| ------------|
+| 06/12/2025 | Sprint #12 | Sprint Planning terminé - US-042 décomposée (9 tâches) | ARCH |
+| 06/12/2025 | US-042 | Créée et ajoutée au Sprint #12 (To Do) | PO |
+| 06/12/2025 | US-042 | Investigation PO terminée (27 caméras, détection automatique ratios) | PO |
+

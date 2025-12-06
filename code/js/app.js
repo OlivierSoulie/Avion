@@ -13,8 +13,8 @@ import {
     // sont maintenant extraites dynamiquement du XML via getExteriorOptionsFromXML() et getInteriorOptionsFromXML()
     // DECORS_CONFIG est conservé car il contient de la logique (type, suffix), pas seulement des données
 } from './config.js';
-import { initRetryButton, renderMosaic, showLoader, hideLoader, showError, hideError, disableControls, enableControls, showPlaceholder, showSuccessToast, initConnectionStatus, initFullscreen, enterSelectionMode, exitSelectionMode, downloadSelectedImages } from './ui.js';
-import { fetchRenderImages, testPayloadBuild, fetchDatabases, setDatabaseId, getDefaultConfig, parsePrestigeConfig, getDatabaseXML, getExteriorColorZones, parsePaintSchemeBookmark, getInteriorOptionsFromXML, getExteriorOptionsFromXML } from './api.js';
+import { initRetryButton, renderMosaic, renderConfigMosaic, showLoader, hideLoader, showError, hideError, disableControls, enableControls, showPlaceholder, showSuccessToast, initConnectionStatus, initFullscreen, enterSelectionMode, exitSelectionMode, downloadSelectedImages } from './ui.js';
+import { fetchRenderImages, fetchConfigurationImages, testPayloadBuild, fetchDatabases, setDatabaseId, getDefaultConfig, parsePrestigeConfig, getDatabaseXML, getExteriorColorZones, parsePaintSchemeBookmark, getInteriorOptionsFromXML, getExteriorOptionsFromXML, getCameraListFromGroup } from './api.js';
 import { log } from './logger.js';
 
 // ======================================
@@ -574,15 +574,32 @@ async function loadRender() {
         setError(null);
 
         // 3. Appeler l'API
-        const imageUrls = await fetchRenderImages(config);
+        const viewType = getViewType(); // Récupérer la vue courante (exterior/interior/configuration)
+
+        let images;
+
+        // US-042: Pour la vue Configuration, utiliser fetchConfigurationImages() qui fait 2 appels API
+        if (viewType === 'configuration') {
+            console.log('📸 Vue Configuration: appel API avec tailles multiples...');
+            images = await fetchConfigurationImages(config);
+        } else {
+            // Pour exterior/interior, appel API classique
+            images = await fetchRenderImages(config);
+        }
 
         // 4. Mettre à jour le state
-        setImages(imageUrls);
+        setImages(images);
 
         // 5. Afficher les images dans la mosaïque
         hideLoader();
-        const viewType = getViewType(); // Récupérer la vue courante (exterior/interior)
-        renderMosaic(imageUrls, viewType);
+
+        if (viewType === 'configuration') {
+            // Afficher la mosaïque Configuration avec ratios mixtes
+            await renderConfigMosaic(images);
+        } else {
+            // Pour exterior/interior, passer les objets complets avec métadonnées
+            renderMosaic(images, viewType);
+        }
 
         // BUG-002 FIX: Afficher le message de succès
         showSuccessToast('Rendu généré avec succès !');
@@ -664,6 +681,16 @@ function toggleViewControls(viewType) {
         if (actionsInterior) actionsInterior.style.display = 'flex';
 
         console.log('✅ Contrôles et actions INTÉRIEUR affichés');
+    } else if (viewType === 'configuration') {
+        // US-042: Vue Configuration - masquer tous les contrôles (pas de personnalisation)
+        controlsExterior.style.display = 'none';
+        controlsInterior.style.display = 'none';
+
+        // Masquer toutes les actions
+        if (actionsExterior) actionsExterior.style.display = 'none';
+        if (actionsInterior) actionsInterior.style.display = 'none';
+
+        console.log('✅ Vue CONFIGURATION - Contrôles masqués');
     }
 }
 
@@ -1051,16 +1078,19 @@ function attachEventListeners() {
 
     // ======================================
     // US-022 : Sélecteur Vue Ext/Int
+    // US-042 : Ajout vue Configuration
     // ======================================
 
     const btnViewExterior = document.getElementById('btnViewExterior');
     const btnViewInterior = document.getElementById('btnViewInterior');
+    const btnViewConfiguration = document.getElementById('btnViewConfiguration');
 
     if (btnViewExterior && btnViewInterior) {
         btnViewExterior.addEventListener('click', () => {
             // Mettre à jour l'UI
             btnViewExterior.classList.add('active');
             btnViewInterior.classList.remove('active');
+            if (btnViewConfiguration) btnViewConfiguration.classList.remove('active');
 
             // Mettre à jour le state
             updateConfig('viewType', 'exterior');
@@ -1077,6 +1107,7 @@ function attachEventListeners() {
             // Mettre à jour l'UI
             btnViewInterior.classList.add('active');
             btnViewExterior.classList.remove('active');
+            if (btnViewConfiguration) btnViewConfiguration.classList.remove('active');
 
             // Mettre à jour le state
             updateConfig('viewType', 'interior');
@@ -1084,6 +1115,26 @@ function attachEventListeners() {
 
             // US-028 : Affichage conditionnel des contrôles
             toggleViewControls('interior');
+
+            // Déclencher le rendu
+            triggerRender();
+        });
+    }
+
+    // US-042: Bouton vue Configuration
+    if (btnViewConfiguration) {
+        btnViewConfiguration.addEventListener('click', () => {
+            // Mettre à jour l'UI
+            btnViewConfiguration.classList.add('active');
+            if (btnViewExterior) btnViewExterior.classList.remove('active');
+            if (btnViewInterior) btnViewInterior.classList.remove('active');
+
+            // Mettre à jour le state
+            updateConfig('viewType', 'configuration');
+            console.log('Vue changée: configuration');
+
+            // Masquer tous les contrôles (pas de personnalisation en vue Configuration)
+            toggleViewControls('configuration');
 
             // Déclencher le rendu
             triggerRender();

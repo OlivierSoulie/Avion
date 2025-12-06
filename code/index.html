@@ -86,7 +86,7 @@
 
                 <div class="viewport-header">
                     <h2>Aperçu</h2>
-                    <!-- Sélecteur de vue Ext/Int -->
+                    <!-- Sélecteur de vue Ext/Int/Config -->
                     <div class="view-selector">
                         <div class="toggle-group">
                             <button type="button" class="toggle-btn active" id="btnViewExterior" data-view="exterior">
@@ -94,6 +94,9 @@
                             </button>
                             <button type="button" class="toggle-btn" id="btnViewInterior" data-view="interior">
                                 Intérieur
+                            </button>
+                            <button type="button" class="toggle-btn" id="btnViewConfiguration" data-view="configuration">
+                                Configuration
                             </button>
                         </div>
                     </div>
@@ -478,6 +481,7 @@
                 <span>›</span>
             </button>
             <div class="fullscreen-counter" id="fullscreenCounter">1 / 1</div>
+            <div class="fullscreen-metadata" id="fullscreenMetadata"></div>
         </div>
     </div>
 

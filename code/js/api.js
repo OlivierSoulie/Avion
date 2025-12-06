@@ -618,19 +618,140 @@ export async function getDatabaseXML() {
 }
 
 /**
+ * US-042 : Récupère la liste des caméras d'un groupe de caméras avec leurs ratios
+ *
+ * @param {string} groupId - ID du groupe de caméras
+ * @returns {Promise<Array<Object>>} Liste des caméras {id, index, ratioType, width, height}
+ */
+export async function getCameraListFromGroup(groupId) {
+    const xmlDoc = await getDatabaseXML();
+
+    // Trouver le groupe
+    const group = xmlDoc.querySelector(`Group[id="${groupId}"]`);
+    if (!group) {
+        throw new Error(`Group ${groupId} not found in XML`);
+    }
+
+    console.log(`   > Groupe trouvé: ${group.getAttribute('name')}`);
+    console.log(`   > Contenu du groupe (innerHTML):`, group.innerHTML.substring(0, 500));
+
+    // Récupérer toutes les caméras du groupe
+    const cameras = [];
+
+    // Pour le groupe Configuration, les caméras sont directement dans le groupe (balises <Camera>)
+    const cameraElements = group.querySelectorAll('Camera');
+
+    console.log(`   > Nombre de Camera trouvées: ${cameraElements.length}`);
+
+    for (let index = 0; index < cameraElements.length; index++) {
+        const camera = cameraElements[index];
+        const cameraId = camera.getAttribute('id');
+        const cameraName = camera.getAttribute('name') || `Camera ${index + 1}`;
+
+        if (cameraId) {
+            // Récupérer le ratio de la caméra
+            try {
+                const sensorInfo = await getCameraSensorInfo(cameraId);
+
+                // Définir les tailles de rendu selon le ratio
+                const sizes = sensorInfo.ratioType === '16:9'
+                    ? { width: 400, height: 225 }
+                    : { width: 100, height: 100 };
+
+                cameras.push({
+                    id: cameraId,
+                    name: cameraName,
+                    index: index,
+                    ratioType: sensorInfo.ratioType,
+                    width: sizes.width,
+                    height: sizes.height
+                });
+            } catch (error) {
+                console.warn(`⚠️ Erreur récupération sensor pour ${cameraId}:`, error);
+                cameras.push({
+                    id: cameraId,
+                    name: cameraName,
+                    index: index,
+                    ratioType: '1:1',
+                    width: 100,
+                    height: 100
+                });
+            }
+        }
+    }
+
+    console.log(`   > Groupe ${groupId}: ${cameras.length} caméras trouvées`);
+    return cameras;
+}
+
+/**
+ * US-042 : Récupère les informations du sensor d'une caméra
+ *
+ * @param {string} cameraId - ID de la caméra
+ * @returns {Promise<Object>} Informations du sensor { sensorId, sensorName, width, height, ratio, ratioType }
+ * @throws {Error} Si la caméra ou le sensor n'est pas trouvé
+ */
+export async function getCameraSensorInfo(cameraId) {
+    const xmlDoc = await getDatabaseXML();
+
+    // Trouver la caméra
+    const camera = xmlDoc.querySelector(`Camera[id="${cameraId}"]`);
+    if (!camera) {
+        throw new Error(`Camera ${cameraId} not found in XML`);
+    }
+
+    // Récupérer le sensorId
+    const sensorId = camera.getAttribute('sensorId');
+    if (!sensorId) {
+        throw new Error(`Camera ${cameraId} has no sensorId attribute`);
+    }
+
+    // Trouver le sensor
+    const sensor = xmlDoc.querySelector(`Sensor[id="${sensorId}"]`);
+    if (!sensor) {
+        throw new Error(`Sensor ${sensorId} not found in XML`);
+    }
+
+    // Extraire les dimensions
+    const width = parseFloat(sensor.getAttribute('width'));
+    const height = parseFloat(sensor.getAttribute('height'));
+
+    if (isNaN(width) || isNaN(height)) {
+        throw new Error(`Sensor ${sensorId} has invalid width or height`);
+    }
+
+    // Calculer le ratio
+    const ratio = width / height;
+
+    // Déterminer le type de ratio (16:9 ≈ 1.778, 1:1 = 1.0)
+    const ratioType = Math.abs(ratio - 1.0) < 0.01 ? '1:1' : '16:9';
+
+    return {
+        sensorId,
+        sensorName: sensor.getAttribute('name') || 'Unknown',
+        width,
+        height,
+        ratio,
+        ratioType
+    };
+}
+
+/**
  * Trouve le camera group ID pour un décor ou une vue
  * (Équivalent Python lignes 110-116)
  *
  * US-022: Support viewType "interior" / "exterior"
+ * US-042: Support viewType "configuration"
  *
  * Logique de recherche:
  * - Si viewType === "interior" → Chercher name="Interieur" (fixe, pas de variation)
+ * - Si viewType === "configuration" → Chercher name="Configuration" (fixe, US-042)
  * - Si viewType === "exterior" → Comportement original (recherche par décor)
  *   1. Recherche exacte: "Exterieur_Decor{decorName}"
  *   2. Recherche partielle: contient "Decor{decorName}"
  *
  * @param {string} decorName - Nom du décor (ex: "Tarmac")
- * @param {string} viewType - Type de vue: "exterior" ou "interior"
+ * @param {string} viewType - Type de vue: "exterior", "interior" ou "configuration"
  * @returns {Promise<string>} L'ID du groupe caméra
  * @throws {Error} Si aucun groupe caméra n'est trouvé
  */
@@ -657,6 +778,22 @@ async function findCameraGroupId(decorName, viewType = "exterior") {
         }
 
         throw new Error(`❌ Groupe caméra "Interieur" introuvable dans le XML`);
+    }
+
+    // US-042: Si vue configuration, chercher "Configuration"
+    if (viewType === "configuration") {
+        console.log(`   > Recherche vue configuration: name="Configuration"`);
+
+        for (let group of groups) {
+            const groupName = group.getAttribute('name');
+            if (groupName === "Configuration") {
+                const id = group.getAttribute('id');
+                console.log(`   ✅ Camera group Configuration trouvé: ${id}`);
+                return id;
+            }
+        }
+
+        throw new Error(`❌ Groupe caméra "Configuration" introuvable dans le XML`);
     }
 
     // Vue extérieure: comportement original
@@ -821,17 +958,20 @@ export async function callLumiscapheAPI(payload, retryCount = 3) {
                 throw new Error('Réponse API invalide: tableau attendu');
             }
 
-            // Extraire les URLs
-            const imageUrls = data
+            // US-042: Extraire les URLs avec cameraId pour support vue Configuration
+            const images = data
                 .filter(item => item && item.url)
-                .map(item => item.url);
+                .map(item => ({
+                    url: item.url,
+                    cameraId: item.cameraId || null
+                }));
 
-            if (imageUrls.length === 0) {
+            if (images.length === 0) {
                 throw new Error('Aucune URL d\'image dans la réponse');
             }
 
-            console.log(`✅ ${imageUrls.length} images reçues`);
-            return imageUrls;
+            console.log(`✅ ${images.length} images reçues`);
+            return images;
 
         } catch (error) {
             console.error(`❌ Tentative ${attempt} échouée:`, error.message);
@@ -855,7 +995,7 @@ export async function callLumiscapheAPI(payload, retryCount = 3) {
 }
 
 /**
- * Retourne les URLs d'images sans validation préalable
+ * Retourne les images sans validation préalable
  * Le navigateur chargera les images directement via <img src="">
  *
  * Note: La validation HEAD a été supprimée car:
@@ -863,29 +1003,117 @@ export async function callLumiscapheAPI(payload, retryCount = 3) {
  * - Les URLs peuvent expirer rapidement
  * - Le navigateur gère naturellement les erreurs de chargement
  *
- * @param {Array<string>} imageUrls - Les URLs des images
- * @returns {Promise<Array<string>>} Les URLs des images
+ * US-042: Support nouveau format {url, cameraId}
+ *
+ * @param {Array<Object>} images - Tableau d'objets {url, cameraId}
+ * @returns {Promise<Array<Object>>} Les images avec URLs et cameraId
  */
-export async function downloadImages(imageUrls) {
-    console.log(`📥 Préparation de ${imageUrls.length} images...`);
+export async function downloadImages(images) {
+    console.log(`📥 Préparation de ${images.length} images...`);
 
     // Afficher les URLs dans la console pour debug
-    imageUrls.forEach((url, i) => {
-        console.log(`   Image ${i + 1}: ${url}`);
+    images.forEach((img, i) => {
+        console.log(`   Image ${i + 1}: ${img.url}${img.cameraId ? ` (camera: ${img.cameraId})` : ''}`);
     });
 
-    console.log(`✅ ${imageUrls.length} images prêtes à charger`);
+    console.log(`✅ ${images.length} images prêtes à charger`);
 
-    // Retourner directement les URLs, le navigateur les chargera
-    return imageUrls;
+    // Retourner directement les images, le navigateur les chargera
+    return images;
+}
+
+/**
+ * US-042 : Génère les rendus pour la vue Configuration avec tailles multiples
+ * Fait 2 appels API complets (tout le groupe en 16:9 puis en 1:1) puis sélectionne les bonnes images
+ *
+ * @param {Object} config - La configuration actuelle
+ * @returns {Promise<Array<Object>>} Tableau d'objets {url, cameraId, ratioType}
+ */
+export async function fetchConfigurationImages(config) {
+    console.log('🎬 === GÉNÉRATION CONFIGURATION (multi-tailles) ===');
+
+    try {
+        // 1. Récupérer le groupe Configuration et analyser les caméras
+        const xmlDoc = await getDatabaseXML();
+        const groups = xmlDoc.querySelectorAll('Group');
+        let configGroupId = null;
+
+        for (let group of groups) {
+            if (group.getAttribute('name') === 'Configuration') {
+                configGroupId = group.getAttribute('id');
+                break;
+            }
+        }
+
+        if (!configGroupId) {
+            throw new Error('Groupe Configuration non trouvé dans le XML');
+        }
+
+        // 2. Récupérer toutes les caméras avec leurs ratios
+        const cameras = await getCameraListFromGroup(configGroupId);
+        console.log(`📊 ${cameras.length} caméras dans le groupe Configuration`);
+
+        // 3. Premier appel API : tout le groupe en 16:9 (400x225)
+        console.log(`📸 Appel 1/2: Génération en 16:9 (400x225)...`);
+        const payload16x9 = await buildPayload({
+            ...config,
+            imageWidth: 400,
+            imageHeight: 225,
+            viewType: 'configuration'
+        });
+        const images16x9 = await callLumiscapheAPI(payload16x9);
+        console.log(`   ✅ ${images16x9.length} images 16:9 reçues`);
+
+        // 4. Deuxième appel API : tout le groupe en 1:1 (100x100)
+        console.log(`📸 Appel 2/2: Génération en 1:1 (100x100)...`);
+        const payload1x1 = await buildPayload({
+            ...config,
+            imageWidth: 100,
+            imageHeight: 100,
+            viewType: 'configuration'
+        });
+        const images1x1 = await callLumiscapheAPI(payload1x1);
+        console.log(`   ✅ ${images1x1.length} images 1:1 reçues`);
+
+        // 5. Sélectionner la bonne image pour chaque caméra selon son ratio
+        const finalImages = [];
+
+        for (let i = 0; i < cameras.length; i++) {
+            const camera = cameras[i];
+
+            // Choisir l'image 16:9 ou 1:1 selon le ratio de la caméra
+            const selectedImage = camera.ratioType === '16:9' ? images16x9[i] : images1x1[i];
+
+            if (selectedImage) {
+                finalImages.push({
+                    url: selectedImage.url,
+                    cameraId: camera.id,
+                    cameraName: camera.name,
+                    groupName: 'Configuration',
+                    ratioType: camera.ratioType
+                });
+
+                console.log(`   📷 Caméra ${i + 1}: ${camera.ratioType} (${camera.name})`);
+            }
+        }
+
+        console.log(`✅ ${finalImages.length} images Configuration triées et sélectionnées`);
+        return finalImages;
+
+    } catch (error) {
+        console.error('❌ Échec génération Configuration:', error);
+        throw error;
+    }
 }
 
 /**
  * FONCTION PRINCIPALE : Génère les rendus via l'API
  * Orchestre la construction du payload, l'appel API et le téléchargement
  *
+ * US-042: Retourne maintenant un tableau d'objets {url, cameraId}
+ *
  * @param {Object} config - La configuration actuelle
- * @returns {Promise<Array<string>>} Les URLs des images
+ * @returns {Promise<Array<Object>>} Tableau d'objets {url, cameraId}
  */
 export async function fetchRenderImages(config) {
     console.log('🎬 === GÉNÉRATION DES RENDUS ===');
@@ -899,14 +1127,37 @@ export async function fetchRenderImages(config) {
         setLastPayload(payload);
         console.log('💾 Payload sauvegardé pour téléchargement JSON');
 
-        // 2. Appeler l'API
-        const imageUrls = await callLumiscapheAPI(payload);
+        // 2. Appeler l'API (retourne maintenant {url, cameraId})
+        const images = await callLumiscapheAPI(payload);
 
         // 3. Valider les images
-        const validatedUrls = await downloadImages(imageUrls);
+        const validatedImages = await downloadImages(images);
+
+        // 4. Enrichir avec les métadonnées (groupName, cameraName)
+        const groupId = await findCameraGroupId(config.decor, config.viewType);
+        const xmlDoc = await getDatabaseXML();
+        const group = xmlDoc.querySelector(`Group[id="${groupId}"]`);
+        const groupName = group ? group.getAttribute('name') : '';
+
+        const enrichedImages = validatedImages.map((img, index) => {
+            // Chercher la caméra correspondante dans le XML
+            const cameraId = img.cameraId;
+            let cameraName = '';
+
+            if (cameraId) {
+                const cameraElement = xmlDoc.querySelector(`Camera[id="${cameraId}"]`);
+                cameraName = cameraElement ? (cameraElement.getAttribute('name') || '') : '';
+            }
+
+            return {
+                ...img,
+                cameraName: cameraName || `Camera ${index + 1}`,
+                groupName: groupName
+            };
+        });
 
         console.log('✅ Génération terminée avec succès');
-        return validatedUrls;
+        return enrichedImages;
 
     } catch (error) {
         console.error('❌ Échec de la génération:', error);
