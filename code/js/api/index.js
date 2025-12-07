@@ -51,7 +51,8 @@ export {
 // Re-export Rendering
 // ======================================
 export {
-    fetchRenderImages
+    fetchRenderImages,
+    fetchOverviewImages // US-044
 } from './rendering.js';
 
 // ======================================

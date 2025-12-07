@@ -262,6 +262,76 @@ export async function getCameraSensorInfo(cameraId) {
     };
 }
 
+/**
+ * US-044 : Récupère les caméras du groupe "Overview" depuis le XML
+ * @returns {Promise<Array<Object>>} Array de 4 objets caméra {id, name, sensorWidth, sensorHeight}
+ * @throws {Error} Si le groupe "Overview" n'existe pas ou si moins de 4 caméras
+ */
+export async function getCameraGroupOverview() {
+    console.log('📷 Récupération du groupe caméra "Overview"...');
+
+    const xmlDoc = await getDatabaseXML();
+    const groups = xmlDoc.querySelectorAll('Group');
+
+    console.log(`   > ${groups.length} groupes trouvés dans le XML`);
+
+    // Rechercher le groupe avec name="Overview"
+    let overviewGroup = null;
+    for (let group of groups) {
+        const groupName = group.getAttribute('name');
+        if (groupName === 'Overview') {
+            overviewGroup = group;
+            break;
+        }
+    }
+
+    if (!overviewGroup) {
+        throw new Error('❌ Groupe caméra "Overview" introuvable dans le XML');
+    }
+
+    const groupId = overviewGroup.getAttribute('id');
+    console.log(`   ✅ Groupe "Overview" trouvé (ID: ${groupId})`);
+
+    // Récupérer toutes les caméras du groupe
+    const cameraElements = overviewGroup.querySelectorAll('Camera');
+    console.log(`   > ${cameraElements.length} caméras trouvées dans le groupe Overview`);
+
+    if (cameraElements.length === 0) {
+        throw new Error('❌ Aucune caméra trouvée dans le groupe "Overview"');
+    }
+
+    // Parser les caméras et récupérer leurs sensors
+    const cameras = [];
+    for (let i = 0; i < cameraElements.length; i++) {
+        const camera = cameraElements[i];
+        const cameraId = camera.getAttribute('id');
+        const cameraName = camera.getAttribute('name') || `Camera ${i + 1}`;
+
+        if (!cameraId) {
+            console.warn(`   ⚠️ Caméra sans ID à l'index ${i}, ignorée`);
+            continue;
+        }
+
+        // Récupérer les dimensions du sensor
+        try {
+            const sensorInfo = await getCameraSensorInfo(cameraId);
+            cameras.push({
+                id: cameraId,
+                name: cameraName,
+                sensorWidth: sensorInfo.width,
+                sensorHeight: sensorInfo.height
+            });
+            console.log(`   > Caméra ${i + 1}: ${cameraName} (${sensorInfo.width}x${sensorInfo.height})`);
+        } catch (error) {
+            console.error(`   ❌ Erreur récupération sensor pour caméra ${cameraId}:`, error);
+            throw new Error(`Impossible de récupérer le sensor de la caméra ${cameraName}`);
+        }
+    }
+
+    console.log(`✅ Groupe "Overview" : ${cameras.length} caméra(s) parsée(s)`);
+    return cameras;
+}
+
 // ======================================
 // Extraction de configurations
 // ======================================

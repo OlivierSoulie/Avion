@@ -8,7 +8,8 @@ import {
     STYLES_SLANTED,
     STYLES_STRAIGHT,
     DECORS_CONFIG,
-    DEFAULT_CONFIG
+    DEFAULT_CONFIG,
+    getAirplaneType // US-044
     // IMPORTANT : Toutes les listes de choix (VERSION, PAINT_SCHEMES, PRESTIGE, SPINNER, etc.)
     // sont maintenant extraites dynamiquement du XML via getExteriorOptionsFromXML() et getInteriorOptionsFromXML()
     // DECORS_CONFIG est conservé car il contient de la logique (type, suffix), pas seulement des données
@@ -16,6 +17,7 @@ import {
 import {
     renderMosaic,
     renderConfigMosaic,
+    renderOverviewMosaic, // US-044
     initFullscreen,
     showLoader,
     hideLoader,
@@ -31,9 +33,10 @@ import {
     downloadImage,
     enterSelectionMode,
     exitSelectionMode,
-    downloadSelectedImages
+    downloadSelectedImages,
+    initMobileMenu // Menu burger mobile
 } from './ui/index.js';
-import { fetchRenderImages, fetchConfigurationImages, fetchDatabases, setDatabaseId, getDefaultConfig, getInteriorPrestigeConfig as parsePrestigeConfig, getDatabaseXML, getExteriorColorZones, parsePaintSchemeBookmark, getInteriorOptionsFromXML, getExteriorOptionsFromXML, getCameraListFromGroup } from './api/index.js';
+import { fetchRenderImages, fetchConfigurationImages, fetchOverviewImages, fetchDatabases, setDatabaseId, getDatabaseId, getDefaultConfig, getInteriorPrestigeConfig as parsePrestigeConfig, getDatabaseXML, getExteriorColorZones, parsePaintSchemeBookmark, getInteriorOptionsFromXML, getExteriorOptionsFromXML, getCameraListFromGroup } from './api/index.js';
 import { log } from './logger.js';
 
 // ======================================
@@ -689,6 +692,7 @@ function toggleViewControls(viewType) {
     const controlsInterior = document.getElementById('controls-interior');
     const actionsExterior = document.getElementById('actions-exterior');
     const actionsInterior = document.getElementById('actions-interior');
+    const actionsPanel = document.querySelector('.viewport-actions-panel');
 
     if (!controlsExterior || !controlsInterior) {
         console.warn('Sections controls-exterior ou controls-interior non trouvées');
@@ -704,6 +708,9 @@ function toggleViewControls(viewType) {
         if (actionsExterior) actionsExterior.style.display = 'flex';
         if (actionsInterior) actionsInterior.style.display = 'none';
 
+        // Afficher le panneau d'actions
+        if (actionsPanel) actionsPanel.style.display = 'block';
+
         console.log('✅ Contrôles et actions EXTÉRIEUR affichés');
     } else if (viewType === 'interior') {
         // Masquer contrôles extérieur, afficher contrôles intérieur
@@ -713,6 +720,9 @@ function toggleViewControls(viewType) {
         // Masquer actions extérieur, afficher actions intérieur
         if (actionsExterior) actionsExterior.style.display = 'none';
         if (actionsInterior) actionsInterior.style.display = 'flex';
+
+        // Afficher le panneau d'actions
+        if (actionsPanel) actionsPanel.style.display = 'block';
 
         console.log('✅ Contrôles et actions INTÉRIEUR affichés');
     } else if (viewType === 'configuration') {
@@ -724,7 +734,21 @@ function toggleViewControls(viewType) {
         if (actionsExterior) actionsExterior.style.display = 'none';
         if (actionsInterior) actionsInterior.style.display = 'none';
 
-        console.log('✅ Vue CONFIGURATION - Contrôles masqués');
+        // Masquer le panneau d'actions (vide)
+        if (actionsPanel) actionsPanel.style.display = 'none';
+    } else if (viewType === 'overview') {
+        // US-044: Vue Overview - masquer tous les contrôles (pas de personnalisation)
+        controlsExterior.style.display = 'none';
+        controlsInterior.style.display = 'none';
+
+        // Masquer toutes les actions
+        if (actionsExterior) actionsExterior.style.display = 'none';
+        if (actionsInterior) actionsInterior.style.display = 'none';
+
+        // Masquer le panneau d'actions (vide)
+        if (actionsPanel) actionsPanel.style.display = 'none';
+
+        console.log('✅ Vue OVERVIEW - Contrôles masqués');
     }
 }
 
@@ -1125,6 +1149,7 @@ function attachEventListeners() {
             btnViewExterior.classList.add('active');
             btnViewInterior.classList.remove('active');
             if (btnViewConfiguration) btnViewConfiguration.classList.remove('active');
+            if (btnViewOverview) btnViewOverview.classList.remove('active');
 
             // Mettre à jour le state
             updateConfig('viewType', 'exterior');
@@ -1142,6 +1167,7 @@ function attachEventListeners() {
             btnViewInterior.classList.add('active');
             btnViewExterior.classList.remove('active');
             if (btnViewConfiguration) btnViewConfiguration.classList.remove('active');
+            if (btnViewOverview) btnViewOverview.classList.remove('active');
 
             // Mettre à jour le state
             updateConfig('viewType', 'interior');
@@ -1162,6 +1188,7 @@ function attachEventListeners() {
             btnViewConfiguration.classList.add('active');
             if (btnViewExterior) btnViewExterior.classList.remove('active');
             if (btnViewInterior) btnViewInterior.classList.remove('active');
+            if (btnViewOverview) btnViewOverview.classList.remove('active');
 
             // Mettre à jour le state
             updateConfig('viewType', 'configuration');
@@ -1172,6 +1199,62 @@ function attachEventListeners() {
 
             // Déclencher le rendu
             triggerRender();
+        });
+    }
+
+    // US-044: Bouton vue Overview
+    const btnViewOverview = document.getElementById('btnViewOverview');
+    if (btnViewOverview) {
+        btnViewOverview.addEventListener('click', async () => {
+            try {
+                // Mettre à jour l'UI
+                btnViewOverview.classList.add('active');
+                if (btnViewExterior) btnViewExterior.classList.remove('active');
+                if (btnViewInterior) btnViewInterior.classList.remove('active');
+                if (btnViewConfiguration) btnViewConfiguration.classList.remove('active');
+
+                console.log('Vue changée: overview');
+
+                // Masquer tous les contrôles (pas de personnalisation en vue Overview)
+                toggleViewControls('overview');
+
+                // Afficher le loader
+                showLoader('Génération vue Overview...');
+                disableControls();
+                setLoading(true);
+
+                // Récupérer la config actuelle
+                const config = getConfig();
+
+                // Appeler l'API pour récupérer les images Overview
+                const { imageA, imagesSecondary } = await fetchOverviewImages(config);
+
+                // Récupérer le type d'avion depuis la version du dropdown
+                const airplaneType = getAirplaneType(config.version);
+
+                // Masquer loader
+                hideLoader();
+                enableControls();
+                setLoading(false);
+
+                // Afficher la mosaïque Overview
+                renderOverviewMosaic(imageA, imagesSecondary, airplaneType);
+
+                // Afficher message de succès
+                showSuccessToast('Vue Overview générée avec succès !');
+
+            } catch (error) {
+                console.error('Erreur génération vue Overview:', error);
+
+                // Masquer loader
+                hideLoader();
+                enableControls();
+                setLoading(false);
+
+                // Afficher erreur
+                showPlaceholder('Erreur lors de la génération de la vue Overview');
+                showError('Erreur génération vue Overview: ' + error.message);
+            }
         });
     }
 
@@ -1551,6 +1634,9 @@ async function init() {
 
     // US-020: Initialiser le plein écran
     initFullscreen();
+
+    // Initialiser le menu burger mobile
+    initMobileMenu();
 
     // Initialiser le bouton Réessayer (US-005)
     initRetryButton(() => {

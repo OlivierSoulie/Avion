@@ -283,3 +283,95 @@ export async function buildPayload(config) {
 export async function buildPayloadForSingleCamera(config) {
     return buildPayloadBase(config, 'singleCamera');
 }
+
+/**
+ * US-044 : Construit un payload pour une caméra du groupe Overview
+ * @param {string} cameraId - ID de la caméra
+ * @param {boolean} isMainImage - true = PNG transparent (caméra A), false = JPEG (caméras B/C/D)
+ * @param {Object} config - Configuration utilisateur
+ * @returns {Promise<Object>} Payload prêt pour l'API
+ */
+export async function buildOverviewPayload(cameraId, isMainImage, config) {
+    console.log(`🔧 === Construction payload Overview (camera: ${cameraId}, main: ${isMainImage}) ===`);
+
+    // 1. Télécharger le XML pour extraire les données
+    const xmlDoc = await getDatabaseXML();
+
+    // 2. Construire la config string complète
+    const fullConfigStr = buildConfigString(xmlDoc, config);
+
+    // 3. Extraire la partie PaintScheme
+    const paintSchemePart = extractPaintSchemePart(fullConfigStr) || `Exterior_PaintScheme.${config.paintScheme}`;
+
+    // 4. Générer les matériaux et couleurs
+    const { materials, materialMultiLayers } = generateMaterialsAndColors(
+        config.immat,
+        config.registrationStyle || config.style,
+        fullConfigStr,
+        paintSchemePart
+    );
+
+    // 5. Générer les surfaces (positionnement des lettres)
+    const anchors = extractAnchors(xmlDoc, config.paintScheme);
+    const surfaces = generateSurfaces(config.immat, anchors);
+
+    // 6. Paramètres de rendu selon le type d'image
+    let renderParams;
+    let encoderParams;
+
+    if (isMainImage) {
+        // Image A : PNG transparent, 1920x1080, compression: 1
+        // Doc API: background=false pour fond transparent, pngEncoder a SEULEMENT compression (1-9)
+        renderParams = {
+            width: 1920,
+            height: 1080,
+            antialiasing: true,
+            superSampling: "2",
+            background: false // false = fond transparent (Boolean selon spec API)
+        };
+        encoderParams = {
+            png: {
+                compression: 1 // Seul paramètre PNG selon spec officielle WebRender
+            }
+        };
+    } else {
+        // Images B/C/D : JPEG standard, 1920x1080
+        renderParams = {
+            width: 1920,
+            height: 1080,
+            antialiasing: true,
+            superSampling: "2"
+        };
+        encoderParams = {
+            jpeg: {
+                quality: 95
+            }
+        };
+    }
+
+    // 7. Construire le payload final
+    const payload = {
+        scene: [{
+            database: getDatabaseId(),
+            configuration: fullConfigStr,
+            materials: materials,
+            materialMultiLayers: materialMultiLayers,
+            surfaces: surfaces
+        }],
+        mode: {
+            image: {
+                camera: isMainImage ? {
+                    id: cameraId,
+                    sensor: {
+                        background: "transparent" // String "transparent" pour PNG avec fond transparent
+                    }
+                } : cameraId // Images B/C/D : simple GUID string
+            }
+        },
+        renderParameters: renderParams,
+        encoder: encoderParams
+    };
+
+    console.log('✅ Payload Overview construit:', JSON.stringify(payload, null, 2));
+    return payload;
+}

@@ -16,7 +16,7 @@
 // ======================================
 
 // Mosaïques
-import { renderMosaic, renderConfigMosaic } from './mosaic.js';
+import { renderMosaic, renderConfigMosaic, renderOverviewMosaic } from './mosaic.js';
 
 // Modal plein écran
 import { openFullscreen, closeFullscreen, fullscreenPrev, fullscreenNext, initFullscreen } from './modal.js';
@@ -45,12 +45,15 @@ import {
     downloadSelectedImages
 } from './download.js';
 
+// Menu burger mobile
+import { initMobileMenu } from './mobile-menu.js';
+
 // ======================================
 // Re-exports publics
 // ======================================
 
 // Mosaïques
-export { renderMosaic, renderConfigMosaic };
+export { renderMosaic, renderConfigMosaic, renderOverviewMosaic };
 
 // Modal plein écran
 export { openFullscreen, closeFullscreen, fullscreenPrev, fullscreenNext, initFullscreen };
@@ -79,6 +82,9 @@ export {
     downloadSelectedImages
 };
 
+// Menu burger mobile
+export { initMobileMenu };
+
 // ======================================
 // Export par défaut pour compatibilité
 // ======================================
@@ -87,6 +93,7 @@ export default {
     // Mosaïques
     renderMosaic,
     renderConfigMosaic,
+    renderOverviewMosaic,
 
     // Modal
     openFullscreen,
@@ -113,5 +120,8 @@ export default {
     downloadImage,
     enterSelectionMode,
     exitSelectionMode,
-    downloadSelectedImages
+    downloadSelectedImages,
+
+    // Mobile menu
+    initMobileMenu
 };

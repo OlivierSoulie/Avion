@@ -1,0 +1,234 @@
+/* ========================================
+   Optimisations pour écrans moyens
+   Tablettes paysage, petits laptops (768px - 1366px)
+   ======================================== */
+
+/* ========================================
+   Tablette paysage / Petit laptop (769px - 1024px)
+   ======================================== */
+@media (min-width: 769px) and (max-width: 1024px) {
+    /* Réduire les paddings globaux */
+    .app-container {
+        padding: 0.75rem;
+        gap: 0.75rem;
+    }
+
+    .viewport-container {
+        padding: 0.75rem;
+    }
+
+    /* Ajuster la grille principale - colonne de droite plus étroite */
+    .app-container {
+        grid-template-columns: 1fr 250px;
+    }
+
+    /* Header plus compact */
+    .app-header {
+        padding: 1rem 1.5rem;
+    }
+
+    .app-header h1 {
+        font-size: 1.75rem;
+    }
+
+    .app-subtitle {
+        font-size: 0.875rem;
+    }
+
+    /* Données techniques - réduire les espacements */
+    .technical-controls {
+        gap: 0.5rem;
+        padding: 0.75rem;
+    }
+
+    .technical-controls .form-group {
+        min-width: 140px;
+    }
+
+    /* Contrôles de configuration - fonts plus petits */
+    .controls-section {
+        padding: 0.75rem;
+    }
+
+    .form-group label {
+        font-size: 0.875rem;
+    }
+
+    .form-control {
+        font-size: 0.875rem;
+        padding: 0.5rem;
+    }
+
+    .btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    /* Mosaïque Overview - ajuster la taille du filigrane */
+    .airplane-type-watermark {
+        font-size: 100px;
+    }
+
+    /* Vue Configuration - réduire gap */
+    .overview-mosaic,
+    .mosaic-grid {
+        gap: 0.75rem;
+    }
+
+    /* Footer plus compact */
+    .app-footer {
+        padding: 0.75rem;
+        font-size: 0.75rem;
+    }
+}
+
+/* ========================================
+   Laptop moyen (1025px - 1366px)
+   ======================================== */
+@media (min-width: 1025px) and (max-width: 1366px) {
+    /* Grille principale - colonne de droite légèrement réduite */
+    .app-container {
+        grid-template-columns: 1fr 280px;
+        padding: 0.5rem;
+    }
+
+    /* Header */
+    .app-header h1 {
+        font-size: 2rem;
+    }
+
+    /* Données techniques - espacement réduit */
+    .technical-controls {
+        gap: 0.75rem;
+    }
+
+    .technical-controls .form-group {
+        min-width: 150px;
+    }
+
+    /* Mosaïque Overview - filigrane légèrement plus petit */
+    .airplane-type-watermark {
+        font-size: 140px;
+    }
+
+    /* Boutons et contrôles */
+    .btn {
+        padding: 0.625rem 1.25rem;
+        font-size: 0.9375rem;
+    }
+
+    .form-control {
+        padding: 0.625rem;
+        font-size: 0.9375rem;
+    }
+
+    /* Viewport display - optimiser l'espace */
+    .viewport-display {
+        margin: 0.5rem auto;
+    }
+
+    /* Mosaïque - gap optimisé */
+    .mosaic-grid,
+    .overview-mosaic {
+        gap: 0.875rem;
+    }
+}
+
+/* ========================================
+   Optimisations communes écrans moyens (769px - 1366px)
+   ======================================== */
+@media (min-width: 769px) and (max-width: 1366px) {
+    /* Sélecteur de vue - boutons plus compacts */
+    .view-selector {
+        gap: 0.5rem;
+    }
+
+    .view-selector .btn {
+        padding: 0.5rem 0.875rem;
+        font-size: 0.875rem;
+    }
+
+    /* Toggle groups plus compacts */
+    .toggle-group {
+        gap: 0.25rem;
+    }
+
+    .toggle-btn {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+    }
+
+    /* Modal plein écran - métadonnées plus compactes */
+    .fullscreen-metadata {
+        font-size: 0.875rem;
+        padding: 0.75rem;
+    }
+
+    .fullscreen-counter {
+        font-size: 1rem;
+    }
+
+    /* Mosaïque images - adapter les vignettes */
+    .mosaic-item {
+        max-width: 100%;
+    }
+
+    /* Loader plus petit */
+    .spinner {
+        width: 40px;
+        height: 40px;
+    }
+
+    /* Toasts plus compacts */
+    .success-toast {
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    /* Placeholder plus compact */
+    .viewport-placeholder {
+        font-size: 1rem;
+        padding: 1.5rem;
+    }
+
+    /* Panneau d'actions viewport */
+    .viewport-actions-panel {
+        gap: 0.75rem;
+        padding: 0.75rem;
+    }
+
+    .actions-section {
+        gap: 0.5rem;
+    }
+}
+
+/* ========================================
+   Optimisations spécifiques Vue Overview
+   ======================================== */
+@media (min-width: 769px) and (max-width: 1024px) {
+    /* Image principale Overview - limite la hauteur */
+    .overview-main-image-wrapper {
+        max-height: 50vh;
+    }
+
+    /* Images secondaires - grille adaptée */
+    .overview-secondary-images {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+    }
+
+    .overview-secondary-image {
+        aspect-ratio: 16 / 9;
+        object-fit: cover;
+    }
+}
+
+@media (min-width: 1025px) and (max-width: 1366px) {
+    .overview-main-image-wrapper {
+        max-height: 55vh;
+    }
+
+    .overview-secondary-images {
+        gap: 0.75rem;
+    }
+}

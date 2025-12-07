@@ -12,18 +12,38 @@
     <link rel="stylesheet" href="styles/viewport.css">
     <link rel="stylesheet" href="styles/controls.css">
     <link rel="stylesheet" href="styles/animations.css">
+    <link rel="stylesheet" href="styles/mobile-menu.css">
+    <link rel="stylesheet" href="styles/medium-screen.css">
 </head>
 <body>
     <!-- Header -->
     <header class="app-header">
-        <h1>Configurateur TBM Daher</h1>
-        <p class="app-subtitle">Configurez et visualisez votre avion TBM en temps réel</p>
-        <!-- BUG-003 FIX: Badge indicateur de connexion -->
-        <div class="connection-badge" id="connectionBadge">
-            <span class="badge-dot"></span>
-            <span class="badge-text">En ligne</span>
+        <div class="header-content">
+            <button id="burgerMenuBtn" class="burger-menu-btn" aria-label="Menu">
+                <span class="burger-line"></span>
+                <span class="burger-line"></span>
+                <span class="burger-line"></span>
+            </button>
+            <div class="header-text">
+                <h1>Configurateur TBM Daher</h1>
+                <p class="app-subtitle">Configurez et visualisez votre avion TBM en temps réel</p>
+            </div>
         </div>
     </header>
+
+    <!-- Mobile Sidebar Menu (slide-in) -->
+    <div id="mobileSidebar" class="mobile-sidebar">
+        <div class="mobile-sidebar-header">
+            <h2>Paramètres techniques</h2>
+            <button id="closeSidebarBtn" class="close-sidebar-btn" aria-label="Fermer">×</button>
+        </div>
+        <div class="mobile-sidebar-content">
+            <!-- Le contenu sera déplacé ici en JavaScript en mode mobile -->
+        </div>
+    </div>
+
+    <!-- Overlay pour fermer le menu -->
+    <div id="sidebarOverlay" class="sidebar-overlay"></div>
 
     <!-- Main Container (Grid 2 colonnes) -->
     <main class="app-container">
@@ -86,7 +106,7 @@
 
                 <div class="viewport-header">
                     <h2>Aperçu</h2>
-                    <!-- Sélecteur de vue Ext/Int/Config -->
+                    <!-- Sélecteur de vue Ext/Int/Config/Overview -->
                     <div class="view-selector">
                         <div class="toggle-group">
                             <button type="button" class="toggle-btn active" id="btnViewExterior" data-view="exterior">
@@ -97,6 +117,9 @@
                             </button>
                             <button type="button" class="toggle-btn" id="btnViewConfiguration" data-view="configuration">
                                 Configuration
+                            </button>
+                            <button type="button" class="toggle-btn" id="btnViewOverview" data-view="overview">
+                                Overview
                             </button>
                         </div>
                     </div>
@@ -147,6 +170,21 @@
                     <!-- Mosaïque d'images (ajouté dynamiquement par JS) -->
                     <div class="mosaic-grid hidden" id="mosaicGrid">
                         <!-- Images ajoutées dynamiquement par renderMosaic() -->
+                    </div>
+
+                    <!-- US-044 : Mosaïque Overview -->
+                    <div class="overview-mosaic hidden" id="overviewMosaic">
+                        <!-- Image principale avec filigrane -->
+                        <div class="overview-main-image-wrapper" id="overviewMainWrapper">
+                            <div class="airplane-type-watermark" id="airplaneTypeWatermark">960</div>
+                            <img id="overviewImageA" class="overview-main-image" alt="Overview principal" />
+                            <!-- Bouton download et checkbox ajoutés dynamiquement -->
+                        </div>
+
+                        <!-- Images secondaires (B, C, D) -->
+                        <div class="overview-secondary-images" id="overviewSecondaryWrapper">
+                            <!-- Wrappers avec download/checkbox ajoutés dynamiquement -->
+                        </div>
                     </div>
                 </div>
 
@@ -482,6 +520,14 @@
             </button>
             <div class="fullscreen-counter" id="fullscreenCounter">1 / 1</div>
             <div class="fullscreen-metadata" id="fullscreenMetadata"></div>
+            <!-- US-044 : Bouton téléchargement dans le modal -->
+            <button class="fullscreen-download" id="fullscreenDownload" title="Télécharger cette image">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+            </button>
         </div>
     </div>
 

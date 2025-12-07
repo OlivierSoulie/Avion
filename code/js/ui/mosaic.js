@@ -23,6 +23,8 @@ export function renderMosaic(imageData, viewType = 'exterior') {
     console.log(`🖼️ Affichage mosaïque avec ${imageData.length} images (vue: ${viewType})`);
 
     const mosaicGrid = document.getElementById('mosaicGrid');
+    const overviewMosaic = document.getElementById('overviewMosaic');
+
     if (!mosaicGrid) {
         console.error('Élément mosaïque manquant dans le DOM');
         return;
@@ -36,6 +38,11 @@ export function renderMosaic(imageData, viewType = 'exterior') {
     // Masquer placeholder et erreur
     hidePlaceholder();
     hideError();
+
+    // Masquer la mosaïque Overview si elle existe
+    if (overviewMosaic) {
+        overviewMosaic.classList.add('hidden');
+    }
 
     // Vider la mosaïque
     mosaicGrid.innerHTML = '';
@@ -130,6 +137,8 @@ export async function renderConfigMosaic(imagesData) {
     console.log(`🖼️ Affichage mosaïque Configuration avec ${imagesData.length} vignettes`);
 
     const mosaicGrid = document.getElementById('mosaicGrid');
+    const overviewMosaic = document.getElementById('overviewMosaic');
+
     if (!mosaicGrid) {
         console.error('Élément mosaïque manquant dans le DOM');
         return;
@@ -143,6 +152,11 @@ export async function renderConfigMosaic(imagesData) {
     // Masquer placeholder et erreur
     hidePlaceholder();
     hideError();
+
+    // Masquer la mosaïque Overview si elle existe
+    if (overviewMosaic) {
+        overviewMosaic.classList.add('hidden');
+    }
 
     // Vider la mosaïque
     mosaicGrid.innerHTML = '';
@@ -230,6 +244,161 @@ export async function renderConfigMosaic(imagesData) {
     mosaicGrid.classList.remove('hidden');
 
     console.log('✅ Mosaïque Configuration affichée');
+}
+
+// ======================================
+// US-044 : Mosaïque Overview
+// ======================================
+
+/**
+ * US-044 : Affiche la mosaïque Overview (1 image principale 16:9 + 3 images secondaires)
+ * @param {Object} imageA - Objet image principale {url, cameraId, cameraName, groupName}
+ * @param {Array<Object>} imagesSecondary - Array de 3 objets images secondaires
+ * @param {string} airplaneType - Type d'avion ("960" ou "980")
+ * @public
+ */
+export function renderOverviewMosaic(imageA, imagesSecondary, airplaneType) {
+    console.log(`🖼️ Affichage mosaïque Overview (type avion: ${airplaneType})`);
+
+    const overviewMosaic = document.getElementById('overviewMosaic');
+    const mainWrapper = document.getElementById('overviewMainWrapper');
+    const secondaryWrapper = document.getElementById('overviewSecondaryWrapper');
+    const imageAElement = document.getElementById('overviewImageA');
+    const watermark = document.getElementById('airplaneTypeWatermark');
+
+    if (!overviewMosaic || !mainWrapper || !secondaryWrapper || !imageAElement || !watermark) {
+        console.error('Éléments Overview manquants dans le DOM');
+        return;
+    }
+
+    // Masquer placeholder et erreur
+    hidePlaceholder();
+    hideError();
+
+    // 1. Afficher image A (principale)
+    imageAElement.src = imageA.url;
+    imageAElement.dataset.groupName = imageA.groupName || '';
+    imageAElement.dataset.cameraName = imageA.cameraName || '';
+    imageAElement.dataset.cameraId = imageA.cameraId || '';
+
+    // Event listener pour ouvrir en plein écran
+    imageAElement.addEventListener('click', () => {
+        openFullscreen(0); // Index 0 pour image A
+    });
+
+    // Ajouter bouton download pour image A (après l'image, avant la fin du wrapper)
+    let downloadBtnA = mainWrapper.querySelector('.download-btn');
+    if (!downloadBtnA) {
+        downloadBtnA = document.createElement('button');
+        downloadBtnA.classList.add('download-btn');
+        downloadBtnA.innerHTML = '⬇️';
+        downloadBtnA.setAttribute('aria-label', 'Télécharger cette image');
+        downloadBtnA.setAttribute('title', 'Télécharger cette image');
+        mainWrapper.appendChild(downloadBtnA);
+    }
+
+    downloadBtnA.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const filename = 'vue_overview_principale.png';
+        try {
+            await downloadImage(imageA.url, filename);
+            showSuccessToast(`Image téléchargée : ${filename}`);
+        } catch (error) {
+            showError(`Erreur lors du téléchargement de ${filename}`);
+        }
+    });
+
+    // Ajouter checkbox pour image A
+    let checkboxA = mainWrapper.querySelector('.image-checkbox');
+    if (!checkboxA) {
+        checkboxA = document.createElement('input');
+        checkboxA.type = 'checkbox';
+        checkboxA.classList.add('image-checkbox');
+        checkboxA.dataset.index = '0';
+        checkboxA.dataset.url = imageA.url;
+        checkboxA.dataset.filename = 'vue_overview_principale.png';
+        checkboxA.addEventListener('click', (e) => {
+            e.stopPropagation(); // Empêcher ouverture fullscreen
+        });
+        mainWrapper.appendChild(checkboxA);
+    } else {
+        // Mettre à jour les data attributes si checkbox existe déjà
+        checkboxA.dataset.url = imageA.url;
+        checkboxA.dataset.filename = 'vue_overview_principale.png';
+    }
+
+    // 2. Mettre à jour le filigrane avec le type d'avion
+    watermark.textContent = airplaneType;
+
+    // 3. Vider et recréer les images secondaires (B, C, D) avec boutons download
+    secondaryWrapper.innerHTML = '';
+
+    imagesSecondary.forEach((img, index) => {
+        if (img) {
+            // Créer wrapper pour image + bouton
+            const itemWrapper = document.createElement('div');
+            itemWrapper.classList.add('overview-secondary-item');
+
+            // Créer image
+            const imgElement = document.createElement('img');
+            imgElement.src = img.url;
+            imgElement.alt = `Overview ${String.fromCharCode(66 + index)}`; // B, C, D
+            imgElement.classList.add('overview-secondary-image');
+            imgElement.dataset.groupName = img.groupName || '';
+            imgElement.dataset.cameraName = img.cameraName || '';
+            imgElement.dataset.cameraId = img.cameraId || '';
+
+            // Event listener pour ouvrir en plein écran
+            imgElement.addEventListener('click', () => {
+                openFullscreen(index + 1); // Index 1, 2, 3 pour B, C, D
+            });
+
+            // Créer bouton download
+            const downloadBtn = document.createElement('button');
+            downloadBtn.classList.add('download-btn');
+            downloadBtn.innerHTML = '⬇️';
+            downloadBtn.setAttribute('aria-label', 'Télécharger cette image');
+            downloadBtn.setAttribute('title', 'Télécharger cette image');
+
+            const filename = `vue_overview_${String.fromCharCode(66 + index).toLowerCase()}.png`; // b, c, d
+            downloadBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                try {
+                    await downloadImage(img.url, filename);
+                    showSuccessToast(`Image téléchargée : ${filename}`);
+                } catch (error) {
+                    showError(`Erreur lors du téléchargement de ${filename}`);
+                }
+            });
+
+            // Créer checkbox pour sélection multiple
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.classList.add('image-checkbox');
+            checkbox.dataset.index = (index + 1).toString(); // 1, 2, 3 pour B, C, D
+            checkbox.dataset.url = img.url;
+            checkbox.dataset.filename = filename;
+            checkbox.addEventListener('click', (e) => {
+                e.stopPropagation(); // Empêcher ouverture fullscreen
+            });
+
+            // Assembler
+            itemWrapper.appendChild(imgElement);
+            itemWrapper.appendChild(downloadBtn);
+            itemWrapper.appendChild(checkbox);
+            secondaryWrapper.appendChild(itemWrapper);
+        }
+    });
+
+    // 4. Masquer mosaïque standard et afficher mosaïque Overview
+    const mosaicGrid = document.getElementById('mosaicGrid');
+    if (mosaicGrid) {
+        mosaicGrid.classList.add('hidden');
+    }
+
+    overviewMosaic.classList.remove('hidden');
+
+    console.log('✅ Mosaïque Overview affichée avec boutons download');
 }
 
 // ======================================

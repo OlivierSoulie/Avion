@@ -191,7 +191,9 @@
     z-index: 10;
 }
 
-.mosaic-item:hover .download-btn {
+.mosaic-item:hover .download-btn,
+.overview-main-image-wrapper:hover .download-btn,
+.overview-secondary-item:hover .download-btn {
     opacity: 1;
 }
 
@@ -238,12 +240,14 @@
 }
 
 /* Afficher checkboxes en mode sélection */
-.mosaic-grid.selection-mode .image-checkbox {
+.mosaic-grid.selection-mode .image-checkbox,
+.overview-mosaic.selection-mode .image-checkbox {
     display: block;
 }
 
 /* Masquer boutons download en mode sélection */
-.mosaic-grid.selection-mode .download-btn {
+.mosaic-grid.selection-mode .download-btn,
+.overview-mosaic.selection-mode .download-btn {
     display: none !important;
 }
 
@@ -402,5 +406,158 @@
 
     .mosaic-item.vignette-1-1 img {
         max-height: 80px;
+    }
+}
+
+/* ========================================
+   US-044 : Vue Overview
+   ======================================== */
+
+/* Conteneur principal de la mosaïque Overview */
+.overview-mosaic {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+    height: 100%;
+    padding: 0.5rem;
+    overflow: visible; /* Pas de scroll en desktop */
+    align-self: stretch; /* Force le container à prendre toute la hauteur disponible */
+}
+
+.overview-mosaic.hidden {
+    display: none;
+}
+
+/* Wrapper de l'image principale avec filigrane */
+.overview-main-image-wrapper {
+    position: relative;
+    width: 100%;
+    flex-shrink: 0; /* Empêche la compression */
+    aspect-ratio: 16 / 9;
+    max-height: 50vh; /* Augmenté car les vignettes sont plus petites */
+    overflow: hidden;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+}
+
+/* Filigrane type d'avion (TBM 960/980) */
+.airplane-type-watermark {
+    position: absolute;
+    top: 10%; /* Positionné en haut du cadre pour ne pas être caché par l'avion */
+    left: 50%;
+    transform: translateX(-50%); /* Centré horizontalement seulement */
+    font-size: 120px; /* Réduit pour tenir "TBM 980" sur une ligne */
+    font-weight: bold;
+    color: #E00500; /* Rouge Daher */
+    opacity: 0.8;
+    z-index: 0;
+    pointer-events: none;
+    user-select: none;
+    line-height: 1;
+    white-space: nowrap; /* Force le texte sur une seule ligne */
+}
+
+/* Image principale (par-dessus le filigrane) */
+.overview-main-image {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.overview-main-image:hover {
+    transform: scale(1.02);
+}
+
+/* Container des images secondaires */
+.overview-secondary-images {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    flex-shrink: 1; /* Permet de réduire si nécessaire */
+}
+
+/* Wrapper pour chaque image secondaire + bouton download */
+.overview-secondary-item {
+    position: relative;
+    width: 100%;
+}
+
+/* Images secondaires (B, C, D) */
+.overview-secondary-image {
+    width: 100%;
+    height: auto;
+    max-height: 120px; /* Limite la hauteur pour donner plus d'espace à l'image principale */
+    object-fit: cover;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    aspect-ratio: 16 / 9;
+}
+
+.overview-secondary-image:hover {
+    transform: scale(1.05);
+    box-shadow: var(--shadow-xl);
+}
+
+.overview-secondary-image:active {
+    transform: scale(0.98);
+}
+
+/* ========================================
+   Responsive Overview
+   ======================================== */
+
+/* Tablette (768px - 1024px) */
+@media (max-width: 1024px) {
+    .airplane-type-watermark {
+        font-size: 100px;
+    }
+
+    .overview-secondary-images {
+        gap: 0.75rem;
+    }
+}
+
+/* Mobile (< 768px) */
+@media (max-width: 768px) {
+    .overview-mosaic {
+        gap: 0.75rem;
+        padding: 0.75rem;
+        height: auto; /* Permet au contenu de définir la hauteur */
+    }
+
+    .overview-main-image-wrapper {
+        max-height: 40vh; /* Limite l'image principale à 40% en mobile */
+    }
+
+    .airplane-type-watermark {
+        font-size: 80px; /* Adapté pour mobile */
+    }
+
+    .overview-secondary-images {
+        grid-template-columns: 1fr; /* Empilé verticalement sur mobile */
+        gap: 0.5rem;
+    }
+}
+
+/* Très petit écran (< 480px) */
+@media (max-width: 480px) {
+    .overview-main-image-wrapper {
+        max-height: 35vh; /* Encore plus petit sur très petit écran */
+        border-radius: var(--radius-md);
+    }
+
+    .airplane-type-watermark {
+        font-size: 60px;
+    }
+
+    .overview-secondary-image {
+        border-radius: var(--radius-sm);
     }
 }

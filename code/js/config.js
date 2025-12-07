@@ -88,6 +88,7 @@ export const SELECTORS = {
     BTN_VIEW_EXTERIOR: 'btnViewExterior',
     BTN_VIEW_INTERIOR: 'btnViewInterior',
     BTN_VIEW_CONFIGURATION: 'btnViewConfiguration',
+    BTN_VIEW_OVERVIEW: 'btnViewOverview', // US-044
 
     // Zones de couleurs
     SELECT_ZONE_A: 'selectZoneA',
@@ -228,3 +229,29 @@ export const DEFAULT_CONFIG = {
     stitching: null, // US-036 : Sera initialisé depuis le XML ou Prestige
     perforatedSeatOptions: "NoSeatPerforation_Premium"
 };
+
+// ======================================
+// US-044 : Utilitaires Vue Overview
+// ======================================
+
+/**
+ * US-044 : Retourne le nom complet de l'avion pour le filigrane Overview
+ * @param {string} version - Version de l'avion depuis dropdown (ex: "960", "980", "TBM 960", "TBM 980")
+ * @returns {string} Nom complet de l'avion ("TBM 960", "TBM 980") ou "???" si inconnu
+ */
+export function getAirplaneType(version) {
+    if (!version || typeof version !== 'string') {
+        console.warn('getAirplaneType: version invalide ou manquante');
+        return '???';
+    }
+
+    // Ajouter le préfixe "TBM " si pas déjà présent
+    if (version.includes('960')) {
+        return version.includes('TBM') ? version : 'TBM 960';
+    } else if (version.includes('980')) {
+        return version.includes('TBM') ? version : 'TBM 980';
+    } else {
+        console.warn(`getAirplaneType: Type d'avion inconnu pour version "${version}"`);
+        return '???';
+    }
+}

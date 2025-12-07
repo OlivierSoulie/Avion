@@ -68,9 +68,11 @@ export async function downloadImage(imageUrl, filename) {
  */
 export function enterSelectionMode() {
     const mosaicGrid = document.getElementById('mosaicGrid');
+    const overviewMosaic = document.getElementById('overviewMosaic');
     const selectionControls = document.getElementById('selectionControls');
 
     mosaicGrid?.classList.add('selection-mode');
+    overviewMosaic?.classList.add('selection-mode');
     selectionControls?.classList.remove('hidden');
 
     // Masquer boutons download individuels
@@ -92,9 +94,11 @@ export function enterSelectionMode() {
  */
 export function exitSelectionMode() {
     const mosaicGrid = document.getElementById('mosaicGrid');
+    const overviewMosaic = document.getElementById('overviewMosaic');
     const selectionControls = document.getElementById('selectionControls');
 
     mosaicGrid?.classList.remove('selection-mode');
+    overviewMosaic?.classList.remove('selection-mode');
     selectionControls?.classList.add('hidden');
 
     // Réafficher boutons download individuels

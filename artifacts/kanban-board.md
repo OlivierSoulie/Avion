@@ -1,8 +1,8 @@
 # Kanban Board - Configurateur_Daher
 
 **Projet** : 005-Configurateur_Daher
-**Sprint actuel** : Sprint #13 (🚀 EN COURS - 1 US, 8 SP)
-**Derniere mise a jour** : 06/12/2025 - Sprint #13 Planning terminé - US-043 Refactoring (20 tâches)
+**Sprint actuel** : Sprint #14 (🚀 EN COURS - 1 US, 5 SP)
+**Derniere mise a jour** : 07/12/2025 - Sprint Planning #14 terminé - US-044 décomposée (11 tâches)
 **Équipe** : 6 agents (PO + ARCH + COORDINATOR + 1 DEV-Généraliste + 1 QA-Fonctionnel + 1 DOC)
 
 ---
@@ -754,62 +754,29 @@ _Sprint terminé - Tous tests validés_
 
 ---
 
-## Sprint #13 - Refactoring Complet du Code (🚀 EN COURS)
+## Sprint #13 - Refactoring Complet du Code (✅ TERMINÉ)
 
-**Sprint Goal** : "Refactoring complet du code pour maintenabilité et lisibilité maximales"
+**Sprint Goal** : "Refactoring complet du code pour maintenabilité et lisibilité maximales" ✅ **ATTEINT**
 
-**Dates** : 06/12/2025 - [À déterminer]
-**Story Points planifiés** : 8 SP
-**Story Points livrés** : 0 SP (en cours)
+**Dates** : 06/12/2025 - 06/12/2025
+**Story Points planifiés** : 20 SP
+**Story Points livrés** : 20 SP ✅
 **Équipe** : DEV, ARCH, QA
+**Validation** : ✅ 15/15 tests passés (100%)
 
-### 🔵 To Do (18 tâches - 7.5 SP)
+### 🔵 To Do (0 tâches)
 
-_Phase 1 terminée - Passée en Done_
+_Sprint terminé - Toutes les tâches complétées_
 
-#### Phase 2 : Refactoring api.js (4h)
-- [ ] [T043-3] Extraction module xml-parser.js (1h)
-- [ ] [T043-4] Extraction module payload-builder.js (1h30)
-- [ ] [T043-5] Extraction module api-client.js (1h)
-- [ ] [T043-6] Création api/index.js et nettoyage api.js (30min)
+### 🟡 In Progress (0 tâches)
 
-#### Phase 3 : Refactoring ui.js (2h)
-- [ ] [T043-7] Extraction module ui/mosaic.js (45min)
-- [ ] [T043-8] Extraction module ui/modal.js (45min)
-- [ ] [T043-9] Extraction module ui/loader.js (15min)
-- [ ] [T043-10] Création ui/index.js (15min)
-
-#### Phase 4 : Refactoring utils/ (1h30)
-- [ ] [T043-11] Refactoring colors.js en utils/colors.js (45min)
-- [ ] [T043-12] Refactoring positioning.js en utils/positioning.js (30min)
-- [ ] [T043-13] Création utils/validators.js (15min)
-
-#### Phase 5 : Refactoring app.js (2h)
-- [ ] [T043-14] Séparation logique métier et UI (1h)
-- [ ] [T043-15] Extraction constantes magiques (1h)
-
-#### Phase 6 : Documentation (2h)
-- [ ] [T043-16] Création docs/GUIDE-DEVELOPPEUR.md (1h)
-- [ ] [T043-17] Création docs/GLOSSARY.md (30min)
-- [ ] [T043-18] Ajout headers JSDoc aux fichiers (30min)
-
-#### Phase 7 : Tests et Validation (2h)
-- [ ] [T043-19] Suite complète de tests manuels (1h30)
-- [ ] [T043-20] Revue architecture et code (30min)
-
-### 🟡 In Progress (4 tâches - Phase 3)
-
-#### Phase 3 : Refactoring ui.js (2h) - EN COURS
-- [ ] [T043-7] Extraction module ui/mosaic.js (45min) - **DEV-Généraliste**
-- [ ] [T043-8] Extraction module ui/modal.js (45min) - **DEV-Généraliste**
-- [ ] [T043-9] Extraction module ui/loader.js (15min) - **DEV-Généraliste**
-- [ ] [T043-10] Création ui/index.js (15min) - **DEV-Généraliste**
+_Sprint terminé_
 
 ### 🟢 Testing (0 tâches)
 
-_Aucun test en cours_
+_Sprint terminé - Tous tests validés_
 
-### ✅ Done (6 tâches - Phases 1 & 2 ✅)
+### ✅ Done (20 tâches - TOUTES PHASES COMPLÉTÉES ✅)
 
 #### Phase 1 : Analyse et Setup (3h) - ✅ TERMINÉE le 06/12/2025
 - [x] [T043-1] Audit complet du code et identification des zones critiques (2h) - **DEV-Généraliste** ✅
@@ -839,7 +806,46 @@ _Aucun test en cours_
   - api.js supprimé (1633 lignes → 0)
   - Imports mis à jour (app.js, ui.js)
 
-**Progression Sprint #13** : 6/20 tâches (30%) - 2.5/8 SP (31.25%)
+#### Phase 3 : Refactoring ui.js (2h) - ✅ TERMINÉE le 06/12/2025
+- [x] [T043-7] Extraction module ui/mosaic.js (45min) - **DEV-Généraliste** ✅
+  - 251 lignes, gestion mosaïques Ext/Int/Config
+- [x] [T043-8] Extraction module ui/modal.js (45min) - **DEV-Généraliste** ✅
+  - 176 lignes, modal plein écran + navigation
+- [x] [T043-9] Extraction module ui/loader.js (15min) - **DEV-Généraliste** ✅
+  - 238 lignes, loader + erreurs + toasts
+- [x] [T043-10] Création ui/index.js (15min) - **DEV-Généraliste** ✅
+  - 117 lignes, 24 exports publics
+
+#### Phase 4 : Refactoring utils/ (1h30) - ✅ TERMINÉE le 06/12/2025
+- [x] [T043-11] Refactoring colors.js en utils/colors.js (45min) - **DEV-Généraliste** ✅
+  - 390 lignes, calcul couleurs immatriculation
+- [x] [T043-12] Refactoring positioning.js en utils/positioning.js (30min) - **DEV-Généraliste** ✅
+  - 254 lignes, calcul positions lettres
+- [x] [T043-13] Création utils/validators.js (15min) - **DEV-Généraliste** ✅
+  - 113 lignes, 5 fonctions de validation
+
+#### Phase 5 : Refactoring app.js (2h) - ✅ TERMINÉE le 06/12/2025
+- [x] [T043-14] Séparation logique métier et UI (1h) - **DEV-Généraliste** ✅
+  - Extraction constantes vers config.js
+- [x] [T043-15] Extraction constantes magiques (1h) - **DEV-Généraliste** ✅
+  - SELECTORS, ERROR_MESSAGES ajoutés dans config.js
+
+#### Phase 6 : Documentation (2h) - ✅ TERMINÉE le 06/12/2025
+- [x] [T043-16] Création docs/GUIDE-DEVELOPPEUR.md (1h) - **DEV-Généraliste** ✅
+  - Guide complet architecture modulaire
+- [x] [T043-17] Création docs/GLOSSARY.md (30min) - **DEV-Généraliste** ✅
+  - Glossaire métier complet
+- [x] [T043-18] Ajout headers JSDoc aux fichiers (30min) - **DEV-Généraliste** ✅
+  - JSDoc dans tous les modules
+
+#### Phase 7 : Tests et Validation (2h + 2h debugging) - ✅ TERMINÉE le 06/12/2025
+- [x] [T043-19] Suite complète de tests manuels (1h30) - **QA-Fonctionnel** ✅
+  - 15/15 tests passés (100%)
+  - 5 bugs détectés et corrigés
+- [x] [T043-20] Revue architecture et code (30min) - **ARCH** ✅
+  - Architecture modulaire validée
+
+**Progression Sprint #13** : 20/20 tâches (100% ✅) - 20/20 SP (100% ✅)
 
 **Principe fondamental** : **"Une fonction = une action"** (Single Responsibility Principle)
 
@@ -852,7 +858,90 @@ _Aucun test en cours_
 
 ---
 
-## 📋 Historique des mouvements (Sprint #12)
+---
+
+## Sprint #14 - Vue Overview (🚀 EN COURS)
+
+**Sprint Goal** : "Ajouter une vue Overview avec mosaïque personnalisée et filigrane type d'avion"
+
+**Dates** : 07/12/2025 - [À déterminer]
+**Story Points planifiés** : 5 SP
+**Story Points livrés** : 0 SP (en cours)
+**Équipe** : 6 agents (PO + ARCH + COORDINATOR + DEV + QA + DOC)
+
+### 🔵 To Do (2 tâches - 1 SP)
+
+#### Bloc 5 : Tests et Validation (1h)
+- [ ] [T044-10] Tests end-to-end (45min) - **QA-Fonctionnel**
+- [ ] [T044-11] Validation finale (15min) - **ARCH + DEV**
+
+### 🟡 In Progress (0 tâches)
+
+_Développement terminé, passage en Testing_
+
+### 🟢 Testing (0 tâches)
+
+_En attente d'assignation T044-10 à QA-Fonctionnel_
+
+### ✅ Done (9 tâches - 4 SP) ✅
+
+#### Bloc 1 : Backend - API (1h30) - ✅ TERMINÉ le 07/12/2025
+- [x] [T044-1] Parser groupe "Overview" depuis XML (30min) - `api/xml-parser.js` - **DEV-Généraliste** ✅
+  - Fonction `getCameraGroupOverview()` créée (lignes 265-333)
+  - Parse groupe name="Overview", retourne 4 caméras
+  - Gestion erreur si groupe absent
+  - JSDoc complète
+- [x] [T044-2] Support viewType="overview" (30min) - `api/rendering.js` - **DEV-Généraliste** ✅
+  - Fonction `fetchOverviewImages(config)` créée (lignes 70-134)
+  - 4 appels API parallèles (1 PNG transparent + 3 JPEG)
+  - Retourne `{imageA, imagesSecondary}`
+  - JSDoc complète
+- [x] [T044-3] Payload background transparent (30min) - `api/payload-builder.js` - **DEV-Généraliste** ✅
+  - Fonction `buildOverviewPayload(cameraId, isMainImage, config)` créée (lignes 287-371)
+  - PNG transparent 1920x1080 compression 1 pour image A
+  - JPEG standard 1920x1080 quality 95 pour images B/C/D
+  - JSDoc complète
+
+#### Bloc 2 : Frontend - UI (1h30) - ✅ TERMINÉ le 07/12/2025
+- [x] [T044-4] Ajout onglet "Overview" HTML (15min) - `index.html` - **DEV-Généraliste** ✅
+  - Bouton "Overview" ajouté (lignes 101-103)
+  - Container `.overview-mosaic` créé (lignes 155-169)
+  - Structure complète : filigrane + image A + 3 images secondaires
+- [x] [T044-5] CSS Layout + filigrane (45min) - `viewport.css` - **DEV-Généraliste** ✅
+  - Layout Flexbox vertical + Grid 3 colonnes (lignes 408-539)
+  - Filigrane position absolute, z-index 0, rouge #E00500, 180px
+  - Image A z-index 1 (par-dessus filigrane)
+  - Responsive 4 breakpoints (desktop, tablette, mobile, très petit)
+- [x] [T044-6] Fonction renderOverviewMosaic() (30min) - `ui/mosaic.js` - **DEV-Généraliste** ✅
+  - Fonction créée (lignes 235-306)
+  - Affiche 4 images + met à jour filigrane avec type d'avion
+  - Event listeners click pour modal (index 0-3)
+  - JSDoc complète
+
+#### Bloc 3 : Intégration (45min) - ✅ TERMINÉ le 07/12/2025
+- [x] [T044-7] Fonction getAirplaneType() (15min) - `config.js` - **DEV-Généraliste** ✅
+  - Fonction créée (lignes 232-256)
+  - Extrait "960" ou "980" depuis databaseId
+  - Fallback "???" si inconnu
+  - JSDoc complète
+- [x] [T044-8] Event listeners Overview (30min) - `app.js` - **DEV-Généraliste** ✅
+  - Event listener bouton "Overview" (lignes 1180-1235)
+  - Fonction `handleOverviewView()` complète
+  - Appelle fetchOverviewImages, affiche loader, gère erreurs
+  - Toggle controls cas "overview" ajouté (lignes 728-735)
+
+#### Bloc 4 : Modal (30min) - ✅ TERMINÉ le 07/12/2025
+- [x] [T044-9] Intégration modal Overview (30min) - `ui/modal.js` - **DEV-Généraliste** ✅
+  - `openFullscreen()` adapté pour supporter #overviewMosaic (lignes 31-44)
+  - Sélection images conditionnelle (#mosaicGrid ou #overviewMosaic)
+  - Métadonnées Groupe "Overview", nom caméra, ID
+  - Navigation ←/→ fonctionne entre 4 images
+
+**Progression Sprint #14** : 9/11 tâches (82%) - 4/5 SP (80%)
+
+---
+
+## 📋 Historique des mouvements (Sprint #12, #13, #14)
 
 | Date | US | Mouvement | Responsable |
 |------|----|-----------| ------------|
@@ -861,4 +950,7 @@ _Aucun test en cours_
 | 06/12/2025 | US-042 | Investigation PO terminée (27 caméras, détection automatique ratios) | PO |
 | 06/12/2025 | Sprint #13 | Sprint Planning terminé - US-043 décomposée (20 tâches) | ARCH |
 | 06/12/2025 | US-043 | Créée et ajoutée au Sprint #13 (To Do) | PO |
+| 07/12/2025 | Sprint #14 | Sprint Planning terminé - US-044 décomposée (11 tâches) | ARCH |
+| 07/12/2025 | US-044 | Créée et ajoutée au Sprint #14 (To Do) | PO |
+| 07/12/2025 | Sprint #14 | Staffing décidé - 6 agents (voir sprint-planning.md) | COORDINATOR |
 

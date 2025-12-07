@@ -5,12 +5,15 @@
  * @description Gère le modal plein écran avec navigation et métadonnées
  */
 
+import { downloadImage } from './download.js';
+
 // ======================================
 // État du modal (privé au module)
 // ======================================
 
 let currentImages = [];
 let currentMetadata = [];
+let currentFilenames = [];
 let currentIndex = 0;
 
 // ======================================
@@ -28,20 +31,55 @@ export function openFullscreen(imageIndex) {
     const counter = document.getElementById('fullscreenCounter');
     const metadata = document.getElementById('fullscreenMetadata');
 
-    // Récupérer les images de la mosaïque
+    // US-044 : Récupérer les images de la mosaïque active (standard OU overview)
     const mosaicGrid = document.getElementById('mosaicGrid');
-    if (!mosaicGrid) return;
+    const overviewMosaic = document.getElementById('overviewMosaic');
 
-    const images = mosaicGrid.querySelectorAll('img');
+    let images = [];
+
+    // Chercher d'abord dans mosaicGrid (vues Extérieur/Intérieur/Configuration)
+    if (mosaicGrid && !mosaicGrid.classList.contains('hidden')) {
+        images = mosaicGrid.querySelectorAll('img');
+    }
+    // Sinon chercher dans overviewMosaic (vue Overview)
+    else if (overviewMosaic && !overviewMosaic.classList.contains('hidden')) {
+        images = overviewMosaic.querySelectorAll('img.overview-main-image, img.overview-secondary-image');
+    }
+
     if (images.length === 0) return;
 
-    // Stocker les URLs et métadonnées
+    // Stocker les URLs, métadonnées et filenames
     currentImages = Array.from(images).map(img => img.src);
     currentMetadata = Array.from(images).map(img => ({
         groupName: img.dataset.groupName || '',
         cameraName: img.dataset.cameraName || '',
         cameraId: img.dataset.cameraId || ''
     }));
+
+    // US-044 : Générer les filenames pour téléchargement
+    currentFilenames = Array.from(images).map((img, idx) => {
+        // Déterminer le type de vue à partir du parent
+        let viewType = 'image';
+
+        // Détecter vue Overview
+        if (img.classList.contains('overview-main-image') || img.classList.contains('overview-secondary-image')) {
+            const letter = img.classList.contains('overview-main-image') ? 'A' : String.fromCharCode(66 + idx - 1); // B, C, D
+            return `overview_${letter}.png`;
+        }
+
+        // Détecter vues standard (Extérieur/Intérieur/Configuration)
+        const mosaicGrid = document.getElementById('mosaicGrid');
+        if (mosaicGrid && mosaicGrid.classList.contains('exterior')) {
+            viewType = 'vue_exterieur';
+        } else if (mosaicGrid && mosaicGrid.classList.contains('interior')) {
+            viewType = 'vue_interieur';
+        } else if (mosaicGrid && mosaicGrid.classList.contains('configuration')) {
+            viewType = 'configuration';
+        }
+
+        return `${viewType}_${idx + 1}.png`;
+    });
+
     currentIndex = imageIndex;
 
     // Afficher l'image
@@ -130,6 +168,27 @@ function updateFullscreenImage() {
 // ======================================
 
 /**
+ * US-044 : Télécharge l'image actuellement affichée dans le modal
+ * @private
+ */
+async function downloadCurrentImage() {
+    if (currentImages.length === 0 || currentIndex < 0 || currentIndex >= currentImages.length) {
+        console.error('❌ Aucune image à télécharger');
+        return;
+    }
+
+    const imageUrl = currentImages[currentIndex];
+    const filename = currentFilenames[currentIndex] || `image_${currentIndex + 1}.png`;
+
+    try {
+        await downloadImage(imageUrl, filename);
+        console.log(`✅ Image téléchargée depuis le modal : ${filename}`);
+    } catch (error) {
+        console.error(`❌ Erreur téléchargement depuis le modal :`, error);
+    }
+}
+
+/**
  * Initialise les event listeners pour le plein écran
  * @public
  */
@@ -137,6 +196,7 @@ export function initFullscreen() {
     const btnClose = document.getElementById('fullscreenClose');
     const btnPrev = document.getElementById('fullscreenPrev');
     const btnNext = document.getElementById('fullscreenNext');
+    const btnDownload = document.getElementById('fullscreenDownload');
     const backdrop = document.getElementById('fullscreenBackdrop');
 
     // Bouton fermer
@@ -151,6 +211,14 @@ export function initFullscreen() {
 
     if (btnNext) {
         btnNext.addEventListener('click', fullscreenNext);
+    }
+
+    // US-044 : Bouton téléchargement
+    if (btnDownload) {
+        btnDownload.addEventListener('click', (e) => {
+            e.stopPropagation();
+            downloadCurrentImage();
+        });
     }
 
     // Clic sur le backdrop pour fermer

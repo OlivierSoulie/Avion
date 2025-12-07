@@ -1,12 +1,12 @@
 /**
- * @fileoverview Fonctions de génération de rendus Extérieur/Intérieur
+ * @fileoverview Fonctions de génération de rendus Extérieur/Intérieur/Overview
  * @module api/rendering
  * @version 1.0
  */
 
-import { buildPayload } from './payload-builder.js';
+import { buildPayload, buildOverviewPayload } from './payload-builder.js';
 import { callLumiscapheAPI, downloadImages, setLastPayload } from './api-client.js';
-import { findCameraGroupId, getDatabaseXML } from './xml-parser.js';
+import { findCameraGroupId, getDatabaseXML, getCameraGroupOverview } from './xml-parser.js';
 
 /**
  * FONCTION PRINCIPALE : Génère les rendus via l'API
@@ -63,6 +63,72 @@ export async function fetchRenderImages(config) {
 
     } catch (error) {
         console.error('❌ Échec de la génération:', error);
+        throw error;
+    }
+}
+
+/**
+ * US-044 : Génère les rendus Overview (1 PNG transparent + 3 JPEG)
+ * @param {Object} config - La configuration actuelle
+ * @returns {Promise<Object>} Objet {imageA: {url, metadata}, imagesSecondary: [{url, metadata}, ...]}
+ * @throws {Error} Si la génération échoue
+ */
+export async function fetchOverviewImages(config) {
+    console.log('🎬 === GÉNÉRATION VUE OVERVIEW ===');
+    console.log('Configuration:', config);
+
+    try {
+        // 1. Récupérer les caméras du groupe Overview
+        const cameras = await getCameraGroupOverview();
+
+        if (cameras.length === 0) {
+            throw new Error('Aucune caméra trouvée dans le groupe Overview');
+        }
+
+        console.log(`   > ${cameras.length} caméras récupérées pour Overview`);
+
+        // 2. Appel API pour caméra A (PNG transparent)
+        console.log('   > Génération image A (PNG transparent)...');
+        const payloadA = await buildOverviewPayload(cameras[0].id, true, config);
+        setLastPayload(payloadA); // Sauvegarder le dernier payload
+        const imageAData = await callLumiscapheAPI(payloadA);
+        const imageAValidated = await downloadImages(imageAData);
+
+        // 3. Appels API pour caméras B, C, D (JPEG)
+        console.log('   > Génération images B, C, D (JPEG)...');
+        const secondaryCameras = cameras.slice(1); // Prendre caméras 1, 2, 3 (B, C, D)
+        const secondaryPromises = secondaryCameras.map(async (camera) => {
+            const payload = await buildOverviewPayload(camera.id, false, config);
+            const imageData = await callLumiscapheAPI(payload);
+            return downloadImages(imageData);
+        });
+
+        const imagesSecondaryArrays = await Promise.all(secondaryPromises);
+        const imagesSecondary = imagesSecondaryArrays.flat(); // Aplatir les tableaux
+
+        // 4. Enrichir avec métadonnées
+        const imageA = {
+            url: imageAValidated[0].url,
+            cameraId: cameras[0].id,
+            cameraName: cameras[0].name,
+            groupName: 'Overview'
+        };
+
+        const enrichedSecondary = imagesSecondary.map((img, index) => ({
+            url: img.url,
+            cameraId: secondaryCameras[index].id,
+            cameraName: secondaryCameras[index].name,
+            groupName: 'Overview'
+        }));
+
+        console.log('✅ Vue Overview générée avec succès');
+        return {
+            imageA: imageA,
+            imagesSecondary: enrichedSecondary
+        };
+
+    } catch (error) {
+        console.error('❌ Échec génération vue Overview:', error);
         throw error;
     }
 }

@@ -1,0 +1,199 @@
+/* ========================================
+   Mobile Menu Burger & Sidebar
+   ======================================== */
+
+/* Bouton burger - masqué par défaut sur desktop */
+.burger-menu-btn {
+    display: none;
+    flex-direction: column;
+    justify-content: space-around;
+    width: 2rem;
+    height: 2rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    z-index: var(--z-header, 100);
+}
+
+.burger-line {
+    width: 2rem;
+    height: 0.25rem;
+    background-color: var(--color-text);
+    border-radius: 10px;
+    transition: all 0.3s linear;
+    position: relative;
+    transform-origin: 1px;
+}
+
+/* Animation du burger en mode ouvert */
+.burger-menu-btn.open .burger-line:nth-child(1) {
+    transform: rotate(45deg);
+}
+
+.burger-menu-btn.open .burger-line:nth-child(2) {
+    opacity: 0;
+    transform: translateX(20px);
+}
+
+.burger-menu-btn.open .burger-line:nth-child(3) {
+    transform: rotate(-45deg);
+}
+
+/* Header content layout */
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+}
+
+.header-text {
+    flex: 1;
+}
+
+/* Sidebar mobile */
+.mobile-sidebar {
+    position: fixed;
+    top: 0;
+    left: -100%; /* Masqué par défaut */
+    width: 80%;
+    max-width: 300px;
+    height: 100vh;
+    background: white;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    transition: left 0.3s ease-in-out;
+    z-index: 1001;
+    overflow-y: auto;
+}
+
+.mobile-sidebar.open {
+    left: 0; /* Slide-in */
+}
+
+.mobile-sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid var(--color-border);
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 10;
+}
+
+.mobile-sidebar-header h2 {
+    font-size: 1.25rem;
+    margin: 0;
+}
+
+.close-sidebar-btn {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--color-text-secondary);
+    padding: 0;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-sidebar-btn:hover {
+    color: var(--color-text);
+}
+
+.mobile-sidebar-content {
+    padding: 1rem;
+}
+
+/* Overlay pour fermer le menu */
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease-in-out;
+    z-index: 1000;
+}
+
+.sidebar-overlay.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+/* ========================================
+   Media Queries
+   ======================================== */
+
+/* Desktop grand écran uniquement : masquer le burger et le sidebar */
+@media (min-width: 1367px) {
+    .burger-menu-btn {
+        display: none !important;
+    }
+
+    .mobile-sidebar,
+    .sidebar-overlay {
+        display: none !important;
+    }
+}
+
+/* Mobile + Écrans moyens : afficher le burger, masquer les données techniques par défaut */
+@media (max-width: 1366px) {
+    .burger-menu-btn {
+        display: flex;
+    }
+
+    /* Masquer les données techniques (elles seront dans le sidebar) */
+    .technical-controls {
+        display: none;
+    }
+
+    /* Masquer TOUTE la fonctionnalité de téléchargement */
+    /* Boutons sur les images */
+    .download-btn,
+    .image-checkbox,
+    /* Boutons dans technical-controls (dans le burger) */
+    #btnDownloadJSON,
+    #btnBulkDownload,
+    /* Boutons de sélection multiple */
+    #selectionControls,
+    #btnDownloadSelected,
+    #btnCancelSelection,
+    /* Bouton dans le modal plein écran */
+    .fullscreen-download,
+    /* Bouton plein écran */
+    .fullscreen-toggle,
+    #btnFullscreen {
+        display: none !important;
+    }
+
+    /* Garder viewport-actions-panel visible (Décor, Portes, etc.) */
+}
+
+/* Mobile uniquement : header compact */
+@media (max-width: 768px) {
+    .app-header {
+        padding: 1rem;
+    }
+
+    .header-content {
+        flex-wrap: wrap;
+    }
+
+    .header-text h1 {
+        font-size: 1.5rem;
+    }
+
+    .app-subtitle {
+        font-size: 0.875rem;
+    }
+}

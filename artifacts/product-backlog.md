@@ -3,7 +3,7 @@
 **Projet** : 005-Configurateur_Daher
 **Date de creation** : 02/12/2025
 **PO** : Claude (PO Agent)
-**Derniere mise a jour** : 06/12/2025 - US-043 (Refactoring complet) ajoutée au Sprint #13
+**Derniere mise a jour** : 07/12/2025 - Sprint #14 complété (US-044 + US-045)
 
 ---
 
@@ -2585,3 +2585,258 @@ Suite aux 12 sprints précédents, le code a été développé rapidement avec d
 ---
 
 **Total Sprint #13** : 8 Story Points (US-043: 8 SP - Refactoring complet pour maintenabilité)
+
+---
+
+## User Stories - Sprint #14 (Nouvelle vue Overview)
+
+### [US-044] Vue Overview avec mosaïque personnalisée et filigrane type d'avion
+
+**Priorité** : Haute
+**Story Points** : 5 SP
+**Sprint** : Sprint #14 (Terminé)
+**Status** : ✅ Done (07/12/2025)
+
+**User Story :**
+En tant qu'utilisateur,
+Je veux une nouvelle vue "Overview" affichant un aperçu synthétique de l'avion,
+Afin d'avoir une vue d'ensemble avec une image principale en 16:9 et trois images secondaires, avec indication du type d'avion en filigrane.
+
+**Contexte métier :**
+Cette vue utilise les caméras du groupe "Overview" défini dans le XML de l'API.
+L'organisation visuelle met en avant l'image principale (camera "A") en grand format 16:9, avec un filigrane indiquant le type d'avion (960 ou 980) en rouge, partiellement masqué par l'avion transparent.
+
+**Critères d'acceptation :**
+
+**A. Ajout de l'onglet Overview**
+- [ ] Nouveau toggle/bouton "Overview" ajouté au sélecteur de vue
+- [ ] Sélecteur devient 4 options : Extérieur / Intérieur / Configuration / Overview
+- [ ] Position : Aligné avec les autres toggles de vue (même style visuel)
+- [ ] Indicateur visuel de la vue active (highlight, underline)
+
+**B. Layout de la mosaïque Overview**
+- [ ] **Organisation spécifique** :
+  - Image "A" (principale) en haut : pleine largeur, ratio 16:9
+  - Images "B", "C", "D" en bas : 3 colonnes égales sur la même ligne
+- [ ] Layout responsive (Grid ou Flexbox)
+- [ ] Espacement cohérent entre les images (gap: 1rem ou similaire)
+- [ ] Pas de scrolling horizontal (100% viewport width)
+
+**C. Récupération des caméras depuis le XML**
+- [ ] Parser le groupe de caméras "Overview" depuis le XML de l'API
+- [ ] Identifier les 4 caméras : A, B, C, D (ou noms équivalents)
+- [ ] Gérer le cas où le groupe "Overview" n'existe pas (message d'erreur clair)
+- [ ] Utiliser les camera IDs du XML pour construire le payload API
+
+**D. Rendu de l'image principale avec background transparent**
+- [ ] **Image A (principale)** :
+  - Format : PNG avec compression 1 (haute qualité)
+  - Background : Transparent (paramètre `background: "transparent"`)
+  - Mode : `"image"` (et non `"imageLayers"`)
+  - Ratio : 16:9
+  - Width/Height : Calculé selon le ratio (ex: 1920x1080 ou 1280x720)
+- [ ] **Images B, C, D (secondaires)** :
+  - Format : JPEG standard (comme vues existantes)
+  - Background : Scène normale (non transparent)
+  - Ratio : À définir selon le XML ou config (ex: 16:9 ou 1:1)
+
+**E. Filigrane du type d'avion (960 ou 980)**
+- [ ] Texte "960" ou "980" affiché derrière l'image principale (image A)
+- [ ] Couleur : Rouge (#E00500 ou similaire)
+- [ ] Police : Grande taille (ex: 120px-200px), gras, centré
+- [ ] Position : Centré horizontalement et verticalement sous l'image A
+- [ ] Effet visuel : L'avion (PNG transparent) "masque" partiellement le texte
+- [ ] Implémentation : `position: relative` sur conteneur, `position: absolute` sur texte, `z-index` géré
+- [ ] Récupération dynamique du type d'avion depuis `config.databaseId` (TBM960 → "960", TBM980 → "980")
+
+**F. Payload API pour la vue Overview**
+- [ ] Construire le payload avec :
+  - `viewType: "overview"` (ou identifiant approprié)
+  - `cameras`: Array contenant les 4 caméras A, B, C, D
+  - Pour caméra A : `mode: "image"`, `background: "transparent"`, `compression: 1`
+  - Pour caméras B, C, D : mode standard (JPEG)
+- [ ] Appel API unique retournant les 4 images
+- [ ] Gestion du chargement (loader affiché pendant l'appel)
+
+**G. Affichage et interaction**
+- [ ] Les 4 images s'affichent dans la mosaïque dès réception de l'API
+- [ ] Clic sur n'importe quelle image ouvre le modal plein écran
+- [ ] Navigation dans le modal : 4 images disponibles (A, B, C, D)
+- [ ] Métadonnées affichées dans le modal (nom caméra, résolution, etc.)
+- [ ] Bouton téléchargement individuel fonctionne pour chaque image
+
+**H. Gestion des contrôles**
+- [ ] Basculer sur vue Overview masque les contrôles spécifiques Ext/Int/Config
+- [ ] Contrôles communs (Modèle, PaintScheme, Décor, etc.) restent visibles
+- [ ] Changement dans les contrôles déclenche un nouveau rendu Overview
+- [ ] État de la configuration préservé (state.js)
+
+**I. Responsive et accessibilité**
+- [ ] Layout adapté sur desktop, tablette, mobile :
+  - Desktop : Image A pleine largeur + 3 colonnes en dessous
+  - Tablette : Idem desktop
+  - Mobile : Image A pleine largeur + 3 images empilées verticalement
+- [ ] Images responsive (`max-width: 100%`, `object-fit: cover`)
+- [ ] Texte filigrane responsive (taille adaptée au viewport)
+
+**J. Tests et validation**
+- [ ] Vérifier sur desktop (1920x1080, 1366x768)
+- [ ] Vérifier sur tablette (iPad, 768px)
+- [ ] Vérifier sur mobile (iPhone, 375px)
+- [ ] Image A PNG avec background transparent affiché correctement
+- [ ] Filigrane "960" ou "980" visible et positionné correctement
+- [ ] Images B, C, D affichées en ligne (desktop/tablette)
+- [ ] Modal plein écran fonctionne avec navigation
+- [ ] Console sans erreurs
+- [ ] Pas de problème de layout ou scrolling
+
+**Notes techniques :**
+
+**Structure HTML (exemple)** :
+```html
+<div id="overviewMosaic" class="overview-mosaic hidden">
+    <div class="overview-main-image-wrapper">
+        <div class="airplane-type-watermark">960</div>
+        <img id="overviewImageA" class="overview-main-image" alt="Vue Overview principale" />
+    </div>
+    <div class="overview-secondary-images">
+        <img id="overviewImageB" class="overview-secondary-image" alt="Vue Overview B" />
+        <img id="overviewImageC" class="overview-secondary-image" alt="Vue Overview C" />
+        <img id="overviewImageD" class="overview-secondary-image" alt="Vue Overview D" />
+    </div>
+</div>
+```
+
+**CSS (exemple)** :
+```css
+.overview-mosaic {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.overview-main-image-wrapper {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+}
+
+.airplane-type-watermark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 180px;
+    font-weight: bold;
+    color: #E00500;
+    z-index: 0;
+    opacity: 0.8;
+}
+
+.overview-main-image {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.overview-secondary-images {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+@media (max-width: 768px) {
+    .overview-secondary-images {
+        grid-template-columns: 1fr;
+    }
+}
+```
+
+**Payload API pour image A (principale)** :
+```javascript
+{
+    "camera": "OverviewCamera_A", // ID depuis XML
+    "mode": "image",
+    "background": "transparent",
+    "width": 1920,
+    "height": 1080,
+    "compression": 1
+}
+```
+
+**Payload API pour images B, C, D (secondaires)** :
+```javascript
+{
+    "camera": "OverviewCamera_B", // ID depuis XML
+    "mode": "image",
+    "width": 800,
+    "height": 600
+    // background par défaut (scène normale)
+}
+```
+
+**Extraction du type d'avion** :
+```javascript
+function getAirplaneType() {
+    const databaseId = getConfig().databaseId;
+    if (databaseId.includes('960')) return '960';
+    if (databaseId.includes('980')) return '980';
+    return '???'; // Fallback si type inconnu
+}
+```
+
+**Fichiers impactés** :
+- `code/index.html` : Ajout toggle "Overview" + container mosaïque
+- `code/js/config.js` : Mapping vue "overview" si nécessaire
+- `code/js/api.js` : Support `viewType="overview"`, gestion background transparent
+- `code/js/ui.js` : Fonction `renderOverviewMosaic()` avec layout spécifique
+- `code/styles/viewport.css` : Styles pour layout Overview + filigrane
+
+**Dépendances** :
+- US-029 (Mosaïque d'images) - réutilisation du système existant
+- US-022 (Sélecteur de vue) - extension avec 4ème vue
+- US-042 (Mosaïque Configuration) - pattern de layout similaire
+
+**Estimation** : 5 Story Points (~2.5-3h de développement)
+- Investigation XML groupe "Overview" : 30min
+- Layout HTML/CSS mosaïque + filigrane : 1h
+- Logique API (background transparent, mode image) : 45min
+- Intégration toggle de vue + event handlers : 30min
+- Tests et ajustements responsive : 45min
+
+---
+
+### [US-045] Optimisation UX Mobile et Écrans Moyens
+
+**Priorité** : Haute
+**Story Points** : 3 SP
+**Sprint** : Sprint #14 (Ajouté en cours de sprint)
+**Status** : ✅ Done (07/12/2025)
+
+**User Story :**
+En tant qu'utilisateur mobile ou tablette,
+Je veux une interface optimisée avec un menu burger et des contrôles adaptés,
+Afin d'avoir une expérience fluide sur tous les types d'écrans.
+
+**Critères d'acceptation :**
+- ✅ Menu burger visible et fonctionnel en mobile et écrans moyens (≤1366px)
+- ✅ Sidebar slide-in avec données techniques
+- ✅ Fonctionnalités de téléchargement masquées en mobile/tablette
+- ✅ Optimisations layout pour tablettes (769-1024px) et petits laptops (1025-1366px)
+- ✅ Scroll vertical fonctionnel en mobile
+- ✅ viewport-actions-panel masqué quand vide
+- ✅ Boutons plein écran masqués en mobile
+
+**Résultats :**
+- Burger menu avec animation et keyboard support (Escape)
+- Breakpoints optimisés : 769-1024px et 1025-1366px
+- 3 nouveaux fichiers CSS/JS créés
+- 8 bugs de layout corrigés
+
+**Estimation** : 3 Story Points (~1.5-2h de développement)
+
+---
+
+**Total Sprint #14** : 8 Story Points (US-044: 5 SP + US-045: 3 SP)
