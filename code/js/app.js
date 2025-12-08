@@ -412,15 +412,23 @@ function populateDropdown(selectId, optionsList, defaultValue) {
 
     console.log(`📋 populateDropdown: ${selectId}, ${optionsList.length} options, défaut="${defaultValue}"`);
 
-    // US-046 : Masquer le dropdown Decor si vide (base POC sans paramètre Decor)
-    if (selectId === 'selectDecor' && optionsList.length === 0) {
+    // US-046 : Masquer TOUT dropdown vide (base POC ou paramètre manquant)
+    // Règle générale : Si aucune option, masquer le dropdown
+    if (optionsList.length === 0) {
         const formGroup = select.closest('.form-group');
         if (formGroup) {
-            console.warn('⚠️ Dropdown Decor vide (base POC ou invalide) → masqué');
+            console.warn(`⚠️ Dropdown ${selectId} vide (paramètre manquant ou base POC) → masqué`);
             formGroup.classList.add('hidden');
             formGroup.style.display = 'none';
         }
         return; // Ne pas continuer si vide
+    }
+
+    // Si options présentes, s'assurer que le form-group est visible
+    const formGroup = select.closest('.form-group');
+    if (formGroup) {
+        formGroup.classList.remove('hidden');
+        formGroup.style.display = '';
     }
 
     // Si pas de defaultValue et qu'on a des options, utiliser la première
@@ -663,12 +671,12 @@ async function checkActionButtonsAvailability() {
         const actionButtons = [
             {
                 selector: '.form-group:has(#btnDoorPilotClosed)',
-                params: ['Door_pilot', 'POC Door pilot'], // V0.3+ : "Door_pilot", V0.1 : "POC Door pilot"
+                params: ['Door_pilot'], // Production uniquement - POC non supporté
                 name: 'Porte pilote'
             },
             {
                 selector: '.form-group:has(#btnDoorPassengerClosed)',
-                params: ['Door_passenger', 'POC Door passenger'], // V0.3+ : "Door_passenger", V0.1 : "POC Door passenger"
+                params: ['Door_passenger'], // Production uniquement - POC non supporté
                 name: 'Porte passager'
             },
             {

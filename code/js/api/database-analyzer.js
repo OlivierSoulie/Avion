@@ -267,10 +267,18 @@ function detectValuePattern(paramName, options) {
     // Analyser plusieurs valeurs pour détecter le pattern
     const samples = options.slice(0, Math.min(5, options.length));
 
-    // Patterns spéciaux connus avec descriptions
-    if (paramName.includes('Decor') || paramName === 'POC Decor') {
-        // Il y a seulement 2 patterns possibles pour Decor:
-        // 1. V0.1/V0.2 : {decorName}_Tx_Ty_Tz_Rx_Ry_Rz (coordonnées numériques)
+    // ⚠️ Paramètres POC : Ne PAS documenter, juste indiquer qu'ils ne sont pas supportés
+    if (paramName.startsWith('POC ')) {
+        return {
+            pattern: `POC ${paramName.substring(4)}.{value}`,
+            description: '⚠️ Paramètre POC (V0.1) - NON SUPPORTÉ dans le configurateur. Voir CLAUDE.md pour plus d\'informations.'
+        };
+    }
+
+    // Patterns spéciaux connus avec descriptions (PRODUCTION uniquement)
+    if (paramName === 'Decor') {
+        // Il y a seulement 2 patterns possibles pour Decor Production:
+        // 1. V0.2 : {decorName}_{cameraName}_Tx_Ty_Tz_Rx_Ry_Rz (coordonnées numériques)
         // 2. V0.3/V0.4/V0.5 : {decorName}_{Flight|Ground} (position)
 
         const firstValue = samples[0].value;
@@ -281,19 +289,19 @@ function detectValuePattern(paramName, options) {
         if (hasFlightGround) {
             // Format V0.3/V0.4/V0.5 : {decorName}_{Flight|Ground}
             return {
-                pattern: `{decorName}_{Flight|Ground}`,
+                pattern: `Decor.{decorName}_{Flight|Ground}`,
                 description: 'decorName = Nom du décor (Studio, Tarmac, Fjord, Hangar, Onirique). Flight/Ground = Position de l\'avion (en vol ou au sol), utilisé pour filtrer les décors compatibles.'
             };
         } else {
-            // Format V0.1/V0.2 : coordonnées numériques
+            // Format V0.2 : coordonnées numériques
             // Vérifier si on a bien 6 parties numériques à la fin (Tx, Ty, Tz, Rx, Ry, Rz)
             const parts = firstValue.split('_');
             const hasNumericCoords = parts.length >= 7 && parts.slice(-6).every(p => /^-?\d+$/.test(p));
 
             if (hasNumericCoords) {
                 return {
-                    pattern: `{decorName}_{cameraName}_Tx_Ty_Tz_Rx_Ry_Rz`,
-                    description: 'Format V0.1/V0.2 : decorName = Nom du décor, cameraName = Nom de la caméra à utiliser (mode image simple, pas de groupe), Tx/Ty/Tz = Translation, Rx/Ry/Rz = Rotation de l\'avion dans la scène 3D.'
+                    pattern: `Decor.{decorName}_{cameraName}_Tx_Ty_Tz_Rx_Ry_Rz`,
+                    description: 'Format V0.2 : decorName = Nom du décor, cameraName = Nom de la caméra à utiliser (mode image simple, pas de groupe), Tx/Ty/Tz = Translation, Rx/Ry/Rz = Rotation de l\'avion dans la scène 3D.'
                 };
             }
         }
