@@ -686,7 +686,7 @@ async function checkActionButtonsAvailability() {
             },
             {
                 selector: '.form-group:has(#btnSunGlassOFF)',
-                params: ['SunGlass', 'Sun glass', 'POC Sun glass'], // V0.3+ : "SunGlass", V0.2 : "Sun glass", V0.1 : "POC Sun glass"
+                params: ['SunGlass', 'Sun glass'], // Production : "SunGlass" ou "Sun glass" - POC non supporté
                 name: 'Volet Hublots'
             }
         ];
