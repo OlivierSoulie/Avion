@@ -77,6 +77,35 @@ Suivre le workflow Scrumban :
 
 ## Règles de Développement
 
+### 🚫 Paramètres POC - NON IMPLÉMENTÉS (CRITIQUE)
+
+**⚠️ RÈGLE ABSOLUE** : Tous les paramètres préfixés "POC" ne doivent PAS être implémentés dans le configurateur.
+
+**Pourquoi ?**
+- Les paramètres "POC" sont des versions de test/POC (Proof of Concept) présentes uniquement dans la base V0.1
+- Ces paramètres ne sont PAS destinés à la production
+- Le configurateur supporte UNIQUEMENT les bases Production (V0.2+)
+
+**Liste des paramètres POC (à IGNORER) :**
+```
+POC Decor
+POC Door pilot
+POC Door passenger
+POC Sun glass
+POC Lighting ceiling
+POC Lighting mood 960
+POC Leather
+POC Stickers
+POC Storage left
+POC Storage right
+```
+
+**Conséquence :** Si un paramètre commence par "POC", il ne doit jamais être affiché ni utilisé dans l'interface.
+
+**Référence :** US-046 - Séparation features POC vs Production
+
+---
+
 ### 📖 Glossaire Métier (IMPORTANT)
 
 **ATTENTION** : Ne pas confondre ces termes clés :

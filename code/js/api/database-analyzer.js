@@ -137,6 +137,9 @@ function analyzeFeatures(xmlDoc) {
         // ========================================
         // POC FEATURES (V0.1 - NON SUPPORTÉES)
         // ========================================
+        // ⚠️ RÈGLE IMPORTANTE : Tous les paramètres préfixés "POC" ne doivent PAS être implémentés
+        // Ces paramètres sont des versions de test/POC et ne sont pas destinés à la production
+        // Le configurateur ne supporte QUE les bases Production (V0.2+)
         poc: {
             hasPOCDecor: paramNames.has('POC Decor'),
             hasPOCDoorPilot: paramNames.has('POC Door pilot'),
