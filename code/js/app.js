@@ -128,7 +128,6 @@ function renderDatabaseStructure(structure) {
     // Infos générales - avec vérification null
     const dbNameEl = document.getElementById('configDbName');
     const dbIdEl = document.getElementById('configDbId');
-    const dbTypeEl = document.getElementById('configDbType');
     const analyzedAtEl = document.getElementById('configAnalyzedAt');
 
     if (dbNameEl) dbNameEl.textContent = structure.name || '-';
@@ -142,16 +141,11 @@ function renderDatabaseStructure(structure) {
         }
     }
 
-    // Afficher le type de base (POC ou Production) - US-046
-    if (dbTypeEl) {
-        dbTypeEl.textContent = structure.databaseType || '-';
-        dbTypeEl.style.color = structure.isPOC ? '#ff9800' : '#4caf50';
-        dbTypeEl.style.fontWeight = '600';
-    }
-
     if (analyzedAtEl) {
         analyzedAtEl.textContent = structure.analyzedAt ? new Date(structure.analyzedAt).toLocaleString('fr-FR') : '-';
     }
+
+    // US-046 : Type de base (POC/Production) détecté en backend uniquement (pas d'affichage UI)
 
     // Features
     const featuresContainer = document.getElementById('configFeatures');
@@ -417,6 +411,17 @@ function populateDropdown(selectId, optionsList, defaultValue) {
     }
 
     console.log(`📋 populateDropdown: ${selectId}, ${optionsList.length} options, défaut="${defaultValue}"`);
+
+    // US-046 : Masquer le dropdown Decor si vide (base POC sans paramètre Decor)
+    if (selectId === 'selectDecor' && optionsList.length === 0) {
+        const formGroup = select.closest('.form-group');
+        if (formGroup) {
+            console.warn('⚠️ Dropdown Decor vide (base POC ou invalide) → masqué');
+            formGroup.classList.add('hidden');
+            formGroup.style.display = 'none';
+        }
+        return; // Ne pas continuer si vide
+    }
 
     // Si pas de defaultValue et qu'on a des options, utiliser la première
     const effectiveDefault = defaultValue || (optionsList.length > 0 ? optionsList[0].value : null);
@@ -756,7 +761,7 @@ async function checkConfigFieldsAvailability() {
             },
             {
                 selector: '.form-group:has(#selectDecor)',
-                params: ['Decor', 'POC Decor'], // V0.3+ : "Decor", V0.1 : "POC Decor"
+                params: ['Decor'], // Production uniquement (V0.2+) - POC non supporté
                 name: 'Décor'
             },
             {
