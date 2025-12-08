@@ -271,7 +271,7 @@ function detectValuePattern(paramName, options) {
     if (paramName.startsWith('POC ')) {
         return {
             pattern: `POC ${paramName.substring(4)}.{value}`,
-            description: '⚠️ Paramètre POC (V0.1) - NON SUPPORTÉ dans le configurateur. Voir CLAUDE.md pour plus d\'informations.'
+            description: '⚠️ NON SUPPORTÉ dans le configurateur'
         };
     }
 
