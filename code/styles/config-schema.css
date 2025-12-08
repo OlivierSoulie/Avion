@@ -125,6 +125,56 @@
     padding: 1.5rem;
 }
 
+/* Badge POC/Production */
+.database-type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+}
+
+.database-type-badge.poc {
+    background: rgba(255, 152, 0, 0.15);
+    border: 2px solid #ff9800;
+    color: #e65100;
+}
+
+.database-type-badge.production {
+    background: rgba(76, 175, 80, 0.15);
+    border: 2px solid #4caf50;
+    color: #2e7d32;
+}
+
+.database-type-badge .badge-icon {
+    font-size: 1.25rem;
+}
+
+.database-type-badge .badge-text {
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Warning POC */
+.poc-warning {
+    background: rgba(255, 152, 0, 0.1);
+    border-left: 4px solid #ff9800;
+    padding: 1rem;
+    border-radius: var(--radius-md);
+    margin-bottom: 1.5rem;
+    color: #e65100;
+    line-height: 1.6;
+}
+
+.poc-warning strong {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 1.05rem;
+}
+
 /* Sections */
 .config-section {
     margin-bottom: 2rem;
@@ -171,6 +221,29 @@
     padding: 0.25rem 0.5rem;
     border-radius: var(--radius-sm);
     font-size: 0.875rem;
+}
+
+/* Lien cliquable pour Database ID */
+.db-id-link {
+    font-family: 'Consolas', 'Monaco', monospace;
+    background: rgba(33, 150, 243, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.875rem;
+    color: var(--color-primary);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    display: inline-block;
+}
+
+.db-id-link:hover {
+    background: rgba(33, 150, 243, 0.2);
+    color: var(--color-primary-dark, #0056b3);
+    text-decoration: underline;
+}
+
+.db-id-link:active {
+    transform: scale(0.98);
 }
 
 /* Features Grid */

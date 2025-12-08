@@ -126,11 +126,15 @@ function buildInteriorConfigString(config) {
  * @returns {Object} {prefix, suffix, positionValue}
  */
 function buildDecorConfig(xmlDoc, decorName) {
-    // Chercher le paramètre Decor dans le XML
-    const decorParam = xmlDoc.querySelector('Parameter[label="Decor"], Parameter[label="POC Decor"]');
+    // ⚠️ IMPORTANT : Supporte UNIQUEMENT les bases Production (V0.2+)
+    // Les bases POC (V0.1) avec "POC Decor" ne sont PAS supportées
+
+    // Chercher le paramètre Decor dans le XML (PRODUCTION uniquement)
+    const decorParam = xmlDoc.querySelector('Parameter[label="Decor"]');
 
     if (!decorParam) {
-        console.warn('Paramètre Decor non trouvé, utilisation fallback V0.3+');
+        console.warn('⚠️ Paramètre Decor non trouvé - Base POC (V0.1) non supportée ou XML invalide');
+        console.warn('   Utilisation fallback V0.3+ par défaut');
         const fallback = DECORS_CONFIG[decorName] || { suffix: `${decorName}_Ground`, type: 'Ground' };
         return { prefix: 'Decor', suffix: fallback.suffix, positionValue: decorName };
     }
@@ -139,13 +143,8 @@ function buildDecorConfig(xmlDoc, decorName) {
     const values = decorParam.querySelectorAll('Value');
     const firstValue = values[0]?.getAttribute('symbol') || '';
 
-    // Détecter le format
-    if (firstValue.startsWith('POC Decor.')) {
-        // V0.1 : Format "POC Decor.{DECORNAME}"
-        const suffix = `${decorName.toUpperCase()}`;  // "FJORD", "STUDIO", etc.
-        console.log(`   > Format V0.1 détecté : POC Decor.${suffix}`);
-        return { prefix: 'POC Decor', suffix, positionValue: decorName };
-    } else if (/^[A-Za-z]+_[A-Za-z0-9]+_[\d\-_]+$/.test(firstValue)) {
+    // Détecter le format Production (V0.2 ou V0.3+)
+    if (/^[A-Za-z]+_[A-Za-z0-9]+_[\d\-_]+$/.test(firstValue)) {
         // V0.2 : Format "{decorName}_{cameraName}_Tx_Ty_Tz_Rx_Ry_Rz"
         // Chercher la première valeur qui correspond au décor demandé
         for (const value of values) {
@@ -197,7 +196,7 @@ export function buildConfigString(xmlDoc, config) {
         `Version.${config.version}`,
         paintConfig,           // Config depuis XML (avec zones personnalisées si définies)
         interiorConfig,        // US-027: Config intérieur personnalisée (10 parties)
-        `${decorPrefix}.${decorSuffix}`,  // V0.1: "POC Decor.FJORD", V0.2+: "Decor.{value}"
+        `${decorPrefix}.${decorSuffix}`,  // Production V0.2+: "Decor.{value}"
         `Position.${positionValue}`,
         `Exterior_Spinner.${config.spinner}`,
         `SunGlass.${config.sunglass}`,        // US-024: Dynamique (SunGlassON/OFF)

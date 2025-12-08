@@ -15,6 +15,28 @@
 import { getDatabaseXML } from './xml-parser.js';
 
 /**
+ * Détecte si une base de données est POC (V0.1) ou Production (V0.2+)
+ * @param {XMLDocument} xmlDoc - Document XML de la base
+ * @returns {Object} { databaseType: "POC"|"Production", isPOC: boolean }
+ */
+function detectDatabaseType(xmlDoc) {
+    const parameters = xmlDoc.querySelectorAll('Parameter');
+    const paramNames = new Set();
+
+    parameters.forEach(p => {
+        const label = p.getAttribute('label');
+        if (label) paramNames.add(label);
+    });
+
+    // Règle de détection : Si "POC Decor" existe, c'est une base POC (V0.1)
+    // Sinon, c'est une base Production (V0.2+)
+    const isPOC = paramNames.has('POC Decor');
+    const databaseType = isPOC ? 'POC' : 'Production';
+
+    return { databaseType, isPOC };
+}
+
+/**
  * Analyse complète de la structure d'une base de données
  * @param {string} databaseId - ID de la base à analyser
  * @returns {Promise<Object>} Schéma complet de la base
@@ -24,9 +46,14 @@ export async function analyzeDatabaseStructure(databaseId) {
 
     const xmlDoc = await getDatabaseXML(databaseId);
 
+    // Détecter si c'est une base POC ou Production
+    const { databaseType, isPOC } = detectDatabaseType(xmlDoc);
+
     const structure = {
         id: databaseId,
         analyzedAt: new Date().toISOString(),
+        databaseType,        // "POC" ou "Production"
+        isPOC,               // boolean
         features: analyzeFeatures(xmlDoc),
         cameraGroups: analyzeCameraGroups(xmlDoc),
         parameters: analyzeParameters(xmlDoc),
@@ -34,7 +61,7 @@ export async function analyzeDatabaseStructure(databaseId) {
         prestigeOptions: analyzePrestigeOptions(xmlDoc)
     };
 
-    console.log('✅ Analyse terminée:', structure);
+    console.log(`✅ Analyse terminée: ${databaseType} database`, structure);
     return structure;
 }
 
@@ -83,30 +110,45 @@ function analyzeFeatures(xmlDoc) {
 
     return {
         // FEATURES = Fonctionnalités du configurateur
-        // Vues
+        // Vues (communes POC et Production)
         hasExterior: hasGroup(['Exterieur*', 'Exterieur']),
         hasInterior: hasGroup(['Interieur']),
         hasConfiguration: hasGroup(['Configuration']),
         hasOverview: hasGroup(['Overview']),
 
-        // Fonctionnalités interactives
-        hasDecor: hasParam(['Decor', 'POC Decor']),
-        hasDoorPilot: hasParam(['Door_pilot', 'POC Door pilot']),
-        hasDoorPassenger: hasParam(['Door_passenger', 'POC Door passenger']),
-        hasSunGlass: hasParam(['SunGlass', 'Sun glass', 'POC Sun glass']),
-        hasTablet: hasParam(['Tablet']),
-        hasLightingCeiling: hasParam(['Lighting_Ceiling', 'Lighting_ceiling']),
-        hasMoodLights: hasParam(['Mood_Lights', 'MoodLights', 'Mood Lights']),
+        // ========================================
+        // PRODUCTION FEATURES (V0.2+)
+        // ========================================
+        production: {
+            hasDecor: paramNames.has('Decor'),
+            hasDoorPilot: paramNames.has('Door_pilot'),
+            hasDoorPassenger: paramNames.has('Door_passenger'),
+            hasSunGlass: paramNames.has('SunGlass'),
+            hasTablet: paramNames.has('Tablet'),
+            hasLightingCeiling: paramNames.has('Lighting_Ceiling') || paramNames.has('Lighting_ceiling'),
+            hasMoodLights: paramNames.has('Mood_Lights') || paramNames.has('MoodLights') || paramNames.has('Mood Lights'),
 
-        // Variantes de nommage détectées (pour le mapping automatique)
-        decorNaming: paramNames.has('POC Decor') ? 'POC Decor' : 'Decor',
-        doorPilotNaming: paramNames.has('POC Door pilot') ? 'POC Door pilot' : 'Door_pilot',
-        doorPassengerNaming: paramNames.has('POC Door passenger') ? 'POC Door passenger' : 'Door_passenger',
-        sunGlassNaming: paramNames.has('POC Sun glass') ? 'POC Sun glass' :
-                        paramNames.has('Sun glass') ? 'Sun glass' : 'SunGlass',
-        lightingCeilingNaming: paramNames.has('Lighting_ceiling') ? 'Lighting_ceiling' : 'Lighting_Ceiling',
-        moodLightsNaming: paramNames.has('Mood_Lights') ? 'Mood_Lights' :
-                         paramNames.has('MoodLights') ? 'MoodLights' : 'Mood Lights'
+            // Variantes de nommage (pour gérer les différences mineures entre V0.2, V0.3, V0.4)
+            lightingCeilingNaming: paramNames.has('Lighting_ceiling') ? 'Lighting_ceiling' : 'Lighting_Ceiling',
+            moodLightsNaming: paramNames.has('Mood_Lights') ? 'Mood_Lights' :
+                             paramNames.has('MoodLights') ? 'MoodLights' : 'Mood Lights'
+        },
+
+        // ========================================
+        // POC FEATURES (V0.1 - NON SUPPORTÉES)
+        // ========================================
+        poc: {
+            hasPOCDecor: paramNames.has('POC Decor'),
+            hasPOCDoorPilot: paramNames.has('POC Door pilot'),
+            hasPOCDoorPassenger: paramNames.has('POC Door passenger'),
+            hasPOCSunGlass: paramNames.has('POC Sun glass'),
+            hasPOCLightingCeiling: paramNames.has('POC Lighting ceiling'),
+            hasPOCLightingMood: paramNames.has('POC Lighting mood 960'),
+            hasPOCLeather: paramNames.has('POC Leather'),
+            hasPOCStickers: paramNames.has('POC Stickers'),
+            hasPOCStorageLeft: paramNames.has('POC Storage left'),
+            hasPOCStorageRight: paramNames.has('POC Storage right')
+        }
     };
 }
 

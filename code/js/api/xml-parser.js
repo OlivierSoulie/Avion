@@ -499,22 +499,38 @@ export function getExteriorOptionsFromXML(xmlDoc) {
         return rawLabel.split('_')[0];
     };
 
-    // Extrait le NOM du décor pour affichage (dropdown label)
-    // - V0.1 : "FJORD" ou "out Studio Flight" → "Fjord" ou "Studio"
-    // - V0.2 : "Fjord_001_201_0_0_0_0_-90_-15" → "Fjord"
-    // - V0.3+ : "Studio_Ground" ou "Fjord_Flight" → "Studio" ou "Fjord"
+    // Extrait UNIQUEMENT le {decorName} du pattern, data-driven
+    // Patterns selon les versions :
+    // - V0.1 : "FJORD" → "Fjord"
+    // - V0.2 : Pattern "{decorName}_{cameraName}_Tx_Ty_Tz_Rx_Ry_Rz"
+    //          "Fjord_201_0_0_0_0_-90_-15" → decorName = "Fjord"
+    //          "StudioFlight_360_0_0_0_0_0_0" → decorName = "StudioFlight" (Flight/Ground FAIT PARTIE du decorName)
+    // - V0.3+ : Pattern "{decorName}_{Flight|Ground}"
+    //           "Studio_Ground" → decorName = "Studio" (Flight/Ground est SÉPARÉ)
+    //           "Fjord_Flight" → decorName = "Fjord"
     const extractDecorName = (rawLabel) => {
-        // Nettoyer les préfixes/suffixes pour obtenir le nom pur
-        let name = rawLabel
-            .replace(/^POC Decor\./, '')      // V0.1 : "POC Decor.FJORD" → "FJORD"
-            .replace(/^out /, '')              // V0.1 : "out Studio Flight" → "Studio Flight"
-            .replace(/_Ground$/, '')           // V0.3+ : "Studio_Ground" → "Studio"
-            .replace(/_Flight$/, '')           // V0.3+ : "Fjord_Flight" → "Fjord"
-            .replace(/ (Ground|Flight)$/, '')  // V0.1 : "Studio Flight" → "Studio"
-            .split('_')[0];                    // V0.2 : "Fjord_001_201..." → "Fjord"
+        // ⚠️ Plus de support pour "POC Decor." - bases Production uniquement
+        let name = rawLabel;
 
-        // Capitaliser première lettre, reste en minuscules
-        return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+        // Pattern V0.3+ : {decorName}_{Flight|Ground}
+        // Identifier par : se termine par _Flight ou _Ground (pas de chiffres après)
+        const v03Match = name.match(/^([A-Za-z]+)_(Flight|Ground)$/);
+        if (v03Match) {
+            // "Studio_Ground" → "Studio" (Flight/Ground séparé du decorName)
+            return v03Match[1];
+        }
+
+        // Pattern V0.2 : {decorName}_{cameraId}_Tx_Ty_Tz_Rx_Ry_Rz
+        // Identifier par : underscore suivi de chiffres
+        const v02Match = name.match(/^([A-Za-z]+(?:Flight|Ground)?)_\d+/);
+        if (v02Match) {
+            // "StudioFlight_360_..." → "StudioFlight" (Flight/Ground fait partie du decorName)
+            // "Fjord_201_..." → "Fjord"
+            return v02Match[1];
+        }
+
+        // V0.1 ou autre : retourner tel quel
+        return name;
     };
 
     const options = {
@@ -547,22 +563,28 @@ export function getExteriorOptionsFromXML(xmlDoc) {
     // Spinner
     options.spinner = extractParameterOptions(xmlDoc, 'Exterior_Spinner', false);
 
-    // Decor - extraire avec nom normalisé, dédupliquer
-    // Le dropdown affiche uniquement les noms (Studio, Fjord, Tarmac, etc.)
-    // La valeur complète (avec Ground/Flight, caméra, etc.) est reconstruite automatiquement
+    // Decor - extraire tel quel depuis le XML (data-driven)
+    // ⚠️ IMPORTANT : Supporte UNIQUEMENT les bases Production (V0.2+) avec paramètre "Decor"
+    // Les bases POC (V0.1) avec "POC Decor" ne sont PAS supportées
     const decorRaw = extractParameterOptions(xmlDoc, 'Decor', false);
-    const decorNames = new Set();
 
-    decorRaw.forEach(opt => {
-        const name = extractDecorName(opt.label);
-        decorNames.add(name);
-    });
+    if (decorRaw.length === 0) {
+        console.warn('⚠️ Paramètre Decor non trouvé - Base POC (V0.1) non supportée');
+        options.decor = []; // Retourner vide pour les bases POC
+    } else {
+        const decorSet = new Set(); // Pour éviter les doublons exacts
 
-    // Convertir en tableau d'options {label, value} avec le nom dans les deux
-    options.decor = Array.from(decorNames).map(name => ({
-        label: name,  // Affichage dans dropdown : "Studio", "Fjord", etc.
-        value: name   // Valeur stockée : juste le nom, sera reconstruit selon version
-    }));
+        decorRaw.forEach(opt => {
+            const decorName = extractDecorName(opt.label);
+            decorSet.add(decorName);
+        });
+
+        // Convertir en tableau d'options {label, value}
+        options.decor = Array.from(decorSet).map(name => ({
+            label: name,  // Nom du décor tel qu'extrait du XML
+            value: name   // Valeur identique pour le moment
+        }));
+    }
 
     // Extraire les styles d'immatriculation
     const stylesParam = xmlDoc.querySelector('Parameter[label="Exterior_RegistrationNumber_Style"]');

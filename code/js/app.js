@@ -128,10 +128,27 @@ function renderDatabaseStructure(structure) {
     // Infos générales - avec vérification null
     const dbNameEl = document.getElementById('configDbName');
     const dbIdEl = document.getElementById('configDbId');
+    const dbTypeEl = document.getElementById('configDbType');
     const analyzedAtEl = document.getElementById('configAnalyzedAt');
 
     if (dbNameEl) dbNameEl.textContent = structure.name || '-';
-    if (dbIdEl) dbIdEl.textContent = structure.id || '-';
+    if (dbIdEl) {
+        if (structure.id) {
+            // Créer un lien cliquable vers le XML
+            const xmlUrl = `https://wr-daher.lumiscaphe.com/Database?databaseId=${structure.id}`;
+            dbIdEl.innerHTML = `<a href="${xmlUrl}" target="_blank" rel="noopener noreferrer" class="db-id-link">${structure.id}</a>`;
+        } else {
+            dbIdEl.textContent = '-';
+        }
+    }
+
+    // Afficher le type de base (POC ou Production) - US-046
+    if (dbTypeEl) {
+        dbTypeEl.textContent = structure.databaseType || '-';
+        dbTypeEl.style.color = structure.isPOC ? '#ff9800' : '#4caf50';
+        dbTypeEl.style.fontWeight = '600';
+    }
+
     if (analyzedAtEl) {
         analyzedAtEl.textContent = structure.analyzedAt ? new Date(structure.analyzedAt).toLocaleString('fr-FR') : '-';
     }
@@ -791,6 +808,51 @@ async function checkConfigFieldsAvailability() {
 }
 
 /**
+ * Peuple tous les dropdowns avec les options extraites du XML
+ * Appelé lors de l'initialisation et lors du changement de base de données
+ */
+async function populateAllDropdowns() {
+    console.log('🔄 Peuplement des dropdowns depuis le XML...');
+
+    try {
+        const xmlDoc = await getDatabaseXML();
+        const config = getConfig();
+
+        // Extraire les options extérieur
+        const exteriorOptions = getExteriorOptionsFromXML(xmlDoc);
+
+        // Peupler les dropdowns extérieur
+        populateDropdown('selectVersion', exteriorOptions.version, config.version);
+        populateDropdown('selectPaintScheme', exteriorOptions.paintScheme, config.paintScheme);
+        populateDropdown('selectPrestige', exteriorOptions.prestige, config.prestige);
+        populateDropdown('selectSpinner', exteriorOptions.spinner, config.spinner);
+        populateDropdown('selectDecor', exteriorOptions.decor, config.decor);
+
+        // Mettre à jour le dropdown Style selon le type de police actuel
+        updateStyleDropdown(config.fontType, exteriorOptions.styleSlanted, exteriorOptions.styleStraight);
+
+        // Extraire les options intérieur
+        const interiorOptions = getInteriorOptionsFromXML(xmlDoc);
+
+        // Peupler les dropdowns intérieur
+        populateDropdown('carpet', interiorOptions.carpet, config.carpet);
+        populateDropdown('seat-covers', interiorOptions.seatCovers, config.seatCovers);
+        populateDropdown('tablet-finish', interiorOptions.tabletFinish, config.tabletFinish);
+        populateDropdown('seatbelts', interiorOptions.seatbelts, config.seatbelts);
+        populateDropdown('metal-finish', interiorOptions.metalFinish, config.metalFinish);
+        populateDropdown('upper-side-panel', interiorOptions.upperSidePanel, config.upperSidePanel);
+        populateDropdown('lower-side-panel', interiorOptions.lowerSidePanel, config.lowerSidePanel);
+        populateDropdown('ultra-suede-ribbon', interiorOptions.ultraSuedeRibbon, config.ultraSuedeRibbon);
+        populateDropdown('stitching', interiorOptions.stitching, config.stitching);
+
+        console.log('✅ Tous les dropdowns peuplés depuis le XML');
+    } catch (error) {
+        console.error('❌ Erreur peuplement dropdowns:', error);
+        throw error;
+    }
+}
+
+/**
  * Charge la config par défaut depuis le XML et initialise le state
  * Retourne true si une config a été chargée, false sinon
  */
@@ -798,6 +860,9 @@ async function loadDefaultConfigFromXML() {
     console.log('📦 Chargement de la configuration par défaut depuis le XML...');
 
     try {
+        // D'abord recharger les options des dropdowns depuis le nouveau XML
+        await populateAllDropdowns();
+
         const defaultConfigString = await getDefaultConfig();
 
         if (!defaultConfigString) {
@@ -1064,42 +1129,10 @@ async function initUI() {
 
     const config = getConfig();
 
-    // Télécharger le XML et extraire TOUTES les options (extérieur + intérieur)
+    // Peupler tous les dropdowns depuis le XML
     try {
         log.init('Extraction de toutes les options depuis XML...');
-        const xmlDoc = await getDatabaseXML();
-
-        // Extraire les options extérieur
-        const exteriorOptions = getExteriorOptionsFromXML(xmlDoc);
-
-        // Peupler les dropdowns extérieur avec les valeurs du XML
-        populateDropdown('selectVersion', exteriorOptions.version, DEFAULT_CONFIG.version);
-        populateDropdown('selectPaintScheme', exteriorOptions.paintScheme, DEFAULT_CONFIG.paintScheme);
-        populateDropdown('selectPrestige', exteriorOptions.prestige, DEFAULT_CONFIG.prestige);
-        populateDropdown('selectSpinner', exteriorOptions.spinner, DEFAULT_CONFIG.spinner);
-
-        // Peupler le décor
-        populateDropdown('selectDecor', exteriorOptions.decor, DEFAULT_CONFIG.decor);
-
-        // Peupler le dropdown Style selon le type de police par défaut
-        // Utiliser les styles extraits du XML (ou fallback hardcodé si absent)
-        updateStyleDropdown(DEFAULT_CONFIG.fontType, exteriorOptions.styleSlanted, exteriorOptions.styleStraight);
-
-        // Extraire les options intérieur
-        const interiorOptions = getInteriorOptionsFromXML(xmlDoc);
-
-        // Peupler les dropdowns intérieur avec les valeurs du XML
-        populateDropdown('carpet', interiorOptions.carpet, config.carpet);
-        populateDropdown('seat-covers', interiorOptions.seatCovers, config.seatCovers);
-        populateDropdown('tablet-finish', interiorOptions.tabletFinish, config.tabletFinish);
-        populateDropdown('seatbelts', interiorOptions.seatbelts, config.seatbelts);
-        populateDropdown('metal-finish', interiorOptions.metalFinish, config.metalFinish);
-        populateDropdown('upper-side-panel', interiorOptions.upperSidePanel, config.upperSidePanel);
-        populateDropdown('lower-side-panel', interiorOptions.lowerSidePanel, config.lowerSidePanel);
-        populateDropdown('ultra-suede-ribbon', interiorOptions.ultraSuedeRibbon, config.ultraSuedeRibbon);
-        populateDropdown('stitching', interiorOptions.stitching, config.stitching); // US-036
-        // US-037 : central-seat-material est maintenant des radio buttons statiques (pas de populate)
-
+        await populateAllDropdowns();
         log.success('Tous les dropdowns peuplés depuis le XML');
     } catch (error) {
         log.error('Erreur chargement options depuis XML:', error);
