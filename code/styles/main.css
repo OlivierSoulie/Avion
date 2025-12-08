@@ -214,8 +214,9 @@ a {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
-    overflow: auto;
-    height: fit-content;
+    overflow: hidden; /* Pas de scroll sur la section */
+    height: 100%; /* Utiliser toute la hauteur disponible */
+    max-height: calc(100vh - 70px); /* Limite pour que actions-panel reste visible */
 }
 
 .viewport-container {
@@ -223,10 +224,10 @@ a {
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
     padding: 0.4rem;
-    height: auto;
+    height: 100%; /* Prendre toute la hauteur disponible */
     display: flex;
     flex-direction: column;
-    overflow: visible;
+    overflow: hidden; /* Pas de scroll sur le container */
 }
 
 .viewport-header {
@@ -259,15 +260,16 @@ a {
 
 .viewport-display {
     display: flex;
-    align-items: center;
+    align-items: flex-start; /* Aligner en haut au lieu de center */
     justify-content: center;
     background: var(--color-bg-secondary);
     border-radius: var(--radius-lg);
     position: relative;
-    overflow: auto;
+    overflow: auto; /* Scroll sur cette zone uniquement */
     max-width: fit-content;
-    max-height: fit-content;
+    flex: 1; /* Prendre l'espace restant (pousse actions-panel en bas) */
     margin: 0.3rem auto;
+    padding-top: 0.5rem; /* Petit padding en haut pour que la première ligne ne soit pas collée */
 }
 
 .viewport-placeholder {

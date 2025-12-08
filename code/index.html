@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="styles/animations.css">
     <link rel="stylesheet" href="styles/mobile-menu.css">
     <link rel="stylesheet" href="styles/medium-screen.css">
+    <link rel="stylesheet" href="styles/config-schema.css">
 </head>
 <body>
     <!-- Header -->
@@ -28,6 +29,9 @@
                 <h1>Configurateur TBM Daher</h1>
                 <p class="app-subtitle">Configurez et visualisez votre avion TBM en temps réel</p>
             </div>
+            <button id="configSchemaBtn" class="config-schema-btn" aria-label="Schémas XML">
+                ⚙️ Configuration
+            </button>
         </div>
     </header>
 
@@ -139,7 +143,7 @@
                     <!-- Loader (caché par défaut) -->
                     <div class="viewport-loader hidden" id="viewportLoader">
                         <div class="spinner"></div>
-                        <p>Génération en cours...</p>
+                        <p>Chargement</p>
                     </div>
 
                     <!-- Message d'erreur (caché par défaut) -->
@@ -528,6 +532,82 @@
                     <line x1="12" y1="15" x2="12" y2="3"></line>
                 </svg>
             </button>
+        </div>
+    </div>
+
+    <!-- Modal Configuration / Schémas XML -->
+    <div class="config-schema-modal hidden" id="configSchemaModal">
+        <div class="config-schema-backdrop" id="configSchemaBackdrop"></div>
+        <div class="config-schema-content">
+            <div class="config-schema-header">
+                <h2>📊 Schémas XML - Documentation de la Base de Données</h2>
+                <button class="config-schema-close" id="configSchemaClose">✕</button>
+            </div>
+
+            <div class="config-schema-body">
+                <!-- Informations générales -->
+                <section class="config-section">
+                    <h3>ℹ️ Informations Générales</h3>
+                    <div id="configGeneralInfo" class="config-info-grid">
+                        <div class="config-info-item">
+                            <strong>Base de données:</strong>
+                            <span id="configDbName">-</span>
+                        </div>
+                        <div class="config-info-item">
+                            <strong>ID:</strong>
+                            <span id="configDbId" class="monospace">-</span>
+                        </div>
+                        <div class="config-info-item">
+                            <strong>Analysé le:</strong>
+                            <span id="configAnalyzedAt">-</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Features disponibles -->
+                <section class="config-section">
+                    <h3>✨ Features Disponibles</h3>
+                    <div id="configFeatures" class="config-features-grid">
+                        <!-- Généré dynamiquement -->
+                    </div>
+                </section>
+
+                <!-- Camera Groups -->
+                <section class="config-section">
+                    <h3>📷 Camera Groups</h3>
+                    <div id="configCameraGroups" class="config-camera-groups">
+                        <!-- Généré dynamiquement -->
+                    </div>
+                </section>
+
+                <!-- Parameters -->
+                <section class="config-section">
+                    <h3>⚙️ Parameters</h3>
+                    <div id="configParameters" class="config-parameters">
+                        <!-- Généré dynamiquement -->
+                    </div>
+                </section>
+
+                <!-- Prestige Options -->
+                <section class="config-section">
+                    <h3>🎨 Prestige Options</h3>
+                    <div id="configPrestiges" class="config-prestiges">
+                        <!-- Généré dynamiquement -->
+                    </div>
+                </section>
+            </div>
+
+            <div class="config-schema-footer">
+                <button id="exportCurrentSchemaBtn" class="btn-primary">
+                    📥 Exporter cette base
+                </button>
+                <button id="exportAllSchemasBtn" class="btn-primary">
+                    📥 Exporter toutes les bases
+                </button>
+                <button id="closeConfigSchemaBtn" class="btn-secondary">
+                    Fermer
+                </button>
+            </div>
         </div>
     </div>
 

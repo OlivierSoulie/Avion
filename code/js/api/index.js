@@ -23,7 +23,8 @@ export {
     fetchDatabases,
     parseColorString,
     parsePaintSchemeBookmark,
-    getExteriorColorZones
+    getExteriorColorZones,
+    validateConfigForDatabase // US-040
 } from './xml-parser.js';
 
 // ======================================

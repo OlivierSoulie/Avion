@@ -4,7 +4,7 @@
  * @version 1.0
  */
 
-import { buildPayload, buildOverviewPayload } from './payload-builder.js';
+import { buildPayload, buildPayloadForSingleCamera, buildOverviewPayload } from './payload-builder.js';
 import { callLumiscapheAPI, downloadImages, setLastPayload } from './api-client.js';
 import { findCameraGroupId, getDatabaseXML, getCameraGroupOverview } from './xml-parser.js';
 
@@ -22,6 +22,19 @@ export async function fetchRenderImages(config) {
     console.log('Configuration:', config);
 
     try {
+        // Détecter si format V0.1/V0.2 (coordonnées dans decor) pour vue extérieure
+        const isV01V02Format = config.viewType === 'exterior' &&
+                               config.decor &&
+                               /^[A-Za-z]+_[A-Za-z0-9]+_[\d\-_]+$/.test(config.decor);
+
+        if (isV01V02Format) {
+            console.log('🔍 Format V0.1/V0.2 détecté : mode image simple');
+            return await fetchRenderImagesSingle(config);
+        }
+
+        // Format V0.3+ : Mode groupe de caméras (logique actuelle)
+        console.log('🔍 Format V0.3+ détecté : mode groupe de caméras');
+
         // 1. Construire le payload (ASYNC - télécharge le XML pour le camera group ID)
         const payload = await buildPayload(config);
 
@@ -65,6 +78,62 @@ export async function fetchRenderImages(config) {
         console.error('❌ Échec de la génération:', error);
         throw error;
     }
+}
+
+/**
+ * V0.1/V0.2 : Génère UNE SEULE image avec la caméra spécifiée dans le décor
+ * Format décor : {decorName}_{cameraName}_Tx_Ty_Tz_Rx_Ry_Rz
+ * @param {Object} config - Configuration avec decor au format V0.1/V0.2
+ * @returns {Promise<Array<Object>>} Tableau avec une seule image {url, cameraId, cameraName}
+ */
+async function fetchRenderImagesSingle(config) {
+    console.log('📷 Mode image simple (V0.1/V0.2)');
+
+    // Parser le décor : {decorName}_{cameraName}_Tx_Ty_Tz_Rx_Ry_Rz
+    const parts = config.decor.split('_');
+
+    if (parts.length < 8) {
+        throw new Error(`Format décor V0.1/V0.2 invalide : "${config.decor}". Attendu : {decorName}_{cameraName}_Tx_Ty_Tz_Rx_Ry_Rz`);
+    }
+
+    const decorName = parts[0]; // Ex: "Fjord"
+    const cameraName = parts[1]; // Ex: "001" ou nom de caméra
+
+    console.log(`   > Décor : ${decorName}`);
+    console.log(`   > Caméra : ${cameraName}`);
+
+    // Trouver l'ID de la caméra dans le XML
+    const xmlDoc = await getDatabaseXML();
+    const cameraElement = xmlDoc.querySelector(`Camera[name="${cameraName}"]`);
+
+    if (!cameraElement) {
+        throw new Error(`Caméra "${cameraName}" non trouvée dans le XML`);
+    }
+
+    const cameraId = cameraElement.getAttribute('id');
+    console.log(`   > Caméra ID : ${cameraId}`);
+
+    // Construire le payload avec la caméra unique (utiliser buildPayloadForSingleCamera)
+    const payload = await buildPayloadForSingleCamera({
+        ...config,
+        cameraId: cameraId  // ID de la caméra spécifiée dans le nom du décor
+    });
+
+    setLastPayload(payload);
+
+    // Appeler l'API
+    const images = await callLumiscapheAPI(payload);
+    const validatedImages = await downloadImages(images);
+
+    // Enrichir avec métadonnées
+    const enrichedImages = validatedImages.map(img => ({
+        ...img,
+        cameraName: cameraName,
+        groupName: 'Single Camera (V0.1/V0.2)'
+    }));
+
+    console.log('✅ Image unique générée avec succès');
+    return enrichedImages;
 }
 
 /**

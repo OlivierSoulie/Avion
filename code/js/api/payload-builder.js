@@ -120,16 +120,50 @@ function buildInteriorConfigString(config) {
 }
 
 /**
- * Construit la configuration décor
- * @param {string} decor - Nom du décor
- * @returns {Object} {suffix, positionValue}
+ * Construit la configuration décor selon le format de la base
+ * @param {XMLDocument} xmlDoc - Document XML pour détecter le format
+ * @param {string} decorName - Nom du décor (ex: "Studio", "Fjord")
+ * @returns {Object} {prefix, suffix, positionValue}
  */
-function buildDecorConfig(decor) {
-    const decorData = DECORS_CONFIG[decor] || { suffix: `${decor}_Ground`, type: 'Ground' };
-    return {
-        suffix: decorData.suffix,
-        positionValue: decor
-    };
+function buildDecorConfig(xmlDoc, decorName) {
+    // Chercher le paramètre Decor dans le XML
+    const decorParam = xmlDoc.querySelector('Parameter[label="Decor"], Parameter[label="POC Decor"]');
+
+    if (!decorParam) {
+        console.warn('Paramètre Decor non trouvé, utilisation fallback V0.3+');
+        const fallback = DECORS_CONFIG[decorName] || { suffix: `${decorName}_Ground`, type: 'Ground' };
+        return { prefix: 'Decor', suffix: fallback.suffix, positionValue: decorName };
+    }
+
+    // Extraire les valeurs pour détecter le format
+    const values = decorParam.querySelectorAll('Value');
+    const firstValue = values[0]?.getAttribute('symbol') || '';
+
+    // Détecter le format
+    if (firstValue.startsWith('POC Decor.')) {
+        // V0.1 : Format "POC Decor.{DECORNAME}"
+        const suffix = `${decorName.toUpperCase()}`;  // "FJORD", "STUDIO", etc.
+        console.log(`   > Format V0.1 détecté : POC Decor.${suffix}`);
+        return { prefix: 'POC Decor', suffix, positionValue: decorName };
+    } else if (/^[A-Za-z]+_[A-Za-z0-9]+_[\d\-_]+$/.test(firstValue)) {
+        // V0.2 : Format "{decorName}_{cameraName}_Tx_Ty_Tz_Rx_Ry_Rz"
+        // Chercher la première valeur qui correspond au décor demandé
+        for (const value of values) {
+            const symbol = value.getAttribute('symbol');
+            if (symbol.toLowerCase().startsWith(decorName.toLowerCase() + '_')) {
+                console.log(`   > Format V0.2 détecté : ${symbol}`);
+                return { prefix: 'Decor', suffix: symbol, positionValue: decorName };
+            }
+        }
+        // Fallback si aucune correspondance
+        console.warn(`Aucune valeur V0.2 trouvée pour "${decorName}", utilisation première valeur`);
+        return { prefix: 'Decor', suffix: firstValue, positionValue: decorName };
+    } else {
+        // V0.3+ : Format "{decorName}_{Ground|Flight}"
+        const decorData = DECORS_CONFIG[decorName] || { suffix: `${decorName}_Ground`, type: 'Ground' };
+        console.log(`   > Format V0.3+ détecté : ${decorData.suffix}`);
+        return { prefix: 'Decor', suffix: decorData.suffix, positionValue: decorName };
+    }
 }
 
 /**
@@ -152,7 +186,7 @@ export function buildConfigString(xmlDoc, config) {
 
     const paintConfig = extractPaintConfig(xmlDoc, config);
     const interiorConfig = buildInteriorConfigString(config);
-    const { suffix: decorSuffix } = buildDecorConfig(config.decor);
+    const { prefix: decorPrefix, suffix: decorSuffix } = buildDecorConfig(xmlDoc, config.decor);
 
     // US-022: Position dépend de la vue (exterior/interior)
     const positionValue = (config.viewType === "interior")
@@ -163,7 +197,7 @@ export function buildConfigString(xmlDoc, config) {
         `Version.${config.version}`,
         paintConfig,           // Config depuis XML (avec zones personnalisées si définies)
         interiorConfig,        // US-027: Config intérieur personnalisée (10 parties)
-        `Decor.${decorSuffix}`,
+        `${decorPrefix}.${decorSuffix}`,  // V0.1: "POC Decor.FJORD", V0.2+: "Decor.{value}"
         `Position.${positionValue}`,
         `Exterior_Spinner.${config.spinner}`,
         `SunGlass.${config.sunglass}`,        // US-024: Dynamique (SunGlassON/OFF)

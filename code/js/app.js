@@ -36,7 +36,8 @@ import {
     downloadSelectedImages,
     initMobileMenu // Menu burger mobile
 } from './ui/index.js';
-import { fetchRenderImages, fetchConfigurationImages, fetchOverviewImages, fetchDatabases, setDatabaseId, getDatabaseId, getDefaultConfig, getInteriorPrestigeConfig as parsePrestigeConfig, getDatabaseXML, getExteriorColorZones, parsePaintSchemeBookmark, getInteriorOptionsFromXML, getExteriorOptionsFromXML, getCameraListFromGroup } from './api/index.js';
+import { fetchRenderImages, fetchConfigurationImages, fetchOverviewImages, fetchDatabases, setDatabaseId, getDatabaseId, getDefaultConfig, getInteriorPrestigeConfig as parsePrestigeConfig, getDatabaseXML, getExteriorColorZones, parsePaintSchemeBookmark, getInteriorOptionsFromXML, getExteriorOptionsFromXML, getCameraListFromGroup, validateConfigForDatabase } from './api/index.js';
+import { analyzeDatabaseStructure, exportStructureAsJSON } from './api/database-analyzer.js';
 import { log } from './logger.js';
 
 // ======================================
@@ -50,6 +51,305 @@ let colorZonesData = {
     zoneD: [],
     zoneAPlus: []
 };
+
+// ======================================
+// Configuration Modal - Database Schema
+// ======================================
+
+let currentDatabaseStructure = null;
+
+/**
+ * Ouvre le modal de configuration et analyse la base actuelle
+ */
+async function openConfigSchemaModal() {
+    const modal = document.getElementById('configSchemaModal');
+    if (!modal) return;
+
+    modal.classList.remove('hidden');
+
+    try {
+        // Analyser la base actuelle
+        const databaseId = getDatabaseId();
+        const databaseName = document.getElementById('selectDatabase')?.selectedOptions[0]?.text || 'Base inconnue';
+
+        // Vider les conteneurs (pas le body entier!)
+        const containers = [
+            'configFeatures',
+            'configCameraGroups',
+            'configParameters',
+            'configPrestiges'
+        ];
+
+        containers.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.innerHTML = '<p style="text-align: center; padding: 1rem; color: #999;">⏳ Chargement...</p>';
+        });
+
+        // Analyser la structure
+        currentDatabaseStructure = await analyzeDatabaseStructure(databaseId);
+        currentDatabaseStructure.name = databaseName;
+
+        // Afficher les résultats
+        renderDatabaseStructure(currentDatabaseStructure);
+
+    } catch (error) {
+        console.error('❌ Erreur analyse base:', error);
+
+        // Afficher l'erreur dans les conteneurs
+        const containers = ['configFeatures', 'configCameraGroups', 'configParameters', 'configPrestiges'];
+        containers.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.innerHTML = `<p style="text-align: center; padding: 1rem; color: red;">❌ Erreur: ${error.message}</p>`;
+        });
+    }
+}
+
+/**
+ * Ferme le modal de configuration
+ */
+function closeConfigSchemaModal() {
+    const modal = document.getElementById('configSchemaModal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
+/**
+ * Affiche la structure de la base dans le modal
+ */
+function renderDatabaseStructure(structure) {
+    if (!structure) {
+        console.error('❌ Structure de base invalide');
+        return;
+    }
+
+    console.log('📊 Affichage de la structure:', structure);
+
+    // Infos générales - avec vérification null
+    const dbNameEl = document.getElementById('configDbName');
+    const dbIdEl = document.getElementById('configDbId');
+    const analyzedAtEl = document.getElementById('configAnalyzedAt');
+
+    if (dbNameEl) dbNameEl.textContent = structure.name || '-';
+    if (dbIdEl) dbIdEl.textContent = structure.id || '-';
+    if (analyzedAtEl) {
+        analyzedAtEl.textContent = structure.analyzedAt ? new Date(structure.analyzedAt).toLocaleString('fr-FR') : '-';
+    }
+
+    // Features
+    const featuresContainer = document.getElementById('configFeatures');
+    if (!featuresContainer) {
+        console.error('❌ Element configFeatures non trouvé');
+        return;
+    }
+    featuresContainer.innerHTML = '';
+
+    const featuresList = [
+        // Vues
+        { key: 'hasExterior', label: 'Vue Extérieur', icon: '🏞️' },
+        { key: 'hasInterior', label: 'Vue Intérieur', icon: '🪑' },
+        { key: 'hasConfiguration', label: 'Vue Configuration', icon: '⚙️' },
+        { key: 'hasOverview', label: 'Vue Overview', icon: '📊' },
+
+        // Fonctionnalités interactives
+        { key: 'hasDecor', label: 'Décor', icon: '🌍' },
+        { key: 'hasDoorPilot', label: 'Porte Pilote', icon: '🚪' },
+        { key: 'hasDoorPassenger', label: 'Porte Passager', icon: '🚪' },
+        { key: 'hasSunGlass', label: 'Volet Hublots', icon: '🪟' },
+        { key: 'hasTablet', label: 'Tablette', icon: '📱' },
+        { key: 'hasLightingCeiling', label: 'Éclairage Plafond', icon: '💡' },
+        { key: 'hasMoodLights', label: 'Mood Lights', icon: '✨' }
+    ];
+
+    featuresList.forEach(({ key, label }) => {
+        const available = structure.features[key];
+        const item = document.createElement('div');
+        item.className = `config-feature-item ${available ? 'available' : 'unavailable'}`;
+        item.innerHTML = `
+            <span class="icon">${available ? '✅' : '❌'}</span>
+            <span class="label">${label}</span>
+        `;
+        featuresContainer.appendChild(item);
+    });
+
+    // Camera Groups
+    const cameraGroupsContainer = document.getElementById('configCameraGroups');
+    cameraGroupsContainer.innerHTML = '';
+
+    Object.entries(structure.cameraGroups).forEach(([type, data]) => {
+        if (!data.available) return;
+
+        const groupDiv = document.createElement('div');
+        groupDiv.className = 'config-camera-group';
+
+        let groupsListHTML = '';
+        data.groups.forEach(group => {
+            // Liste des noms et IDs de caméras
+            let camerasListHTML = '';
+            if (group.cameras && group.cameras.length > 0) {
+                camerasListHTML = '<ul class="cameras-list">';
+                group.cameras.forEach(cam => {
+                    camerasListHTML += `<li><span class="cam-name">${cam.name}</span><span class="cam-id">${cam.id}</span></li>`;
+                });
+                camerasListHTML += '</ul>';
+            }
+
+            groupsListHTML += `
+                <div class="config-camera-group-item">
+                    <div class="name">${group.name}</div>
+                    <div class="count">${group.cameraCount} caméra(s)</div>
+                    ${camerasListHTML}
+                </div>
+            `;
+        });
+
+        groupDiv.innerHTML = `
+            <h4>${type.charAt(0).toUpperCase() + type.slice(1)}</h4>
+            <div class="pattern">Pattern: ${data.pattern || 'N/A'}</div>
+            <div class="groups-list">${groupsListHTML}</div>
+        `;
+        cameraGroupsContainer.appendChild(groupDiv);
+    });
+
+    // Parameters
+    const parametersContainer = document.getElementById('configParameters');
+    parametersContainer.innerHTML = '';
+
+    Object.entries(structure.parameters).forEach(([paramName, paramData]) => {
+        const paramDiv = document.createElement('div');
+        paramDiv.className = 'config-parameter-item';
+
+        let optionsHTML = '';
+        paramData.options.forEach(opt => {
+            optionsHTML += `<div class="config-option-item" title="${opt.value}">${opt.label}</div>`;
+        });
+
+        // Description du pattern (si existe)
+        let descriptionHTML = '';
+        if (paramData.patternDescription) {
+            descriptionHTML = `<div class="config-parameter-description">ℹ️ ${paramData.patternDescription}</div>`;
+        }
+
+        paramDiv.innerHTML = `
+            <div class="config-parameter-header">
+                <span class="config-parameter-name">${paramName}</span>
+                <span class="config-parameter-count">${paramData.optionCount} option(s)</span>
+            </div>
+            <div class="config-parameter-pattern">Pattern: ${paramData.pattern || 'N/A'}</div>
+            ${descriptionHTML}
+            <div class="config-parameter-options">${optionsHTML}</div>
+        `;
+        parametersContainer.appendChild(paramDiv);
+    });
+
+    // Prestiges
+    const prestigesContainer = document.getElementById('configPrestiges');
+    prestigesContainer.innerHTML = '';
+
+    if (structure.prestigeOptions && structure.prestigeOptions.length > 0) {
+        structure.prestigeOptions.forEach(prestige => {
+            const prestigeDiv = document.createElement('div');
+            prestigeDiv.className = 'config-prestige-item';
+            prestigeDiv.textContent = prestige;
+            prestigesContainer.appendChild(prestigeDiv);
+        });
+    } else {
+        prestigesContainer.innerHTML = '<p style="color: var(--color-text-secondary);">Aucune option Prestige</p>';
+    }
+}
+
+/**
+ * Exporte toutes les bases de données
+ */
+async function exportAllDatabaseSchemas() {
+    try {
+        const databases = await fetchDatabases();
+        const allStructures = {
+            generatedAt: new Date().toISOString(),
+            databaseVersions: []
+        };
+
+        // Afficher progression
+        const btn = document.getElementById('exportAllSchemasBtn');
+        const originalText = btn.textContent;
+        btn.disabled = true;
+
+        for (let i = 0; i < databases.length; i++) {
+            const db = databases[i];
+            btn.textContent = `⏳ Analyse ${i + 1}/${databases.length}...`;
+
+            const structure = await analyzeDatabaseStructure(db.id);
+            structure.name = db.name;
+            allStructures.databaseVersions.push(structure);
+        }
+
+        // Export
+        const jsonString = JSON.stringify(allStructures, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'all-databases-schema.json';
+        a.click();
+        URL.revokeObjectURL(url);
+
+        btn.textContent = originalText;
+        btn.disabled = false;
+
+        showSuccessToast(`${databases.length} bases exportées !`);
+
+    } catch (error) {
+        console.error('❌ Erreur export:', error);
+        showError(`Erreur export: ${error.message}`);
+    }
+}
+
+/**
+ * Initialise les event listeners du modal Configuration
+ */
+function initConfigSchemaModal() {
+    // Bouton d'ouverture dans le header
+    const openBtn = document.getElementById('configSchemaBtn');
+    if (openBtn) {
+        openBtn.addEventListener('click', openConfigSchemaModal);
+    }
+
+    // Boutons de fermeture
+    const closeBtn = document.getElementById('configSchemaClose');
+    const closeBtn2 = document.getElementById('closeConfigSchemaBtn');
+    const backdrop = document.getElementById('configSchemaBackdrop');
+
+    if (closeBtn) closeBtn.addEventListener('click', closeConfigSchemaModal);
+    if (closeBtn2) closeBtn2.addEventListener('click', closeConfigSchemaModal);
+    if (backdrop) backdrop.addEventListener('click', closeConfigSchemaModal);
+
+    // Bouton export base actuelle
+    const exportCurrentBtn = document.getElementById('exportCurrentSchemaBtn');
+    if (exportCurrentBtn) {
+        exportCurrentBtn.addEventListener('click', () => {
+            if (currentDatabaseStructure) {
+                exportStructureAsJSON(currentDatabaseStructure, `${currentDatabaseStructure.name || 'database'}-schema.json`);
+                showSuccessToast('Schéma exporté !');
+            }
+        });
+    }
+
+    // Bouton export toutes les bases
+    const exportAllBtn = document.getElementById('exportAllSchemasBtn');
+    if (exportAllBtn) {
+        exportAllBtn.addEventListener('click', exportAllDatabaseSchemas);
+    }
+
+    // Fermeture au clavier (Escape)
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('configSchemaModal');
+            if (modal && !modal.classList.contains('hidden')) {
+                closeConfigSchemaModal();
+            }
+        }
+    });
+}
 
 // ======================================
 // Fonctions utilitaires UI
@@ -233,6 +533,264 @@ function parseDefaultConfigString(configString) {
 }
 
 /**
+ * Vérifie quels groupes caméra existent et masque/affiche les boutons de vue en conséquence
+ * US-040: V0.1/V0.2 n'ont pas tous les groupes (Overview, Configuration, etc.)
+ */
+async function checkViewAvailability() {
+    console.log('🔍 Vérification disponibilité des vues...');
+
+    try {
+        const xmlDoc = await getDatabaseXML();
+        const groups = xmlDoc.querySelectorAll('Group');
+
+        // Collecter les groupes disponibles AVEC au moins 1 caméra
+        const availableGroups = new Map(); // Map<groupName, cameraCount>
+        for (let group of groups) {
+            const groupName = group.getAttribute('name');
+            if (groupName) {
+                const cameraCount = group.querySelectorAll('Camera').length;
+                availableGroups.set(groupName, cameraCount);
+            }
+        }
+
+        console.log('   Groupes disponibles (avec caméras):');
+        availableGroups.forEach((count, name) => {
+            console.log(`     - ${name}: ${count} caméra(s)`);
+        });
+
+        // Mapping: bouton → groupe caméra requis (avec fallbacks pour anciennes versions)
+        const viewButtons = [
+            { id: 'btnViewExterior', groups: ['Exterieur_Decor', 'Exterieur'], partial: true }, // Partial: commence par, fallback V0.1/V0.2
+            { id: 'btnViewInterior', groups: ['Interieur'], partial: false },
+            { id: 'btnViewConfiguration', groups: ['Configuration'], partial: false },
+            { id: 'btnViewOverview', groups: ['Overview'], partial: false }
+        ];
+
+        // Pour chaque bouton, vérifier si le groupe existe ET contient des caméras
+        viewButtons.forEach(({ id, groups, partial }) => {
+            const btn = document.getElementById(id);
+            if (!btn) return;
+
+            let isAvailable = false;
+            let foundGroup = null;
+
+            // Essayer chaque groupe dans l'ordre (premier = préféré, suivants = fallbacks)
+            for (let group of groups) {
+                if (partial) {
+                    // Recherche partielle (ex: Exterieur_Decor* ou Exterieur)
+                    for (let [groupName, cameraCount] of availableGroups) {
+                        if (groupName.startsWith(group) && cameraCount > 0) {
+                            isAvailable = true;
+                            foundGroup = groupName;
+                            break;
+                        }
+                    }
+                } else {
+                    // Recherche exacte
+                    const cameraCount = availableGroups.get(group) || 0;
+                    if (cameraCount > 0) {
+                        isAvailable = true;
+                        foundGroup = group;
+                    }
+                }
+
+                // Si trouvé, arrêter la recherche
+                if (isAvailable) break;
+            }
+
+            if (isAvailable) {
+                console.log(`   ✅ ${id}: groupe "${foundGroup}" trouvé avec caméras`);
+                btn.classList.remove('hidden');
+                btn.disabled = false;
+            } else {
+                console.log(`   ⚠️ ${id}: groupe "${groups.join(', ')}" absent ou vide → masqué`);
+                console.log(`      → Ajout classe 'hidden' et disabled=true sur`, btn);
+                btn.classList.add('hidden');
+                btn.disabled = true;
+            }
+        });
+
+    } catch (error) {
+        console.warn('⚠️ Erreur vérification vues:', error);
+    }
+}
+
+/**
+ * Vérifie quels parameters existent et masque/affiche les boutons d'actions en conséquence
+ * US-040: V0.1/V0.2 n'ont pas tous les parameters (Door_pilot, Door_passenger, Tablet, SunGlass)
+ */
+async function checkActionButtonsAvailability() {
+    console.log('🔍 Vérification disponibilité boutons d\'actions...');
+
+    try {
+        const xmlDoc = await getDatabaseXML();
+        const parameters = xmlDoc.querySelectorAll('Parameter');
+
+        // Collecter tous les noms de parameters disponibles
+        const availableParams = new Set();
+        for (let param of parameters) {
+            const paramLabel = param.getAttribute('label');
+            if (paramLabel) {
+                availableParams.add(paramLabel);
+            }
+        }
+
+        console.log('   Parameters disponibles:', Array.from(availableParams).join(', '));
+
+        // Mapping: groupe de boutons → parameter requis (avec variantes de nommage)
+        const actionButtons = [
+            {
+                selector: '.form-group:has(#btnDoorPilotClosed)',
+                params: ['Door_pilot', 'POC Door pilot'], // V0.3+ : "Door_pilot", V0.1 : "POC Door pilot"
+                name: 'Porte pilote'
+            },
+            {
+                selector: '.form-group:has(#btnDoorPassengerClosed)',
+                params: ['Door_passenger', 'POC Door passenger'], // V0.3+ : "Door_passenger", V0.1 : "POC Door passenger"
+                name: 'Porte passager'
+            },
+            {
+                selector: '.form-group:has(#btnTabletClosed)',
+                params: ['Tablet'], // Absent en V0.1/V0.2
+                name: 'Tablette'
+            },
+            {
+                selector: '.form-group:has(#btnSunGlassOFF)',
+                params: ['SunGlass', 'Sun glass', 'POC Sun glass'], // V0.3+ : "SunGlass", V0.2 : "Sun glass", V0.1 : "POC Sun glass"
+                name: 'Volet Hublots'
+            }
+        ];
+
+        // Pour chaque groupe de boutons, vérifier si UNE DES VARIANTES du parameter existe
+        actionButtons.forEach(({ selector, params, name }) => {
+            const formGroup = document.querySelector(selector);
+            if (!formGroup) return;
+
+            let isAvailable = false;
+            let foundVariant = null;
+
+            // Vérifier toutes les variantes
+            for (let paramName of params) {
+                if (availableParams.has(paramName)) {
+                    isAvailable = true;
+                    foundVariant = paramName;
+                    break;
+                }
+            }
+
+            if (isAvailable) {
+                console.log(`   ✅ ${name}: trouvé sous "${foundVariant}"`);
+                formGroup.classList.remove('hidden');
+                formGroup.style.display = '';
+            } else {
+                console.log(`   ⚠️ ${name}: aucune variante trouvée (${params.join(' / ')}) → masqué`);
+                formGroup.classList.add('hidden');
+                formGroup.style.display = 'none';
+            }
+        });
+
+    } catch (error) {
+        console.warn('⚠️ Erreur vérification boutons actions:', error);
+    }
+}
+
+/**
+ * Vérifie quels champs de configuration existent et masque/affiche les dropdowns en conséquence
+ * US-040: V0.1/V0.2 n'ont pas tous les parameters (Version, Spinner, Stitching, etc.)
+ */
+async function checkConfigFieldsAvailability() {
+    console.log('🔍 Vérification disponibilité champs de configuration...');
+
+    try {
+        const xmlDoc = await getDatabaseXML();
+        const parameters = xmlDoc.querySelectorAll('Parameter');
+
+        // Collecter tous les noms de parameters disponibles
+        const availableParams = new Set();
+        for (let param of parameters) {
+            const paramLabel = param.getAttribute('label');
+            if (paramLabel) {
+                availableParams.add(paramLabel);
+            }
+        }
+
+        // Vérifier aussi les ConfigurationBookmark pour les Prestiges
+        const prestigeBookmarks = xmlDoc.querySelectorAll('ConfigurationBookmark[label^="Interior_PrestigeSelection_"]');
+        const hasPrestige = prestigeBookmarks.length > 0;
+
+        console.log('   Parameters de configuration disponibles:', Array.from(availableParams).join(', '));
+
+        // Mapping: sélecteur de form-group → parameter requis (avec variantes de nommage)
+        const configFields = [
+            {
+                selector: '.form-group:has(#selectVersion)',
+                params: ['Version'], // Présent dans toutes les versions
+                name: 'Modèle (Version)'
+            },
+            {
+                selector: '.form-group:has(#selectPaintScheme)',
+                params: ['Exterior_PaintScheme'], // Présent dans toutes les versions
+                name: 'Schéma de peinture'
+            },
+            {
+                selector: '.form-group:has(#selectSpinner)',
+                params: ['Exterior_Spinner'], // Présent dans toutes les versions
+                name: 'Spinner'
+            },
+            {
+                selector: '.form-group:has(#selectDecor)',
+                params: ['Decor', 'POC Decor'], // V0.3+ : "Decor", V0.1 : "POC Decor"
+                name: 'Décor'
+            },
+            {
+                selector: '.form-group:has(#selectPrestige)',
+                isPrestige: true,
+                name: 'Prestige'
+            },
+            {
+                selector: '.form-group:has(#stitching)',
+                params: ['Interior_Stitching'], // Absent en V0.1/V0.2
+                name: 'Stitching (fil de couture)'
+            }
+        ];
+
+        // Pour chaque champ, vérifier si UNE DES VARIANTES du parameter existe
+        configFields.forEach(({ selector, params, isPrestige, name }) => {
+            const formGroup = document.querySelector(selector);
+            if (!formGroup) return;
+
+            let isAvailable = false;
+
+            if (isPrestige) {
+                // Cas spécial pour Prestige (ConfigurationBookmark)
+                isAvailable = hasPrestige;
+            } else {
+                // Parameter classique: vérifier toutes les variantes
+                for (let paramName of params) {
+                    if (availableParams.has(paramName)) {
+                        console.log(`   ✅ ${name}: trouvé sous "${paramName}"`);
+                        isAvailable = true;
+                        break;
+                    }
+                }
+            }
+
+            if (isAvailable) {
+                formGroup.classList.remove('hidden');
+                formGroup.style.display = '';
+            } else {
+                console.log(`   ⚠️ ${name}: aucune variante trouvée (${params.join(' / ')}) → masqué`);
+                formGroup.classList.add('hidden');
+                formGroup.style.display = 'none';
+            }
+        });
+
+    } catch (error) {
+        console.warn('⚠️ Erreur vérification champs configuration:', error);
+    }
+}
+
+/**
  * Charge la config par défaut depuis le XML et initialise le state
  * Retourne true si une config a été chargée, false sinon
  */
@@ -285,6 +843,16 @@ async function loadDefaultConfigFromXML() {
         }
 
         console.log('✅ Configuration par défaut appliquée depuis le XML');
+
+        // US-040 V0.1/V0.2 : Vérifier quelles vues sont disponibles et masquer les boutons inexistants
+        await checkViewAvailability();
+
+        // US-040 : Vérifier quels boutons d'actions sont disponibles selon les parameters XML
+        await checkActionButtonsAvailability();
+
+        // US-040 : Vérifier quels champs de configuration sont disponibles selon les parameters XML
+        await checkConfigFieldsAvailability();
+
         return true;
 
     } catch (error) {
@@ -596,8 +1164,17 @@ async function loadRender() {
         // 1. Récupérer la config actuelle
         const config = getConfig();
 
+        // US-040: Valider la config pour la base actuelle
+        const { config: validatedConfig, corrections } = await validateConfigForDatabase(config);
+
+        // Si corrections appliquées, informer l'utilisateur
+        if (corrections.length > 0) {
+            console.warn(`⚠️ ${corrections.length} correction(s) appliquée(s) pour compatibilité base`);
+            showSuccessToast(`Configuration adaptée (${corrections.length} corrections)`);
+        }
+
         // BUG-001 FIX: Vérifier si la config a changé
-        const currentHash = hashConfig(config);
+        const currentHash = hashConfig(validatedConfig);
         if (currentHash === lastConfigHash) {
             console.log('Configuration identique à la dernière - API non appelée');
             return;
@@ -610,7 +1187,7 @@ async function loadRender() {
         setLoading(true);
         setError(null);
 
-        // 3. Appeler l'API
+        // 3. Appeler l'API avec la config validée
         const viewType = getViewType(); // Récupérer la vue courante (exterior/interior/configuration)
 
         let images;
@@ -618,10 +1195,10 @@ async function loadRender() {
         // US-042: Pour la vue Configuration, utiliser fetchConfigurationImages() qui fait 2 appels API
         if (viewType === 'configuration') {
             console.log('📸 Vue Configuration: appel API avec tailles multiples...');
-            images = await fetchConfigurationImages(config);
+            images = await fetchConfigurationImages(validatedConfig);
         } else {
             // Pour exterior/interior, appel API classique
-            images = await fetchRenderImages(config);
+            images = await fetchRenderImages(validatedConfig);
         }
 
         // 4. Mettre à jour le state
@@ -884,16 +1461,36 @@ function attachEventListeners() {
     // US-019: Dropdown Base de données
     const selectDatabase = document.getElementById('selectDatabase');
     if (selectDatabase) {
-        selectDatabase.addEventListener('change', (e) => {
+        selectDatabase.addEventListener('change', async (e) => {
             const databaseId = e.target.value;
             const databaseName = e.target.options[e.target.selectedIndex].text;
 
             console.log(`🔄 Changement de base: ${databaseName} (${databaseId})`);
-            setDatabaseId(databaseId);
 
-            // Réinitialiser les images (la base a changé)
-            showPlaceholder('Base de données changée. Sélectionnez une configuration pour générer le rendu.');
-            setImages([]);
+            try {
+                // US-039: Changement de base → Recharger config par défaut
+                showLoader('Chargement');
+
+                // 1. Changer l'ID de base (invalide le cache XML)
+                setDatabaseId(databaseId);
+
+                // 2. Recharger la configuration par défaut depuis le nouveau XML
+                await loadDefaultConfigFromXML();
+
+                // 3. Réinitialiser le hash pour forcer le rechargement des images
+                lastConfigHash = null;
+
+                // 4. Charger les images avec la nouvelle config
+                await loadRender();
+
+                showSuccessToast(`Base "${databaseName}" chargée avec succès`);
+
+                console.log('✅ Base changée et configuration rechargée');
+            } catch (error) {
+                hideLoader();
+                console.error('❌ Erreur lors du changement de base:', error);
+                showError(`Erreur lors du chargement de la base: ${error.message}`);
+            }
         });
     }
 
@@ -1637,6 +2234,9 @@ async function init() {
 
     // Initialiser le menu burger mobile
     initMobileMenu();
+
+    // Initialiser le modal Configuration/Schémas XML
+    initConfigSchemaModal();
 
     // Initialiser le bouton Réessayer (US-005)
     initRetryButton(() => {

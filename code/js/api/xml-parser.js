@@ -114,8 +114,17 @@ export async function findCameraGroupId(decorName, viewType = "exterior") {
     }
 
     // Vue extérieure: comportement original
-    // Recherche 1 : Nom exact "Exterieur_Decor{decorName}"
-    const target = `Exterieur_Decor${decorName}`;
+    // US-040 V0.2 : Si decorName contient coordonnées (ex: "Fjord_201_0_0_0_0_-90_-15"),
+    // extraire juste le nom du décor (ex: "Fjord")
+    let decorBaseName = decorName;
+    if (/^[A-Za-z]+_[\d\-_]+$/.test(decorName)) {
+        // Format V0.2 avec coordonnées : extraire juste le nom (avant premier underscore)
+        decorBaseName = decorName.split('_')[0];
+        console.log(`   > Détection format V0.2: "${decorName}" → "${decorBaseName}"`);
+    }
+
+    // Recherche 1 : Nom exact "Exterieur_Decor{decorBaseName}"
+    const target = `Exterieur_Decor${decorBaseName}`;
     console.log(`   > Recherche exacte: "${target}"`);
 
     for (let group of groups) {
@@ -127,8 +136,8 @@ export async function findCameraGroupId(decorName, viewType = "exterior") {
         }
     }
 
-    // Recherche 2 : Nom partiel contenant "Decor{decorName}"
-    const partialTarget = `Decor${decorName}`;
+    // Recherche 2 : Nom partiel contenant "Decor{decorBaseName}"
+    const partialTarget = `Decor${decorBaseName}`;
     console.log(`   > Recherche partielle: contient "${partialTarget}"`);
 
     for (let group of groups) {
@@ -136,6 +145,18 @@ export async function findCameraGroupId(decorName, viewType = "exterior") {
         if (groupName.includes(partialTarget)) {
             const id = group.getAttribute('id');
             console.log(`   ✅ Camera group trouvé (partiel): ${id} (nom: ${groupName})`);
+            return id;
+        }
+    }
+
+    // Recherche 3 : Fallback V0.1/V0.2 - chercher juste "Exterieur"
+    console.log(`   > Recherche fallback: "Exterieur" (V0.1/V0.2)`);
+
+    for (let group of groups) {
+        const groupName = group.getAttribute('name');
+        if (groupName === 'Exterieur') {
+            const id = group.getAttribute('id');
+            console.log(`   ✅ Camera group trouvé (fallback V0.1/V0.2): ${id}`);
             return id;
         }
     }
@@ -478,9 +499,22 @@ export function getExteriorOptionsFromXML(xmlDoc) {
         return rawLabel.split('_')[0];
     };
 
-    // "Studio_Ground" → "Studio", "Fjord_Flight" → "Fjord"
-    const formatDecorLabel = (rawLabel) => {
-        return rawLabel.replace('_Ground', '').replace('_Flight', '');
+    // Extrait le NOM du décor pour affichage (dropdown label)
+    // - V0.1 : "FJORD" ou "out Studio Flight" → "Fjord" ou "Studio"
+    // - V0.2 : "Fjord_001_201_0_0_0_0_-90_-15" → "Fjord"
+    // - V0.3+ : "Studio_Ground" ou "Fjord_Flight" → "Studio" ou "Fjord"
+    const extractDecorName = (rawLabel) => {
+        // Nettoyer les préfixes/suffixes pour obtenir le nom pur
+        let name = rawLabel
+            .replace(/^POC Decor\./, '')      // V0.1 : "POC Decor.FJORD" → "FJORD"
+            .replace(/^out /, '')              // V0.1 : "out Studio Flight" → "Studio Flight"
+            .replace(/_Ground$/, '')           // V0.3+ : "Studio_Ground" → "Studio"
+            .replace(/_Flight$/, '')           // V0.3+ : "Fjord_Flight" → "Fjord"
+            .replace(/ (Ground|Flight)$/, '')  // V0.1 : "Studio Flight" → "Studio"
+            .split('_')[0];                    // V0.2 : "Fjord_001_201..." → "Fjord"
+
+        // Capitaliser première lettre, reste en minuscules
+        return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
     };
 
     const options = {
@@ -513,11 +547,21 @@ export function getExteriorOptionsFromXML(xmlDoc) {
     // Spinner
     options.spinner = extractParameterOptions(xmlDoc, 'Exterior_Spinner', false);
 
-    // Decor - extraire et formater (label ET value)
+    // Decor - extraire avec nom normalisé, dédupliquer
+    // Le dropdown affiche uniquement les noms (Studio, Fjord, Tarmac, etc.)
+    // La valeur complète (avec Ground/Flight, caméra, etc.) est reconstruite automatiquement
     const decorRaw = extractParameterOptions(xmlDoc, 'Decor', false);
-    options.decor = decorRaw.map(opt => ({
-        label: formatDecorLabel(opt.label),
-        value: formatDecorLabel(opt.value)  // Formater aussi la value pour correspondre à DECORS_CONFIG
+    const decorNames = new Set();
+
+    decorRaw.forEach(opt => {
+        const name = extractDecorName(opt.label);
+        decorNames.add(name);
+    });
+
+    // Convertir en tableau d'options {label, value} avec le nom dans les deux
+    options.decor = Array.from(decorNames).map(name => ({
+        label: name,  // Affichage dans dropdown : "Studio", "Fjord", etc.
+        value: name   // Valeur stockée : juste le nom, sera reconstruit selon version
     }));
 
     // Extraire les styles d'immatriculation
@@ -967,4 +1011,141 @@ export async function getExteriorColorZones() {
         console.error('   Stack:', error.stack);
         throw error;
     }
+}
+
+// ======================================
+// US-040: Validation de configuration
+// ======================================
+
+/**
+ * Valide une configuration pour la base de données actuelle
+ * Applique des fallbacks intelligents si des valeurs sont invalides
+ * @param {Object} config - Configuration à valider
+ * @returns {Promise<{config: Object, corrections: Array<string>}>} Config validée + corrections appliquées
+ */
+export async function validateConfigForDatabase(config) {
+    console.log('🔍 Validation de la configuration pour la base actuelle...');
+
+    const xmlDoc = await getDatabaseXML();
+    const corrections = [];
+    const validatedConfig = { ...config };
+
+    // 1. Valider version (960/980)
+    const versionOptions = getExteriorOptionsFromXML(xmlDoc).version || [];
+    if (!versionOptions || versionOptions.length === 0) {
+        // Parameter absent → Utiliser default
+        validatedConfig.version = '960';
+        corrections.push('version: Parameter absent → Default "960"');
+    } else if (!versionOptions.find(v => v.value === config.version)) {
+        validatedConfig.version = versionOptions[0].value;
+        corrections.push(`version: "${config.version}" invalide → "${versionOptions[0].value}"`);
+    }
+
+    // 2. Valider paintScheme
+    const paintSchemeOptions = getExteriorOptionsFromXML(xmlDoc).paintScheme || [];
+    if (!paintSchemeOptions || paintSchemeOptions.length === 0) {
+        // V0.1 : Seul "Zephir" disponible (fallback)
+        validatedConfig.paintScheme = 'Zephir';
+        corrections.push('paintScheme: Parameter absent → Default "Zephir"');
+    } else if (!paintSchemeOptions.find(s => s.value === config.paintScheme)) {
+        validatedConfig.paintScheme = paintSchemeOptions[0].value;
+        corrections.push(`paintScheme: "${config.paintScheme}" invalide → "${paintSchemeOptions[0].value}"`);
+    }
+
+    // 3. Valider prestige
+    const prestigeOptions = getInteriorOptionsFromXML(xmlDoc).prestige || [];
+    if (!prestigeOptions || prestigeOptions.length === 0) {
+        // V0.1 : AUCUN prestige → Fallback hardcodé
+        validatedConfig.prestige = 'Oslo';
+        corrections.push('prestige: Aucun disponible → Fallback "Oslo" (WARNING: peut échouer)');
+    } else if (!prestigeOptions.find(p => p.value === config.prestige)) {
+        validatedConfig.prestige = prestigeOptions[0].value;
+        corrections.push(`prestige: "${config.prestige}" invalide → "${prestigeOptions[0].value}"`);
+    }
+
+    // 4. Valider spinner
+    const spinnerOptions = getExteriorOptionsFromXML(xmlDoc).spinner || [];
+    if (!spinnerOptions || spinnerOptions.length === 0) {
+        validatedConfig.spinner = 'PolishedAluminium';
+        corrections.push('spinner: Parameter absent → Default "PolishedAluminium"');
+    } else if (!spinnerOptions.find(s => s.value === config.spinner)) {
+        validatedConfig.spinner = spinnerOptions[0].value;
+        corrections.push(`spinner: "${config.spinner}" invalide → "${spinnerOptions[0].value}"`);
+    }
+
+    // 5. Valider tous les autres parameters
+    const parameterMappings = {
+        'Decor': 'decor',
+        'Door_pilot': 'doorPilot',
+        'Door_passenger': 'doorPassenger',
+        'SunGlass': 'sunglass',
+        'Tablet': 'tablet',
+        'Position': 'position'
+    };
+
+    // IMPORTANT: Utiliser getExteriorOptionsFromXML() pour le Decor car il applique le formatting
+    // (retire _Ground et _Flight pour correspondre aux noms de camera groups)
+    const exteriorOptions = getExteriorOptionsFromXML(xmlDoc);
+
+    for (const [xmlLabel, configKey] of Object.entries(parameterMappings)) {
+        const param = xmlDoc.querySelector(`Parameter[label="${xmlLabel}"]`);
+
+        if (!param) {
+            // Parameter absent → Garder valeur par défaut
+            corrections.push(`${xmlLabel}: Parameter absent → Valeur ignorée dans payload`);
+        } else {
+            // SPECIAL: Pour Decor, utiliser les options formatées
+            const options = (xmlLabel === 'Decor')
+                ? exteriorOptions.decor
+                : extractParameterOptions(xmlDoc, xmlLabel, false);
+
+            const currentValue = config[configKey];
+
+            if (currentValue && !options.find(o => o.value === currentValue)) {
+                validatedConfig[configKey] = options[0].value;
+                corrections.push(`${xmlLabel}: "${currentValue}" invalide → "${options[0].value}"`);
+            }
+        }
+    }
+
+    // 6. Valider parameters intérieur
+    const interiorMappings = {
+        'Interior_Stitching': 'interiorStitching',
+        'Interior_Carpet': 'interiorCarpet',
+        'Interior_CentralSeatMaterial': 'interiorCentralSeatMaterial',
+        'Interior_LowerSidePanel': 'interiorLowerSidePanel',
+        'Interior_MetalFinish': 'interiorMetalFinish',
+        'Interior_PerforatedSeatOptions': 'interiorPerforatedSeatOptions',
+        'Interior_SeatCovers': 'interiorSeatCovers',
+        'Interior_Seatbelts': 'interiorSeatbelts',
+        'Interior_TabletFinish': 'interiorTabletFinish',
+        'Interior_Ultra-SuedeRibbon': 'interiorUltraSuedeRibbon',
+        'Interior_UpperSidePanel': 'interiorUpperSidePanel'
+    };
+
+    for (const [xmlLabel, configKey] of Object.entries(interiorMappings)) {
+        const param = xmlDoc.querySelector(`Parameter[label="${xmlLabel}"]`);
+
+        if (!param) {
+            corrections.push(`${xmlLabel}: Parameter absent → Ignoré`);
+        } else {
+            const options = extractParameterOptions(xmlDoc, xmlLabel, false);
+            const currentValue = config[configKey];
+
+            if (currentValue && !options.find(o => o.value === currentValue)) {
+                validatedConfig[configKey] = options[0].value;
+                corrections.push(`${xmlLabel}: "${currentValue}" invalide → "${options[0].value}"`);
+            }
+        }
+    }
+
+    // Logger les corrections
+    if (corrections.length > 0) {
+        console.warn(`⚠️ Configuration corrigée (${corrections.length} corrections):`);
+        corrections.forEach(c => console.warn(`   - ${c}`));
+    } else {
+        console.log('✅ Configuration 100% compatible avec la base actuelle');
+    }
+
+    return { config: validatedConfig, corrections };
 }
