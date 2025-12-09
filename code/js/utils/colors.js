@@ -102,9 +102,20 @@ export function resolveLetterColors(styleLetter, paintSchemeConfigPart, colorMap
 
     try {
         // Parser la config pour extraire les paires de zones
-        // Ex: "Exterior_PaintScheme.Zephir_B-0_B-D_B-D_B-D_B-D" -> ["B-0", "B-D", ...]
+        // V0.2-V0.5 : "Exterior_PaintScheme.Zephir_B-0_B-D_B-D_B-D_B-D"
+        // V0.6+     : "Exterior_PaintScheme.Tehuano_6_A-0_A-D_A-D_A-D_A-D" (avec index)
         const segments = paintSchemeConfigPart.split('.')[1].split('_');
-        const configPairs = segments.slice(1); // Enlever le premier segment (nom du scheme)
+
+        // Enlever le nom du scheme (premier segment)
+        let startIdx = 1;
+
+        // V0.6+ : Si le 2ème segment est un nombre (index), le sauter aussi
+        if (segments.length > 1 && /^\d+$/.test(segments[1])) {
+            startIdx = 2;
+            console.log(`  Format V0.6 détecté, index ${segments[1]} ignoré`);
+        }
+
+        const configPairs = segments.slice(startIdx); // ["A-0", "A-D", ...]
 
         console.log('  Paires de config:', configPairs);
 
@@ -129,30 +140,29 @@ export function resolveLetterColors(styleLetter, paintSchemeConfigPart, colorMap
         }
 
         // Récupérer la paire de zones correspondante
-        const targetPair = configPairs[styleIdx]; // Ex: "B-0" ou "B-D"
+        const targetPair = configPairs[styleIdx]; // Ex: "A-0" ou "A-D"
         const [z0, z1] = targetPair.split('-');
 
         console.log(`  Zones cibles: ${z0}, ${z1}`);
 
-        // INVERSION : L'API interprète les layers à l'envers
-        // Pour "A-D" : on veut Layer 0 = Zone A, Layer 1 = Zone D
-        // Mais l'API applique Layer 0 = deuxième valeur, Layer 1 = première valeur
-        // Donc on inverse l'attribution
-        let primaryColor = colorMap[z1] || null;  // Layer 0 = deuxième zone (z1)
-        let secondaryColor = colorMap[z0] || null;  // Layer 1 = première zone (z0)
+        // LOGIQUE SIMPLE : Layer 0 = première zone, Layer 1 = deuxième zone
+        // Pour "A-D" : Layer 0 = Zone A, Layer 1 = Zone D
+        // Pour "A-0" : Layer 0 = Zone A, Layer 1 = Zone A (fallback car 0 = pas de 2ème couleur)
+        let primaryColor = colorMap[z0] || null;  // Layer 0 = première zone (z0)
+        let secondaryColor = colorMap[z1] || null;  // Layer 1 = deuxième zone (z1)
 
-        // Si z1 = "0", pas de Layer 0 (retourne null)
+        // Si z1 = "0", utiliser z0 pour Layer 1 aussi (fallback)
         if (z1 === '0') {
-            primaryColor = null;
+            secondaryColor = primaryColor;
         }
 
-        // Si z0 = "0", pas de Layer 1
+        // Si z0 = "0", pas de Layer 0 (ne devrait jamais arriver)
         const hasLayer1 = (z0 !== '0');
         if (!hasLayer1) {
             secondaryColor = null;
         }
 
-        console.log(`  Couleurs résolues (INVERSÉES): Layer0=${primaryColor} (zone ${z1}), Layer1=${secondaryColor} (zone ${z0}), hasLayer1=${hasLayer1}`);
+        console.log(`  Couleurs résolues: Layer0=${primaryColor} (zone ${z0}), Layer1=${secondaryColor} (zone ${z1}), hasLayer1=${hasLayer1}`);
         return { primaryColor, secondaryColor, hasLayer1 };
 
     } catch (error) {
@@ -190,17 +200,20 @@ export function generateMaterials(immatString, styleLetter) {
 
         if (isSlanted) {
             // Pour slanted : ajouter Left/Right selon le côté
+            // CONVENTIONS AVIATION CIVILE : Lettres penchées vers l'arrière
             const textureFilenameLeft = `Style_${styleLetter}_Left_${char}`;
             const textureFilenameRight = `Style_${styleLetter}_Right_${char}`;
 
+            // RegL (côté GAUCHE avion) → texture Right (penché vers l'arrière /)
             materialsList.push({
                 name: `RegL${index}`,
-                filename: textureFilenameLeft
+                filename: textureFilenameRight
             });
 
+            // RegR (côté DROIT avion) → texture Left (penché vers l'arrière \)
             materialsList.push({
                 name: `RegR${index}`,
-                filename: textureFilenameRight
+                filename: textureFilenameLeft
             });
         } else {
             // Pour straight : même texture pour gauche et droite
@@ -252,10 +265,13 @@ export function generateMaterialMultiLayers(immatString, styleLetter, primaryCol
         if (!processedChars.has(char)) {
             if (isSlanted) {
                 // Pour slanted : GARDER Left/Right dans materialMultiLayers
+                // IMPORTANT : Respecter conventions aviation civile (lettres penchées vers l'arrière)
+                // - Côté GAUCHE avion (RegL) → orientation Right (penché vers l'arrière /)
+                // - Côté DROIT avion (RegR) → orientation Left (penché vers l'arrière \)
                 const textureFilenameLeft = `Style_${styleLetter}_Left_${char}`;
                 const textureFilenameRight = `Style_${styleLetter}_Right_${char}`;
 
-                // Layer 0 (toujours présent si primaryColor existe)
+                // Layer 0 : TOUJOURS envoyé avec primaryColor
                 if (primaryColor) {
                     multiLayersList.push({
                         name: textureFilenameLeft,
@@ -269,26 +285,24 @@ export function generateMaterialMultiLayers(immatString, styleLetter, primaryCol
                     });
                 }
 
-                // Layer 1 : TOUJOURS envoyer, même si hasLayer1 == false
-                // Si pas de Layer 1 défini (zone = "0"), utiliser la couleur du Layer 0
-                const finalSecondaryColor = (hasLayer1 && secondaryColor) ? secondaryColor : primaryColor;
-                if (finalSecondaryColor) {
+                // Layer 1 : TOUJOURS envoyé avec secondaryColor
+                if (secondaryColor) {
                     multiLayersList.push({
                         name: textureFilenameLeft,
                         layer: 1,
-                        diffuseColor: finalSecondaryColor
+                        diffuseColor: secondaryColor
                     });
                     multiLayersList.push({
                         name: textureFilenameRight,
                         layer: 1,
-                        diffuseColor: finalSecondaryColor
+                        diffuseColor: secondaryColor
                     });
                 }
             } else {
                 // Pour straight : SANS Left/Right dans materialMultiLayers
                 const textureFilename = `Style_${styleLetter}_${char}`;
 
-                // Layer 0 (toujours présent si primaryColor existe)
+                // Layer 0 : TOUJOURS envoyé avec primaryColor
                 if (primaryColor) {
                     multiLayersList.push({
                         name: textureFilename,
@@ -297,14 +311,12 @@ export function generateMaterialMultiLayers(immatString, styleLetter, primaryCol
                     });
                 }
 
-                // Layer 1 : TOUJOURS envoyer, même si hasLayer1 == false
-                // Si pas de Layer 1 défini (zone = "0"), utiliser la couleur du Layer 0
-                const finalSecondaryColor = (hasLayer1 && secondaryColor) ? secondaryColor : primaryColor;
-                if (finalSecondaryColor) {
+                // Layer 1 : TOUJOURS envoyé avec secondaryColor
+                if (secondaryColor) {
                     multiLayersList.push({
                         name: textureFilename,
                         layer: 1,
-                        diffuseColor: finalSecondaryColor
+                        diffuseColor: secondaryColor
                     });
                 }
             }
