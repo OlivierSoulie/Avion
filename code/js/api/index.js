@@ -33,8 +33,6 @@ export {
 export {
     setDatabaseId,
     getDatabaseId,
-    setLastPayload,
-    getLastPayload,
     callLumiscapheAPI,
     downloadImages
 } from './api-client.js';

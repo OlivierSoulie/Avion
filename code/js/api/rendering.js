@@ -5,8 +5,9 @@
  */
 
 import { buildPayload, buildPayloadForSingleCamera, buildOverviewPayload } from './payload-builder.js';
-import { callLumiscapheAPI, downloadImages, setLastPayload } from './api-client.js';
+import { callLumiscapheAPI, downloadImages } from './api-client.js';
 import { findCameraGroupId, getDatabaseXML, getCameraGroupOverview } from './xml-parser.js';
+import { setLastPayload } from '../state.js';
 
 /**
  * FONCTION PRINCIPALE : Génère les rendus via l'API

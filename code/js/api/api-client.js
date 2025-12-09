@@ -57,27 +57,6 @@ export function getDatabaseId() {
 }
 
 // ======================================
-// Sauvegarde du dernier payload (US-021)
-// ======================================
-let lastPayload = null;
-
-/**
- * Sauvegarde le payload pour téléchargement JSON
- * @param {Object} payload - Payload à sauvegarder
- */
-export function setLastPayload(payload) {
-    lastPayload = payload;
-}
-
-/**
- * Récupère le dernier payload
- * @returns {Object|null} Dernier payload
- */
-export function getLastPayload() {
-    return lastPayload;
-}
-
-// ======================================
 // Appels API
 // ======================================
 

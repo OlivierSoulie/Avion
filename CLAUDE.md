@@ -283,6 +283,25 @@ git push origin main
 
 ## Changelog
 
+### 09/12/2025 (Fix critique V0.6+ immatriculation + améliorations)
+- **BUG FIX CRITIQUE** : Direction V0.6+ pour immatriculation
+  - **Problème** : En V0.6+, les positions RegR allaient vers la gauche au lieu de la droite
+  - **Cause** : Le signe est encodé dans startX du bookmark (ex: `REGR_-0.34_0.0`), le code appliquait en plus une direction négative
+  - **Solution** : Direction toujours positive (1.0) en V0.6+ pour REGL et REGR
+  - Modifié : `code/js/utils/positioning.js` ligne 93
+  - Modifié : `generate_full_render.py` lignes 188-195
+  - **Résultat** : Positions V0.5 et V0.6+ maintenant identiques
+  - ⚠️ **EN ATTENTE** : Validation visuelle en attente des modifications Lumiscaphe (démasquage surfaces RegL/RegR en base V0.6)
+- **BUG FIX** : Bouton "Download JSON" ne fonctionnait plus
+  - **Cause** : Payload sauvegardé dans `api-client.js` mais lu depuis `state.js`
+  - **Solution** : Unification du stockage dans `state.js` uniquement
+  - Modifié : `code/js/api/rendering.js` (import depuis state.js)
+  - Modifié : `code/js/api/api-client.js` (suppression lastPayload local)
+  - Modifié : `code/js/api/index.js` (retrait ré-exportation)
+- **AMÉLIORATION** : Nom de base dans fichier JSON téléchargé
+  - Format : `configurateur-payload-{databaseName}-{version}-{paintScheme}-{timestamp}.json`
+  - Modifié : `code/js/app.js` ligne 502
+
 ### 05/12/2025 (Mise à jour Python v3.0 + Documentation GitHub)
 - **CHANGEMENT MAJEUR** : Le JavaScript devient la source de vérité pour la logique métier
   - Le script Python a été mis à jour pour refléter toutes les corrections du JavaScript

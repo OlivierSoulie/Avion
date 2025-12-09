@@ -32,59 +32,82 @@ export function extractAnchors(xmlRoot, scheme) {
         Y: 0.0
     };
 
-    const target = `${scheme.toUpperCase()}_REG`;
-
     // Chercher dans ConfigurationBookmark ET Bookmark
     const candidates = [];
     candidates.push(...xmlRoot.querySelectorAll('ConfigurationBookmark'));
     candidates.push(...xmlRoot.querySelectorAll('Bookmark'));
 
     console.log(`   > ${candidates.length} bookmarks trouvés dans le XML`);
-    console.log(`   > Recherche des bookmarks contenant: "${target}"`);
+    console.log(`   > Recherche des bookmarks pour schéma: "${scheme.toUpperCase()}"`);
 
     for (const item of candidates) {
         const name = (item.getAttribute('name') || item.getAttribute('label') || '').toUpperCase();
 
-        if (name.startsWith(target)) {
-            // Format attendu: "{SCHEME}_REG_REGL_{coords}_Y" ou "{SCHEME}_REG_REGR_{coords}_Y"
-            // Ex: "SIROCCO_REG_REGL_0.34_0.35_0.36_0.37_0.38_0.39_0.0"
+        // Formats supportés :
+        // V0.2-V0.5 : "{SCHEME}_REGL_{X1}_{X2}_{X3}_{X4}_{X5}_{X6}_{Y}" (9 parties)
+        //             Ex: "SIROCCO_REGL_0.34_0.35_0.36_0.37_0.38_0.39_0.0"
+        // V0.6+     : "{SCHEME}_REGL_{X1}_{Y}" (4 parties)
+        //             Ex: "TEHUANO_REGL_0.34_0.0"
+        const targetLeft = `${scheme.toUpperCase()}_REGL`;
+        const targetRight = `${scheme.toUpperCase()}_REGR`;
+
+        if (name.startsWith(targetLeft) || name.startsWith(targetRight)) {
+            console.log(`   🎯 Bookmark trouvé: ${name}`);
             const parts = name.split('_');
+            const isLeft = name.startsWith(targetLeft);
 
-            if (parts.length >= 9) {
+            // Besoin de 4 parties minimum (V0.6) ou 9 parties (V0.2-V0.5)
+            if (parts.length >= 4) {
                 try {
-                    // Extraire les 6 coordonnées (parts[2] à parts[7])
-                    const coords = [
-                        parseFloat(parts[2]),
-                        parseFloat(parts[3]),
-                        parseFloat(parts[4]),
-                        parseFloat(parts[5]),
-                        parseFloat(parts[6]),
-                        parseFloat(parts[7])
-                    ];
+                    let startX, y, direction;
 
-                    // Extraire Y (parts[8])
-                    const y = parseFloat(parts[8]);
+                    if (parts.length >= 9) {
+                        // V0.2-V0.5 : Format long (6 positions)
+                        // parts = [SCHEME, REGL/REGR, X1, X2, X3, X4, X5, X6, Y] = 9 parties
+                        const coords = [
+                            parseFloat(parts[2]),
+                            parseFloat(parts[3]),
+                            parseFloat(parts[4]),
+                            parseFloat(parts[5]),
+                            parseFloat(parts[6]),
+                            parseFloat(parts[7])
+                        ];
+                        y = parseFloat(parts[8]);
+                        startX = coords[0];
 
-                    // Détection de la direction : si coords[1] < coords[0], direction négative
-                    let direction = 1.0;
-                    if (coords.length > 1 && coords[1] < coords[0]) {
-                        direction = -1.0;
+                        // Détection de la direction : si coords[1] < coords[0], direction négative
+                        if (coords.length > 1 && coords[1] < coords[0]) {
+                            direction = -1.0;
+                        } else {
+                            direction = 1.0;
+                        }
+                        console.log(`   📍 Format V0.2-V0.5 détecté (6 positions)`);
+                    } else {
+                        // V0.6+ : Format court (1 seule position)
+                        // parts = [SCHEME, REGL/REGR, X1, Y]
+                        startX = parseFloat(parts[2]);
+                        y = parseFloat(parts[3]);
+
+                        // Direction TOUJOURS positive en V0.6+ car le signe est déjà dans startX
+                        // Ex: REGL_0.34_0.0 → startX=+0.34, REGR_-0.34_0.0 → startX=-0.34
+                        direction = 1.0;
+                        console.log(`   📍 Format V0.6+ détecté (1 position)`);
                     }
 
-                    // On garde le point de départ (coords[0] = Start)
+                    // Construire les données du côté
                     const sideData = {
-                        Start: coords[0],
+                        Start: startX,
                         Direction: direction
                     };
 
                     // Identifier le côté (Left ou Right)
-                    if (parts[1].toUpperCase().includes('REGL')) {
+                    if (isLeft) {
                         params.Left = sideData;
                         params.Y = y;
-                        console.log(`   ✅ Anchors LEFT trouvés: Start=${coords[0]}, Direction=${direction}, Y=${y}`);
-                    } else if (parts[1].toUpperCase().includes('REGR')) {
+                        console.log(`   ✅ Anchors LEFT trouvés: Start=${startX}, Direction=${direction}, Y=${y}`);
+                    } else {
                         params.Right = sideData;
-                        console.log(`   ✅ Anchors RIGHT trouvés: Start=${coords[0]}, Direction=${direction}`);
+                        console.log(`   ✅ Anchors RIGHT trouvés: Start=${startX}, Direction=${direction}`);
                     }
                 } catch (error) {
                     console.warn(`   ⚠️ Erreur parsing bookmark "${name}":`, error);

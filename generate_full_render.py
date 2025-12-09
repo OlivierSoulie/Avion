@@ -6,7 +6,16 @@ Générateur de rendus TBM Daher - Version Python
 Ce script Python a été mis à jour pour refléter les concepts et corrections
 implémentés dans le site web JavaScript (code/js/).
 
-CORRECTIONS MAJEURES (05/12/2025) :
+CORRECTIONS MAJEURES (09/12/2025) :
+- FIX CRITIQUE : Direction V0.6+ toujours positive (1.0) car signe dans startX
+  * V0.6+ : REGL_0.34 → startX=+0.34, direction=1.0
+  * V0.6+ : REGR_-0.34 → startX=-0.34, direction=1.0 (pas -1.0 !)
+  * Le signe est déjà encodé dans le bookmark, pas besoin d'inverser
+- FIX : Respect des conventions aviation civile pour lettres penchées (slanted)
+  * Côté GAUCHE (RegL) → texture Right (penché vers l'arrière /)
+  * Côté DROIT (RegR) → texture Left (penché vers l'arrière \)
+
+CORRECTIONS (05/12/2025) :
 - BUG FIX CRITIQUE : Inversion des layers par l'API Lumiscaphe
   * Pour paire "A-D" : Layer 0 envoyé avec couleur Zone D, Layer 1 avec Zone A
   * Logique inversée implémentée dans resolve_letter_colors()
@@ -29,7 +38,7 @@ import os
 import sys
 
 # --- VERSION ---
-SCRIPT_VERSION = "v3.0 (Aligned with JavaScript - Layers inversion fix + Interior config)"
+SCRIPT_VERSION = "v3.1 (Aviation civile conventions + V0.6 support)"
 
 # --- CONFIGURATION ---
 API_BASE_URL = "https://wr-daher.lumiscaphe.com"
@@ -148,37 +157,57 @@ def find_camera_group_id(xml_root, decor_name):
 def extract_anchors(xml_root, scheme):
     """
     Récupère le point de départ (X0) et la direction pour chaque côté.
+    Supporte V0.2-V0.5 (9 parties) et V0.6+ (4 parties).
     """
     params = {'Left': None, 'Right': None, 'Y': 0.0}
-    target = f"{scheme.upper()}_REG"
-    
+    target_left = f"{scheme.upper()}_REGL"
+    target_right = f"{scheme.upper()}_REGR"
+
     candidates = []
     candidates.extend(xml_root.findall(".//ConfigurationBookmark"))
     candidates.extend(xml_root.findall(".//Bookmark"))
-    
+
     for item in candidates:
         name = (item.get('name') or item.get('label') or "").upper()
-        if name.startswith(target):
-            parts = name.split('_')
-            if len(parts) >= 9:
-                try:
-                    coords = [float(x) for x in parts[2:8]]
-                    y = float(parts[8])
-                    
-                    # Détection Direction
-                    direction = 1.0
-                    if len(coords) > 1 and coords[1] < coords[0]:
-                        direction = -1.0
 
-                    # On garde le point de départ (Coords 0)
-                    side_data = {'Start': coords[0], 'Direction': direction}
-                    
-                    if "REGL" in parts[1].upper(): 
-                        params['Left'] = side_data; params['Y'] = y
-                    elif "REGR" in parts[1].upper(): 
+        if name.startswith(target_left) or name.startswith(target_right):
+            parts = name.split('_')
+            is_left = name.startswith(target_left)
+
+            if len(parts) >= 4:
+                try:
+                    if len(parts) >= 9:
+                        # V0.2-V0.5 : Format long (6 positions)
+                        # parts = [SCHEME, REGL/REGR, X1, X2, X3, X4, X5, X6, Y]
+                        coords = [float(x) for x in parts[2:8]]
+                        y = float(parts[8])
+                        start_x = coords[0]
+
+                        # Détection direction : si coords[1] < coords[0], direction négative
+                        if len(coords) > 1 and coords[1] < coords[0]:
+                            direction = -1.0
+                        else:
+                            direction = 1.0
+                    else:
+                        # V0.6+ : Format court (1 seule position)
+                        # parts = [SCHEME, REGL/REGR, X1, Y]
+                        start_x = float(parts[2])
+                        y = float(parts[3])
+
+                        # Direction TOUJOURS positive en V0.6+ car le signe est déjà dans startX
+                        # Ex: REGL_0.34_0.0 → start_x=+0.34, REGR_-0.34_0.0 → start_x=-0.34
+                        direction = 1.0
+
+                    side_data = {'Start': start_x, 'Direction': direction}
+
+                    if is_left:
+                        params['Left'] = side_data
+                        params['Y'] = y
+                    else:
                         params['Right'] = side_data
-                except: continue
-                
+                except:
+                    continue
+
     if not params['Left']:
         params['Left'] = {'Start': 0.34, 'Direction': 1.0}
         params['Right'] = {'Start': -0.34, 'Direction': -1.0}
@@ -384,11 +413,14 @@ def generate():
 
     for index, char in enumerate(s_immat):
         # Pour slanted : ajouter Left/Right, pour straight : pas d'orientation
+        # CONVENTIONS AVIATION CIVILE : Lettres penchées vers l'arrière
         if is_slanted:
             texture_filename_left = f"Style_{s_font_style}_Left_{char}"
             texture_filename_right = f"Style_{s_font_style}_Right_{char}"
-            materials_list.append({"name": f"RegL{index}", "filename": texture_filename_left})
-            materials_list.append({"name": f"RegR{index}", "filename": texture_filename_right})
+            # RegL (côté GAUCHE avion) → texture Right (penché vers l'arrière /)
+            materials_list.append({"name": f"RegL{index}", "filename": texture_filename_right})
+            # RegR (côté DROIT avion) → texture Left (penché vers l'arrière \)
+            materials_list.append({"name": f"RegR{index}", "filename": texture_filename_left})
 
             # Multi-layers pour les deux orientations
             if char not in processed_chars:

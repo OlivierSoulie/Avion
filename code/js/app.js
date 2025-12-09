@@ -496,10 +496,11 @@ function downloadJSON() {
         // Créer un Blob avec le contenu
         const blob = new Blob([jsonContent], { type: 'application/json' });
 
-        // Générer le nom de fichier avec timestamp
+        // Générer le nom de fichier avec timestamp et nom de la base
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
         const config = getConfig();
-        const filename = `configurateur-payload-${config.version}-${config.paintScheme}-${timestamp}.json`;
+        const databaseName = currentDatabaseStructure?.name || 'base-inconnue';
+        const filename = `configurateur-payload-${databaseName}-${config.version}-${config.paintScheme}-${timestamp}.json`;
 
         // Créer un lien de téléchargement temporaire
         const url = URL.createObjectURL(blob);
