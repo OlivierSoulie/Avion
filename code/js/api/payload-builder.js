@@ -53,14 +53,23 @@ function extractPaintConfig(xmlDoc, config) {
 
         if (hasIndex) {
             const index = configParts[1];
-            // schemePart = "Exterior_PaintScheme.Tehuano_A-0_..."
-            // Résultat attendu = "Exterior_PaintScheme.Tehuano_6_A-0_..."
-            const schemeValue = schemePart.replace('Exterior_PaintScheme.', '');
-            const schemeName = schemeValue.split('_')[0]; // "Tehuano"
-            const restOfScheme = schemeValue.substring(schemeName.length + 1); // "A-0_A-D_..."
 
-            schemePart = `Exterior_PaintScheme.${schemeName}_${index}_${restOfScheme}`;
-            console.log(`   ⚠️ WORKAROUND V0.6 : Index ${index} ajouté → ${schemePart}`);
+            // Vérifier si le bookmark contient déjà l'index
+            const schemeValue = schemePart.replace('Exterior_PaintScheme.', '');
+            const schemeValueParts = schemeValue.split('_');
+            const bookmarkHasIndex = schemeValueParts.length >= 2 && /^\d+$/.test(schemeValueParts[1]);
+
+            if (bookmarkHasIndex) {
+                // Le bookmark contient déjà l'index, ne rien faire
+                console.log(`   ℹ️ V0.6 : Index ${schemeValueParts[1]} déjà présent dans bookmark → ${schemePart}`);
+            } else {
+                // Le bookmark n'a pas d'index, l'ajouter
+                const schemeName = schemeValueParts[0]; // "Tehuano"
+                const restOfScheme = schemeValue.substring(schemeName.length + 1); // "A-0_A-D_..."
+
+                schemePart = `Exterior_PaintScheme.${schemeName}_${index}_${restOfScheme}`;
+                console.log(`   ⚠️ WORKAROUND V0.6 : Index ${index} ajouté → ${schemePart}`);
+            }
         }
     }
 

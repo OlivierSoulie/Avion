@@ -794,7 +794,12 @@ async function checkConfigFieldsAvailability() {
             {
                 selector: '.form-group:has(#selectDecor)',
                 params: ['Decor'], // Production uniquement (V0.2+) - POC non supporté
-                name: 'Décor'
+                name: 'Décor (Extérieur)'
+            },
+            {
+                selector: '.form-group:has(#selectDecorInterior)',
+                params: ['Decor'], // Production uniquement (V0.2+) - POC non supporté
+                name: 'Décor (Intérieur)'
             },
             {
                 selector: '.form-group:has(#selectPrestige)',
@@ -864,6 +869,8 @@ async function populateAllDropdowns() {
         populateDropdown('selectPrestige', exteriorOptions.prestige, config.prestige);
         populateDropdown('selectSpinner', exteriorOptions.spinner, config.spinner);
         populateDropdown('selectDecor', exteriorOptions.decor, config.decor);
+        // Peupler aussi le dropdown décor de la section intérieur (synchronisé)
+        populateDropdown('selectDecorInterior', exteriorOptions.decor, config.decor);
 
         // Mettre à jour le dropdown Style selon le type de police actuel
         updateStyleDropdown(config.fontType, exteriorOptions.styleSlanted, exteriorOptions.styleStraight);
@@ -926,6 +933,14 @@ async function loadDefaultConfigFromXML() {
         if (parsedConfig.paintScheme) {
             const selectPaintScheme = document.getElementById('selectPaintScheme');
             if (selectPaintScheme) selectPaintScheme.value = parsedConfig.paintScheme;
+
+            // Resynchroniser les zones de couleurs avec le schéma chargé du XML
+            // Extraire le nom court pour chercher le bookmark
+            // V0.2-V0.5 : "Sirocco_B-0_..." → "Sirocco"
+            // V0.6+     : "Sirocco_6_B-0_..." → "Sirocco"
+            const schemeName = parsedConfig.paintScheme.split('_')[0];
+            await syncZonesWithPaintScheme(schemeName);
+            console.log('✅ Zones resynchronisées après chargement du paintScheme depuis XML');
         }
         if (parsedConfig.prestige) {
             const selectPrestige = document.getElementById('selectPrestige');
@@ -934,6 +949,9 @@ async function loadDefaultConfigFromXML() {
         if (parsedConfig.decor) {
             const selectDecor = document.getElementById('selectDecor');
             if (selectDecor) selectDecor.value = parsedConfig.decor;
+            // Synchroniser le dropdown décor de la section intérieur
+            const selectDecorInterior = document.getElementById('selectDecorInterior');
+            if (selectDecorInterior) selectDecorInterior.value = parsedConfig.decor;
         }
         if (parsedConfig.spinner) {
             const selectSpinner = document.getElementById('selectSpinner');
@@ -1049,7 +1067,11 @@ async function initColorZones() {
         // Synchroniser les zones avec le schéma de peinture actuel
         const currentScheme = getConfig().paintScheme;
         if (currentScheme) {
-            await syncZonesWithPaintScheme(currentScheme);
+            // Extraire le nom court du schéma (ignorer l'index et les zones)
+            // V0.2-V0.5 : "Tehuano_B-0_..." → "Tehuano"
+            // V0.6+     : "Tehuano_6_B-0_..." → "Tehuano"
+            const schemeName = currentScheme.split('_')[0];
+            await syncZonesWithPaintScheme(schemeName);
             console.log('✅ Zones synchronisées avec le schéma par défaut');
         } else {
             // Fallback: Initialiser avec les premières couleurs si pas de schéma
@@ -1579,11 +1601,15 @@ function attachEventListeners() {
     const selectPaintScheme = document.getElementById('selectPaintScheme');
     if (selectPaintScheme) {
         selectPaintScheme.addEventListener('change', async (e) => {
-            const schemeName = e.target.value;
-            updateConfig('paintScheme', schemeName);
-            console.log('Schéma peinture changé:', schemeName);
+            const schemeValue = e.target.value; // Valeur complète : "Tehuano_6_B-0_..."
+            updateConfig('paintScheme', schemeValue);
+            console.log('Schéma peinture changé:', schemeValue);
 
             // Synchroniser les zones de couleurs avec le schéma
+            // Extraire le nom court pour chercher le bookmark
+            // V0.2-V0.5 : "Tehuano_B-0_..." → "Tehuano"
+            // V0.6+     : "Tehuano_6_B-0_..." → "Tehuano"
+            const schemeName = schemeValue.split('_')[0];
             await syncZonesWithPaintScheme(schemeName);
 
             triggerRender(); // US-005: Appel API automatique
@@ -1682,12 +1708,32 @@ function attachEventListeners() {
         });
     }
 
-    // Dropdown Décor
+    // Dropdown Décor (Extérieur)
     const selectDecor = document.getElementById('selectDecor');
     if (selectDecor) {
         selectDecor.addEventListener('change', (e) => {
             updateConfig('decor', e.target.value);
             console.log('Décor changé:', e.target.value);
+
+            // Synchroniser le dropdown décor de la section intérieur
+            const selectDecorInterior = document.getElementById('selectDecorInterior');
+            if (selectDecorInterior) selectDecorInterior.value = e.target.value;
+
+            triggerRender(); // US-005: Appel API automatique
+        });
+    }
+
+    // Dropdown Décor (Intérieur) - Synchronisé avec Extérieur
+    const selectDecorInterior = document.getElementById('selectDecorInterior');
+    if (selectDecorInterior) {
+        selectDecorInterior.addEventListener('change', (e) => {
+            updateConfig('decor', e.target.value);
+            console.log('Décor changé (intérieur):', e.target.value);
+
+            // Synchroniser le dropdown décor de la section extérieur
+            const selectDecor = document.getElementById('selectDecor');
+            if (selectDecor) selectDecor.value = e.target.value;
+
             triggerRender(); // US-005: Appel API automatique
         });
     }
