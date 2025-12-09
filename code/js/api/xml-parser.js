@@ -494,9 +494,22 @@ export function getExteriorOptionsFromXML(xmlDoc) {
 
     // Fonctions spéciales pour formater les labels
 
-    // "Alize_B-0_B-D_B-D_B-D_B-D" → "Alize"
+    // V0.2-V0.5 : "Alize_B-0_B-D_B-D_B-D_B-D" → "Alize"
+    // V0.6+     : "Alize_2_B-0_B-D_B-D_B-D_B-D" → "Alize" (ignorer l'index)
     const formatPaintSchemeLabel = (rawLabel) => {
         return rawLabel.split('_')[0];
+    };
+
+    // Extrait l'index si présent dans le pattern V0.6+
+    // "Alize_2_B-0_..." → 2
+    // "Alize_B-0_..." → null (anciennes versions)
+    const extractPaintSchemeIndex = (rawLabel) => {
+        const parts = rawLabel.split('_');
+        // V0.6+ : Si le 2ème segment est un chiffre pur, c'est l'index
+        if (parts.length >= 2 && /^\d+$/.test(parts[1])) {
+            return parseInt(parts[1], 10);
+        }
+        return null; // Pas d'index (V0.2-V0.5)
     };
 
     // Extrait UNIQUEMENT le {decorName} du pattern, data-driven
@@ -548,9 +561,35 @@ export function getExteriorOptionsFromXML(xmlDoc) {
 
     // Paint Scheme - extraire et formater
     const paintRaw = extractParameterOptions(xmlDoc, 'Exterior_PaintScheme', false);
-    options.paintScheme = paintRaw.map(opt => ({
-        label: formatPaintSchemeLabel(opt.label),
-        value: formatPaintSchemeLabel(opt.value)
+
+    // Mapper avec extraction de l'index (V0.6+)
+    const paintWithIndex = paintRaw.map(opt => ({
+        label: formatPaintSchemeLabel(opt.label), // Label court pour affichage dropdown : "Alize"
+        value: opt.value,                         // Valeur COMPLÈTE du XML pour l'API : "Alize_2_B-0_B-D_..."
+        index: extractPaintSchemeIndex(opt.label), // null si pas d'index (V0.2-V0.5)
+        rawLabel: opt.label // Garder le label brut pour debug
+    }));
+
+    // Trier : par index si présent (V0.6+), sinon alphabétiquement (V0.2-V0.5)
+    const hasIndex = paintWithIndex.some(opt => opt.index !== null);
+    if (hasIndex) {
+        // V0.6+ : Tri par index croissant
+        paintWithIndex.sort((a, b) => {
+            const indexA = a.index ?? Infinity; // Si pas d'index, mettre à la fin
+            const indexB = b.index ?? Infinity;
+            return indexA - indexB;
+        });
+        console.log('📊 Paint Schemes triés par INDEX (V0.6+):', paintWithIndex.map(p => `${p.label} (${p.index})`));
+    } else {
+        // V0.2-V0.5 : Tri alphabétique
+        paintWithIndex.sort((a, b) => a.label.localeCompare(b.label));
+        console.log('📊 Paint Schemes triés ALPHABÉTIQUEMENT (V0.2-V0.5):', paintWithIndex.map(p => p.label));
+    }
+
+    // Garder seulement label/value pour l'API finale
+    options.paintScheme = paintWithIndex.map(opt => ({
+        label: opt.label,
+        value: opt.value
     }));
 
     // Prestige - SPECIAL : Les prestiges sont des ConfigurationBookmark, pas des Parameters

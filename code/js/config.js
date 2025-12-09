@@ -213,6 +213,7 @@ export const DEFAULT_CONFIG = {
     viewType: "exterior", // US-022: Vue par défaut (exterior/interior)
     sunglass: "SunGlassOFF", // US-024: Lunettes de soleil par défaut OFF
     tablet: "Closed", // US-023: Tablette par défaut fermée
+    moodLights: "Lighting_Mood_OFF", // Mood Lights par défaut OFF
     doorPilot: "Closed", // US-025: Porte pilote par défaut fermée
     doorPassenger: "Closed", // US-026: Porte passager par défaut fermée
 

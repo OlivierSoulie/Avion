@@ -126,12 +126,12 @@ function analyzeFeatures(xmlDoc) {
             hasSunGlass: paramNames.has('SunGlass'),
             hasTablet: paramNames.has('Tablet'),
             hasLightingCeiling: paramNames.has('Lighting_Ceiling') || paramNames.has('Lighting_ceiling'),
-            hasMoodLights: paramNames.has('Mood_Lights') || paramNames.has('MoodLights') || paramNames.has('Mood Lights'),
+            hasMoodLights: paramNames.has('Lighting_mood') || paramNames.has('Mood_Lights') || paramNames.has('MoodLights'),
 
             // Variantes de nommage (pour gérer les différences mineures entre V0.2, V0.3, V0.4)
             lightingCeilingNaming: paramNames.has('Lighting_ceiling') ? 'Lighting_ceiling' : 'Lighting_Ceiling',
-            moodLightsNaming: paramNames.has('Mood_Lights') ? 'Mood_Lights' :
-                             paramNames.has('MoodLights') ? 'MoodLights' : 'Mood Lights'
+            moodLightsNaming: paramNames.has('Lighting_mood') ? 'Lighting_mood' :
+                             paramNames.has('Mood_Lights') ? 'Mood_Lights' : 'MoodLights'
         },
 
         // ========================================
@@ -287,10 +287,10 @@ function detectValuePattern(paramName, options) {
         const hasFlightGround = samples.some(opt => opt.value.endsWith('_Flight') || opt.value.endsWith('_Ground'));
 
         if (hasFlightGround) {
-            // Format V0.3/V0.4/V0.5 : {decorName}_{Flight|Ground}
+            // Format V0.3-V0.6 : {decorName}_{Flight|Ground}
             return {
                 pattern: `Decor.{decorName}_{Flight|Ground}`,
-                description: 'decorName = Nom du décor (Studio, Tarmac, Fjord, Hangar, Onirique). Flight/Ground = Position de l\'avion (en vol ou au sol), utilisé pour filtrer les décors compatibles.'
+                description: 'V0.3-V0.6 : decorName = Nom du décor (Studio, Tarmac, Fjord, Hangar, Onirique). Flight/Ground = Position de l\'avion (en vol ou au sol), utilisé pour positionner automatiquement l\'avion dans la scène 3D.'
             };
         } else {
             // Format V0.2 : coordonnées numériques
@@ -308,59 +308,132 @@ function detectValuePattern(paramName, options) {
     }
 
     if (paramName.includes('PaintScheme')) {
-        return {
-            pattern: `${paramName}.{schemeName}_{style}_{pair0}_{pair1}_{pair2}_{pair3}_{pair4}`,
-            description: 'schemeName = Nom du schéma (Zephir, Tehuano, etc.), style = Lettre A-J (A-E slanted, F-J straight), pair0-4 = Paires de couleurs (format: Zone-Index)'
-        };
+        // Analyser le pattern selon le nombre de segments
+        const segmentCounts = samples.map(opt => opt.label.split('_').length);
+        const maxSegments = Math.max(...segmentCounts);
+
+        if (maxSegments === 1) {
+            // V0.1 : Format POC simple (juste le nom du schéma)
+            return {
+                pattern: `${paramName}.{schemeName}`,
+                description: 'V0.1 (POC) : schemeName = Nom du schéma de peinture uniquement (ex: Alize, Zephir). Pas de configuration de zones.'
+            };
+        }
+
+        // Détecter si on a le nouveau pattern V0.6 avec index
+        // V0.2-V0.5 : "Alize_B-0_B-D_B-D_B-D_B-D" (6 segments)
+        // V0.6      : "Alize_2_B-0_B-D_B-D_B-D_B-D" (6 segments avec index en 2ème position)
+        const hasIndex = samples.some(opt => {
+            const parts = opt.label.split('_');
+            // Si le 2ème segment est un chiffre pur, c'est un index V0.6
+            return parts.length >= 2 && /^\d+$/.test(parts[1]);
+        });
+
+        if (hasIndex) {
+            // V0.6 : Pattern avec index pour tri personnalisé
+            return {
+                pattern: `${paramName}.{schemeName}_{index}_{pair0}_{pair1}_{pair2}_{pair3}_{pair4}`,
+                description: '✨ V0.6 : schemeName = Nom du schéma (Zephir, Tehuano, etc.), index = Position de tri dans le dropdown (démarre à 1), pair0-4 = Paires de couleurs (format: Zone-Index comme B-0, A-D). Le dropdown est trié par index.'
+            };
+        } else {
+            // V0.2-V0.5 : Pattern sans index (tri alphabétique)
+            return {
+                pattern: `${paramName}.{schemeName}_{pair0}_{pair1}_{pair2}_{pair3}_{pair4}`,
+                description: 'V0.2-V0.5 : schemeName = Nom du schéma (Zephir, Tehuano, etc.), pair0-4 = Paires de couleurs (format: Zone-Index comme B-0, A-D). Le dropdown est trié alphabétiquement.'
+            };
+        }
     }
 
     if (paramName.includes('Door') || paramName.includes('door')) {
         return {
             pattern: `${paramName}.{Open|Closed}`,
-            description: 'Contrôle l\'ouverture/fermeture de la porte. Open = porte ouverte, Closed = porte fermée.'
+            description: 'V0.2-V0.6 : Contrôle l\'ouverture/fermeture de la porte. Open = porte ouverte, Closed = porte fermée.'
         };
     }
 
     if (paramName.includes('SunGlass') || paramName.includes('Sun glass')) {
         return {
-            pattern: `${paramName}.{ON|OFF}`,
-            description: 'Contrôle les volets de hublots. ON = volets fermés (hublots cachés), OFF = volets ouverts (hublots visibles).'
+            pattern: `${paramName}.{SunGlassON|SunGlassOFF}`,
+            description: 'V0.3-V0.6 : Contrôle les volets de hublots. SunGlassON = volets fermés (hublots cachés), SunGlassOFF = volets ouverts (hublots visibles).'
         };
     }
 
     if (paramName.includes('Tablet')) {
         return {
             pattern: `${paramName}.{Open|Closed}`,
-            description: 'Contrôle la tablette. Open = tablette dépliée, Closed = tablette repliée.'
+            description: 'V0.3-V0.6 : Contrôle la tablette. Open = tablette dépliée, Closed = tablette repliée.'
         };
     }
 
     if (paramName.includes('Lighting') || paramName.includes('Mood')) {
-        const lightType = paramName.includes('Ceiling') ? 'plafond' : 'd\'ambiance';
+        const lightType = paramName.includes('Ceiling') ? 'plafond' : 'd\'ambiance (Mood Lights)';
         return {
-            pattern: `${paramName}.{ON|OFF}`,
-            description: `Contrôle l'éclairage ${lightType}. ON = lumières allumées, OFF = lumières éteintes.`
+            pattern: `${paramName}.{Lighting_Mood_ON|Lighting_Mood_OFF}`,
+            description: `V0.3-V0.6 : Contrôle l'éclairage ${lightType}. Lighting_Mood_ON = lumières allumées, Lighting_Mood_OFF = lumières éteintes.`
         };
     }
 
     if (paramName.includes('Spinner')) {
         return {
             pattern: `${paramName}.{color}`,
-            description: 'Couleur du spinner (cône d\'hélice). Exemples: Silver, Black, etc.'
+            description: 'V0.1-V0.6 : Couleur du spinner (cône d\'hélice). Format: 1 segment avec le nom de la couleur. Exemples: MattBlack, Silver, etc.'
         };
     }
 
     if (paramName.includes('Stitching')) {
         return {
-            pattern: `${paramName}.{color}`,
-            description: 'Couleur du fil de couture des sièges. Exemples: White, Black, Red, etc.'
+            pattern: `${paramName}.{color}_Premium`,
+            description: 'V0.3-V0.6 : Couleur du fil de couture des sièges. Format: 1 segment avec couleur et suffixe _Premium. Exemples: BeigeGrey_Premium, White_Premium, etc.'
         };
     }
 
     if (paramName.includes('Colors_Zone')) {
+        // Analyser le pattern selon le nombre de segments
+        const segmentCounts = samples.map(opt => opt.label.split('-').length);
+        const maxSegments = Math.max(...segmentCounts);
+
+        if (maxSegments <= 4) {
+            // V0.1 : Format POC simple (4 segments)
+            return {
+                pattern: `${paramName}.{colorName}-{code}-{hex}-{tag}`,
+                description: 'V0.1 (POC) : colorName = Nom couleur, code = Code Daher, hex = Code HTML (#RRGGBB), tag = Métadonnées (noA+, A+, etc.)'
+            };
+        } else if (maxSegments >= 10 && maxSegments <= 14) {
+            // V0.2-V0.6 : Format production étendu (10 segments pour A/B/C/D, 14 pour A+)
+            // Exemple: AlbeilleBlack-22505-#414142-#424243-noA+-22505-albeille-black-dark-metallic
+            const isZoneAPlus = paramName.includes('ZoneA+');
+            const description = isZoneAPlus
+                ? 'V0.2-V0.6 : ZoneA+ (14 segments) = {colorName}-{code}-{hex}-{hexLumiscaphe}-{tagVoilure}-{code2}-{metadata...} avec mots-clés recherche étendus'
+                : 'V0.2-V0.6 : Zones A/B/C/D (10 segments) = {colorName}-{code}-{hex}-{hexLumiscaphe}-{tagVoilure}-{code2}-{metadata...} avec métadonnées recherche (ex: albeille-black-dark-metallic)';
+
+            return {
+                pattern: `${paramName}.{colorName}-{code}-{hex}-{hexLumiscaphe}-{tagVoilure}-{code2}-{metadata}`,
+                description: description
+            };
+        } else {
+            // Fallback générique
+            return {
+                pattern: `${paramName}.{colorName}-{code}-{hex}-...`,
+                description: `Format détecté avec ${maxSegments} segments. Voir les exemples ci-dessous pour la structure complète.`
+            };
+        }
+    }
+
+    // Patterns Interior_ génériques (V0.2-V0.6)
+    if (paramName.startsWith('Interior_')) {
+        // Tous les paramètres Interior_ suivent un format simple à 1 segment
+        // Exemples: CharcoalBlack_carpet_Premium, Aegean_2242_Leather, Carbon_table_carbonFiber_Premium
         return {
-            pattern: `${paramName}.{colorName}-{code}-{hex}-{tag}`,
-            description: 'colorName = Nom de la couleur, code = Code Daher, hex = Code HTML (#RRGGBB), tag = Métadonnées (noA+, A+, etc.)'
+            pattern: `${paramName}.{materialName}`,
+            description: 'V0.2-V0.6 : Format à 1 segment contenant le nom du matériau/couleur. Peut inclure des informations de type (carpet, leather, suede) et niveau (Premium, Standard).'
+        };
+    }
+
+    // Pattern Version
+    if (paramName === 'Version') {
+        return {
+            pattern: `Version.{960|980}`,
+            description: 'V0.1-V0.6 : Modèle de l\'avion. 960 = TBM 960, 980 = TBM 980.'
         };
     }
 
@@ -400,8 +473,12 @@ function analyzeConfigurationBookmarks(xmlDoc) {
 
     bookmarks.forEach(bookmark => {
         const label = bookmark.getAttribute('label');
+        const value = bookmark.getAttribute('value');
         if (label) {
-            bookmarkList.push(label);
+            bookmarkList.push({
+                label: label,
+                value: value || '(vide)'
+            });
         }
     });
 

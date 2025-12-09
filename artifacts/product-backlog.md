@@ -3,7 +3,7 @@
 **Projet** : 005-Configurateur_Daher
 **Date de creation** : 02/12/2025
 **PO** : Claude (PO Agent)
-**Derniere mise a jour** : 07/12/2025 - Sprint #14 complété (US-044 + US-045)
+**Derniere mise a jour** : 08/12/2025 - Sprint #15 en cours (US-047 + US-048)
 
 ---
 
@@ -2840,3 +2840,92 @@ Afin d'avoir une expérience fluide sur tous les types d'écrans.
 ---
 
 **Total Sprint #14** : 8 Story Points (US-044: 5 SP + US-045: 3 SP)
+
+---
+
+## User Stories - Sprint #15 (Normalisation + Analyse Patterns)
+
+### [US-047] Normalisation dropdown Décor pour V0.1/V0.2
+
+**Priorité** : Haute
+**Story Points** : 3 SP
+**Sprint** : Sprint #15
+**Status** : 📋 To Do
+
+**User Story :**
+En tant qu'utilisateur du configurateur,
+Je veux que le dropdown Décor affiche correctement les valeurs pour toutes les versions de base,
+Afin de pouvoir utiliser le configurateur avec les bases V0.1 et V0.2 sans erreur.
+
+**Critères d'acceptation :**
+- [ ] V0.3-V0.6 : Affiche "Fjord (Ground)", "Studio (Flight)", etc.
+- [ ] V0.2 : Affiche "Fjord", "Studio", etc. (sans suffixe)
+- [ ] V0.1 : Dropdown masqué ou vide (Decor absent)
+- [ ] Formatage correct avec `formatDecorLabel()`
+- [ ] Backward compatibility : anciens états config compatibles
+
+**Décomposition technique** :
+- [T047-1] Parser V0.2 : Extraire decorName sans coordonnées (30min) - `xml-parser.js`
+- [T047-2] Fonction formatDecorLabel() avec détection format (30min) - `xml-parser.js`
+- [T047-3] Tests avec XML V0.1/V0.2/V0.3 (1h) - QA
+- [T047-4] Mise à jour documentation patterns (30min) - DOC
+
+**Estimation** : 3 Story Points (~2.5h de développement)
+
+**Fichiers impactés** :
+- `code/js/api/xml-parser.js` : Parser V0.2 + formatDecorLabel()
+
+**Dépendances** :
+- US-048 (Analyse patterns) - pour comprendre les formats V0.1/V0.2
+
+---
+
+### [US-048] Analyse exhaustive patterns multi-versions
+
+**Priorité** : Haute
+**Story Points** : 5 SP
+**Sprint** : Sprint #15
+**Status** : ✅ Done (08/12/2025)
+
+**User Story :**
+En tant que développeur/mainteneur du projet,
+Je veux une documentation complète et exacte de tous les patterns de données,
+Afin de garantir que la modale de configuration affiche des informations correctes.
+
+**Critères d'acceptation :**
+- ✅ Analyse des 25 paramètres à travers V0.1-V0.6
+- ✅ Rapport détaillé des patterns (nombre de segments, exemples)
+- ✅ Identification des évolutions majeures entre versions
+- ✅ Mise à jour `database-analyzer.js` avec patterns corrects
+- ✅ Document de référence `PATTERNS_REFERENCE.md` créé
+
+**Décomposition technique** :
+- [T048-1] Télécharger tous les XML (V0.1-V0.6) (30min) - ✅ DONE
+- [T048-2] Créer script d'analyse `analyze_patterns.js` (45min) - ✅ DONE
+- [T048-3] Exécuter analyse et générer rapport (15min) - ✅ DONE
+- [T048-4] Analyser résultats et identifier évolutions (1h) - ✅ DONE
+- [T048-5] Mettre à jour `database-analyzer.js` (1h30) - ✅ DONE
+- [T048-6] Créer `PATTERNS_REFERENCE.md` (1h) - ✅ DONE
+- [T048-7] Vérifier modale affiche patterns corrects (30min) - ✅ DONE
+
+**Résultats** :
+- 6 fichiers XML téléchargés (V0.1-V0.6)
+- Script d'analyse créé (`temp_xml_analysis/analyze_patterns.js`)
+- Rapport de 299 lignes généré (`temp_xml_analysis/pattern_analysis.txt`)
+- Documentation de 800+ lignes créée (`temp_xml_analysis/PATTERNS_REFERENCE.md`)
+- `database-analyzer.js` mis à jour avec patterns corrects
+
+**Estimation** : 5 Story Points (~5h de développement)
+
+**Fichiers créés** :
+- `temp_xml_analysis/v01.xml` à `v06.xml` (6 fichiers)
+- `temp_xml_analysis/analyze_patterns.js`
+- `temp_xml_analysis/pattern_analysis.txt`
+- `temp_xml_analysis/PATTERNS_REFERENCE.md`
+
+**Fichiers modifiés** :
+- `code/js/api/database-analyzer.js` : Patterns mis à jour pour tous les paramètres
+
+---
+
+**Total Sprint #15** : 8 Story Points (US-047: 3 SP + US-048: 5 SP)

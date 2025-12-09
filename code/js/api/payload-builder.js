@@ -22,26 +22,53 @@ import { log } from '../logger.js';
  * @returns {string} Configuration paint scheme formatée
  */
 function extractPaintConfig(xmlDoc, config) {
+    // Extraire le nom court du paintScheme (pour chercher le bookmark)
+    // V0.2-V0.5 : "Zephir_B-0_B-D_..." → "Zephir"
+    // V0.6+     : "Zephir_1_B-0_B-D_..." → "Zephir" (ignorer l'index)
+    const paintSchemeName = config.paintScheme.split('_')[0];
+
     // Récupérer le bookmark du schéma de peinture depuis le XML
     // Ce bookmark contient à la fois Exterior_PaintScheme.XXX ET les zones Exterior_Colors_ZoneX.XXX
-    const paintBookmarkValue = getConfigFromLabel(xmlDoc, `Exterior_${config.paintScheme}`);
+    const paintBookmarkValue = getConfigFromLabel(xmlDoc, `Exterior_${paintSchemeName}`);
 
     if (!paintBookmarkValue) {
-        // Fallback si bookmark introuvable
+        // Fallback si bookmark introuvable - utiliser le nom court + la valeur complète
         console.warn('   ⚠️ Bookmark introuvable, utilisation fallback');
-        return `Exterior_PaintScheme.${config.paintScheme}`;
+        return `Exterior_PaintScheme.${config.paintScheme}`; // Valeur complète pour fallback
     }
 
-    // Parser le bookmark pour extraire les parties
+    // ⚠️ WORKAROUND V0.6 : Le bookmark contient Exterior_PaintScheme sans index
+    // mais l'API attend avec l'index inséré (erreur dans la base V0.6)
+    // On doit rajouter l'index dans la partie Exterior_PaintScheme
     const bookmarkParts = paintBookmarkValue.split('/');
 
-    // Séparer la partie PaintScheme des parties zones
-    const schemePart = bookmarkParts.find(p => p.startsWith('Exterior_PaintScheme.'));
+    // Trouver et corriger la partie Exterior_PaintScheme
+    let schemePart = bookmarkParts.find(p => p.startsWith('Exterior_PaintScheme.'));
+
+    if (schemePart) {
+        // Extraire l'index de config.paintScheme si présent
+        // config.paintScheme = "Tehuano_6_A-0_A-D_..." → index = 6
+        const configParts = config.paintScheme.split('_');
+        const hasIndex = configParts.length >= 2 && /^\d+$/.test(configParts[1]);
+
+        if (hasIndex) {
+            const index = configParts[1];
+            // schemePart = "Exterior_PaintScheme.Tehuano_A-0_..."
+            // Résultat attendu = "Exterior_PaintScheme.Tehuano_6_A-0_..."
+            const schemeValue = schemePart.replace('Exterior_PaintScheme.', '');
+            const schemeName = schemeValue.split('_')[0]; // "Tehuano"
+            const restOfScheme = schemeValue.substring(schemeName.length + 1); // "A-0_A-D_..."
+
+            schemePart = `Exterior_PaintScheme.${schemeName}_${index}_${restOfScheme}`;
+            console.log(`   ⚠️ WORKAROUND V0.6 : Index ${index} ajouté → ${schemePart}`);
+        }
+    }
 
     // Vérifier si les zones sont définies dans la config (elles le sont toujours après init)
     const zonesAreDefined = config.zoneA && config.zoneB && config.zoneC && config.zoneD && config.zoneAPlus;
 
     if (zonesAreDefined) {
+        // Construire avec zones personnalisées + schemePart corrigé
         return buildPaintConfigWithZones(xmlDoc, config, schemePart);
     } else {
         // Utiliser le bookmark complet (zones pas encore initialisées)
@@ -201,6 +228,7 @@ export function buildConfigString(xmlDoc, config) {
         `Exterior_Spinner.${config.spinner}`,
         `SunGlass.${config.sunglass}`,        // US-024: Dynamique (SunGlassON/OFF)
         `Tablet.${config.tablet}`,            // US-023: Dynamique (Open/Closed)
+        `Lighting_mood.${config.moodLights}`, // Mood Lights dynamique (Lighting_Mood_ON/OFF)
         `Door_pilot.${config.doorPilot}`,     // US-025: Dynamique (Open/Closed)
         `Door_passenger.${config.doorPassenger}`, // US-026: Dynamique (Open/Closed)
         config.registrationStyle ? `Exterior_RegistrationNumber_Style.${config.registrationStyle}` : null
@@ -248,8 +276,13 @@ async function buildPayloadBase(config, mode) {
     // 5. Construire surfaces (vide pour singleCamera, rempli pour normal)
     let surfaces = [];
     if (mode === 'normal') {
+        // Extraire le nom court du paintScheme pour les anchors
+        // V0.2-V0.5 : "Zephir_B-0_..." → "Zephir"
+        // V0.6+     : "Zephir_1_B-0_..." → "Zephir"
+        const paintSchemeName = config.paintScheme.split('_')[0];
+
         // Extraire les anchors pour le positionnement (depuis XML)
-        const anchors = extractAnchors(xmlDoc, config.paintScheme);
+        const anchors = extractAnchors(xmlDoc, paintSchemeName);
         // Générer les surfaces (positions des lettres)
         surfaces = generateSurfaces(config.immat, anchors);
     }
@@ -345,7 +378,11 @@ export async function buildOverviewPayload(cameraId, isMainImage, config) {
     );
 
     // 5. Générer les surfaces (positionnement des lettres)
-    const anchors = extractAnchors(xmlDoc, config.paintScheme);
+    // Extraire le nom court du paintScheme pour les anchors
+    // V0.2-V0.5 : "Zephir_B-0_..." → "Zephir"
+    // V0.6+     : "Zephir_1_B-0_..." → "Zephir"
+    const paintSchemeName = config.paintScheme.split('_')[0];
+    const anchors = extractAnchors(xmlDoc, paintSchemeName);
     const surfaces = generateSurfaces(config.immat, anchors);
 
     // 6. Paramètres de rendu selon le type d'image

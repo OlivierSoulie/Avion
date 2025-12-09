@@ -1,8 +1,8 @@
 # Kanban Board - Configurateur_Daher
 
 **Projet** : 005-Configurateur_Daher
-**Sprint actuel** : Sprint #14 (🚀 EN COURS - 1 US, 5 SP)
-**Derniere mise a jour** : 07/12/2025 - Sprint Planning #14 terminé - US-044 décomposée (11 tâches)
+**Sprint actuel** : Sprint #15 (🚀 EN COURS - 2 US, 8 SP)
+**Derniere mise a jour** : 08/12/2025 - Sprint #15 en cours - US-048 Done (5 SP), US-047 To Do (3 SP)
 **Équipe** : 6 agents (PO + ARCH + COORDINATOR + 1 DEV-Généraliste + 1 QA-Fonctionnel + 1 DOC)
 
 ---
@@ -937,11 +937,86 @@ _En attente d'assignation T044-10 à QA-Fonctionnel_
   - Métadonnées Groupe "Overview", nom caméra, ID
   - Navigation ←/→ fonctionne entre 4 images
 
-**Progression Sprint #14** : 9/11 tâches (82%) - 4/5 SP (80%)
+**Progression Sprint #14** : 11/11 tâches (100%) - 5/5 SP (100%) ✅ TERMINÉ
 
 ---
 
-## 📋 Historique des mouvements (Sprint #12, #13, #14)
+## Sprint #15 - Normalisation Décor + Analyse Patterns Multi-Versions (🚀 EN COURS)
+
+**Sprint Goal** : "Normaliser le dropdown Décor pour supporter V0.1/V0.2 + Analyser exhaustivement tous les patterns de données V0.1 à V0.6"
+
+**Dates** : 08/12/2025 - [À déterminer]
+**Story Points planifiés** : 8 SP (US-047: 3 SP + US-048: 5 SP)
+**Story Points livrés** : 5 SP (62.5%)
+**Équipe** : 6 agents (PO + ARCH + COORDINATOR + DEV + QA + DOC)
+
+### 🔵 To Do (1 US - 3 SP)
+
+#### [US-047] Normalisation dropdown Décor pour V0.1/V0.2 (3 SP) - 📋 **TO DO**
+
+**Assigné à** : DEV-Généraliste + QA-Fonctionnel + DOC
+
+**Tâches** :
+- [ ] [T047-1] Parser V0.2 : Extraire decorName sans coordonnées (30min)
+  - **Fichier** : `code/js/api/xml-parser.js`
+  - **Description** : Ajouter logique pour extraire uniquement le nom du décor en V0.2
+- [ ] [T047-2] Fonction formatDecorLabel() avec détection format (30min)
+  - **Fichier** : `code/js/api/xml-parser.js`
+  - **Description** : Créer fonction qui formate le label selon la version détectée
+- [ ] [T047-3] Tests avec XML V0.1/V0.2/V0.3 (1h)
+  - **Assigné à** : QA-Fonctionnel
+  - **Description** : Tester le dropdown Décor avec les 3 formats de données
+- [ ] [T047-4] Mise à jour documentation patterns (30min)
+  - **Assigné à** : DOC
+  - **Description** : Documenter le nouveau comportement dans PATTERNS_REFERENCE.md
+
+### 🟡 In Progress (0 US - 0 SP)
+
+_Aucune tâche en cours_
+
+### 🟢 Testing (0 US - 0 SP)
+
+_Aucune tâche en test_
+
+### ✅ Done (1 US - 5 SP)
+
+#### [US-048] Analyse exhaustive patterns multi-versions (5 SP) - ✅ **COMPLÉTÉ le 08/12/2025**
+
+**Assigné à** : DEV-Généraliste + ARCH + QA-Fonctionnel + DOC
+**Durée réelle** : ~5h
+
+**Tâches complétées** :
+- [x] [T048-1] Télécharger tous les XML (V0.1-V0.6) (30min) - ✅ DONE
+  - 6 fichiers XML téléchargés : `temp_xml_analysis/v01.xml` à `v06.xml`
+  - DATABASE_IDs : V0.1 à V0.6 identifiés
+- [x] [T048-2] Créer script d'analyse `analyze_patterns.js` (45min) - ✅ DONE
+  - Script créé : `temp_xml_analysis/analyze_patterns.js`
+  - Parse 25 paramètres à travers 6 versions
+- [x] [T048-3] Exécuter analyse et générer rapport (15min) - ✅ DONE
+  - Rapport créé : `temp_xml_analysis/pattern_analysis.txt` (299 lignes)
+- [x] [T048-4] Analyser résultats et identifier évolutions (1h) - ✅ DONE
+  - Évolutions majeures identifiées (V0.1→V0.2, V0.2→V0.3, V0.5→V0.6)
+- [x] [T048-5] Mettre à jour `database-analyzer.js` (1h30) - ✅ DONE
+  - Patterns mis à jour pour tous les paramètres critiques
+  - Exterior_PaintScheme, Exterior_Colors_Zone, Decor, Interior_Stitching, etc.
+- [x] [T048-6] Créer `PATTERNS_REFERENCE.md` (1h) - ✅ DONE
+  - Document créé : `temp_xml_analysis/PATTERNS_REFERENCE.md` (800+ lignes)
+  - 25 paramètres documentés avec tableaux comparatifs
+- [x] [T048-7] Vérifier modale affiche patterns corrects (30min) - ✅ DONE
+  - Tests visuels passés
+
+**Livrables** :
+- 6 fichiers XML (V0.1-V0.6)
+- Script d'analyse (`analyze_patterns.js`)
+- Rapport d'analyse (`pattern_analysis.txt`)
+- Documentation complète (`PATTERNS_REFERENCE.md`)
+- `database-analyzer.js` mis à jour
+
+**Progression Sprint #15** : 5/8 SP complétés (62.5%) - 1/2 US Done - 7/11 tâches (63.6%)
+
+---
+
+## 📋 Historique des mouvements (Sprint #12, #13, #14, #15)
 
 | Date | US | Mouvement | Responsable |
 |------|----|-----------| ------------|
@@ -953,4 +1028,11 @@ _En attente d'assignation T044-10 à QA-Fonctionnel_
 | 07/12/2025 | Sprint #14 | Sprint Planning terminé - US-044 décomposée (11 tâches) | ARCH |
 | 07/12/2025 | US-044 | Créée et ajoutée au Sprint #14 (To Do) | PO |
 | 07/12/2025 | Sprint #14 | Staffing décidé - 6 agents (voir sprint-planning.md) | COORDINATOR |
+| 08/12/2025 | Sprint #15 | Sprint Planning terminé - US-047 et US-048 décomposées (11 tâches) | ARCH |
+| 08/12/2025 | US-047 | Créée et ajoutée au Sprint #15 (To Do) | PO |
+| 08/12/2025 | US-048 | Créée et ajoutée au Sprint #15 (To Do) | PO |
+| 08/12/2025 | US-048 | To Do → In Progress (assignation DEV-Généraliste) | COORDINATOR |
+| 08/12/2025 | US-048 | In Progress → Testing (7 tâches complétées) | DEV-Généraliste |
+| 08/12/2025 | US-048 | Testing → Done (tous tests passés) | QA-Fonctionnel |
+| 08/12/2025 | Sprint #15 | Daily Scrum effectué - 62.5% progression | COORDINATOR |
 

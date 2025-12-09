@@ -77,7 +77,8 @@ async function openConfigSchemaModal() {
             'configFeatures',
             'configCameraGroups',
             'configParameters',
-            'configPrestiges'
+            'configPrestiges',
+            'configBookmarks'
         ];
 
         containers.forEach(id => {
@@ -96,7 +97,7 @@ async function openConfigSchemaModal() {
         console.error('❌ Erreur analyse base:', error);
 
         // Afficher l'erreur dans les conteneurs
-        const containers = ['configFeatures', 'configCameraGroups', 'configParameters', 'configPrestiges'];
+        const containers = ['configFeatures', 'configCameraGroups', 'configParameters', 'configPrestiges', 'configBookmarks'];
         containers.forEach(id => {
             const el = document.getElementById(id);
             if (el) el.innerHTML = `<p style="text-align: center; padding: 1rem; color: red;">❌ Erreur: ${error.message}</p>`;
@@ -156,24 +157,27 @@ function renderDatabaseStructure(structure) {
     featuresContainer.innerHTML = '';
 
     const featuresList = [
-        // Vues
-        { key: 'hasExterior', label: 'Vue Extérieur', icon: '🏞️' },
-        { key: 'hasInterior', label: 'Vue Intérieur', icon: '🪑' },
-        { key: 'hasConfiguration', label: 'Vue Configuration', icon: '⚙️' },
-        { key: 'hasOverview', label: 'Vue Overview', icon: '📊' },
+        // Vues (niveau racine)
+        { key: 'hasExterior', label: 'Vue Extérieur', icon: '🏞️', path: 'features' },
+        { key: 'hasInterior', label: 'Vue Intérieur', icon: '🪑', path: 'features' },
+        { key: 'hasConfiguration', label: 'Vue Configuration', icon: '⚙️', path: 'features' },
+        { key: 'hasOverview', label: 'Vue Overview', icon: '📊', path: 'features' },
 
-        // Fonctionnalités interactives
-        { key: 'hasDecor', label: 'Décor', icon: '🌍' },
-        { key: 'hasDoorPilot', label: 'Porte Pilote', icon: '🚪' },
-        { key: 'hasDoorPassenger', label: 'Porte Passager', icon: '🚪' },
-        { key: 'hasSunGlass', label: 'Volet Hublots', icon: '🪟' },
-        { key: 'hasTablet', label: 'Tablette', icon: '📱' },
-        { key: 'hasLightingCeiling', label: 'Éclairage Plafond', icon: '💡' },
-        { key: 'hasMoodLights', label: 'Mood Lights', icon: '✨' }
+        // Fonctionnalités interactives (production)
+        { key: 'hasDecor', label: 'Décor', icon: '🌍', path: 'features.production' },
+        { key: 'hasDoorPilot', label: 'Porte Pilote', icon: '🚪', path: 'features.production' },
+        { key: 'hasDoorPassenger', label: 'Porte Passager', icon: '🚪', path: 'features.production' },
+        { key: 'hasSunGlass', label: 'Volet Hublots', icon: '🪟', path: 'features.production' },
+        { key: 'hasTablet', label: 'Tablette', icon: '📱', path: 'features.production' },
+        { key: 'hasLightingCeiling', label: 'Éclairage Plafond', icon: '💡', path: 'features.production' },
+        { key: 'hasMoodLights', label: 'Mood Lights', icon: '✨', path: 'features.production' }
     ];
 
-    featuresList.forEach(({ key, label }) => {
-        const available = structure.features[key];
+    featuresList.forEach(({ key, label, path }) => {
+        // Accéder à la valeur selon le path
+        const target = path === 'features' ? structure.features : structure.features.production;
+        const available = target[key];
+
         const item = document.createElement('div');
         item.className = `config-feature-item ${available ? 'available' : 'unavailable'}`;
         item.innerHTML = `
@@ -266,6 +270,23 @@ function renderDatabaseStructure(structure) {
         });
     } else {
         prestigesContainer.innerHTML = '<p style="color: var(--color-text-secondary);">Aucune option Prestige</p>';
+    }
+
+    // Configuration Bookmarks
+    const bookmarksContainer = document.getElementById('configBookmarks');
+    bookmarksContainer.innerHTML = '';
+
+    if (structure.configurationBookmarks && structure.configurationBookmarks.length > 0) {
+        structure.configurationBookmarks.forEach(bookmark => {
+            const bookmarkDiv = document.createElement('div');
+            bookmarkDiv.className = 'config-bookmark-item';
+            bookmarkDiv.textContent = bookmark.label;
+            // Tooltip avec la valeur complète du bookmark
+            bookmarkDiv.title = `${bookmark.label}\n\n${bookmark.value}`;
+            bookmarksContainer.appendChild(bookmarkDiv);
+        });
+    } else {
+        bookmarksContainer.innerHTML = '<p style="color: var(--color-text-secondary);">Aucun bookmark</p>';
     }
 }
 
@@ -531,12 +552,10 @@ function parseDefaultConfigString(configString) {
             config.version = part.replace('Version.', '');
             console.log('     ✅ Version:', config.version);
         } else if (part.startsWith('Exterior_PaintScheme.')) {
-            // Prendre tout après "Exterior_PaintScheme." mais juste le nom (avant les autres params)
+            // Prendre la valeur complète après "Exterior_PaintScheme."
             const fullValue = part.replace('Exterior_PaintScheme.', '');
-            // Le nom du scheme est le premier élément (avant underscore avec chiffres)
-            config.paintScheme = fullValue.split('_')[0];
-            console.log('     ✅ PaintScheme (valeur complète):', fullValue);
-            console.log('     ✅ PaintScheme (nom extrait):', config.paintScheme);
+            config.paintScheme = fullValue;
+            console.log('     ✅ PaintScheme (valeur complète):', config.paintScheme);
         } else if (part.startsWith('Interior_PrestigeSelection.')) {
             const fullValue = part.replace('Interior_PrestigeSelection.', '');
             config.prestige = fullValue.split('_')[0];
@@ -688,6 +707,11 @@ async function checkActionButtonsAvailability() {
                 selector: '.form-group:has(#btnSunGlassOFF)',
                 params: ['SunGlass', 'Sun glass'], // Production : "SunGlass" ou "Sun glass" - POC non supporté
                 name: 'Volet Hublots'
+            },
+            {
+                selector: '.form-group:has(#btnMoodLightsOFF)',
+                params: ['Lighting_mood'], // Mood Lights (V0.6+)
+                name: 'Mood Lights'
             }
         ];
 
@@ -1941,6 +1965,28 @@ function attachEventListeners() {
             btnTabletClosed.classList.remove('active');
             updateConfig('tablet', 'Open');
             console.log('Tablette: Ouverte');
+            triggerRender();
+        });
+    }
+
+    // Event listeners Mood Lights
+    const btnMoodLightsOFF = document.getElementById('btnMoodLightsOFF');
+    const btnMoodLightsON = document.getElementById('btnMoodLightsON');
+
+    if (btnMoodLightsOFF && btnMoodLightsON) {
+        btnMoodLightsOFF.addEventListener('click', () => {
+            btnMoodLightsOFF.classList.add('active');
+            btnMoodLightsON.classList.remove('active');
+            updateConfig('moodLights', 'Lighting_Mood_OFF');
+            console.log('Mood Lights: OFF');
+            triggerRender();
+        });
+
+        btnMoodLightsON.addEventListener('click', () => {
+            btnMoodLightsON.classList.add('active');
+            btnMoodLightsOFF.classList.remove('active');
+            updateConfig('moodLights', 'Lighting_Mood_ON');
+            console.log('Mood Lights: ON');
             triggerRender();
         });
     }
