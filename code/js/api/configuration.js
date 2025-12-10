@@ -46,14 +46,16 @@ export async function fetchConfigurationImages(config) {
         const finalImages = [];
         const registrationStyles = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
         // IMPORTANT: Les caméras RegistrationNumber sont nommées selon le PAINT SCHEME, pas le décor !
-        const targetRegistrationName = `RegistrationNumber_${config.paintScheme}`;
+        // Extraire le nom court du paintScheme (ex: "Alize_2_B-0_..." → "Alize")
+        const paintSchemeName = config.paintScheme.split('_')[0];
+        const targetRegistrationName = `RegistrationNumber_${paintSchemeName}`;
 
         console.log(`🎯 Recherche de la caméra: ${targetRegistrationName}`);
 
         for (let i = 0; i < cameras.length; i++) {
             const camera = cameras[i];
 
-            // Cas 1 : Caméra RegistrationNumber correspondant au décor actuel
+            // Cas 1 : Caméra RegistrationNumber correspondant au paint scheme actuel
             if (camera.name === targetRegistrationName) {
                 console.log(`📸 Caméra RegistrationNumber trouvée: ${camera.name}`);
                 console.log(`   → Génération de 10 vignettes (styles A à J)...`);
@@ -99,9 +101,9 @@ export async function fetchConfigurationImages(config) {
                 }
 
             }
-            // Cas 2 : Caméra RegistrationNumber mais pas le bon décor → IGNORER
+            // Cas 2 : Caméra RegistrationNumber mais pas le bon paint scheme → IGNORER
             else if (camera.name.startsWith('RegistrationNumber_')) {
-                console.log(`⏭️  Ignorer ${camera.name} (décor différent)`);
+                console.log(`⏭️  Ignorer ${camera.name} (paint scheme différent)`);
                 continue;
             }
             // Cas 3 : Autre caméra (paint scheme, Spinner, Colors, etc.) → GARDER
