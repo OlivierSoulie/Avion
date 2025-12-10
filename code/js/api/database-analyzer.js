@@ -290,7 +290,7 @@ function detectValuePattern(paramName, options) {
             // Format V0.3-V0.6 : {decorName}_{Flight|Ground}
             return {
                 pattern: `Decor.{decorName}_{Flight|Ground}`,
-                description: 'V0.3-V0.6 : decorName = Nom du décor (Studio, Tarmac, Fjord, Hangar, Onirique). Flight/Ground = Position de l\'avion (en vol ou au sol), utilisé pour positionner automatiquement l\'avion dans la scène 3D.'
+                description: 'V0.3-V0.6 : decorName = Nom de l\'environnement 3D (skybox, fond, éclairage). Flight/Ground = Position de l\'avion dans l\'image pour filtrage (Ground = au sol, Flight = en vol). Mode groupe de caméras `Exterieur_Decor{DecorName}`. ⚠️ Toujours utilisé avec le paramètre Position.{DecorName} (voir paramètre Position).'
             };
         } else {
             // Format V0.2 : coordonnées numériques
@@ -301,10 +301,17 @@ function detectValuePattern(paramName, options) {
             if (hasNumericCoords) {
                 return {
                     pattern: `Decor.{decorName}_{cameraName}_Tx_Ty_Tz_Rx_Ry_Rz`,
-                    description: 'Format V0.2 : decorName = Nom du décor, cameraName = Nom de la caméra à utiliser (mode image simple, pas de groupe), Tx/Ty/Tz = Translation, Rx/Ry/Rz = Rotation de l\'avion dans la scène 3D.'
+                    description: 'V0.2 : decorName = Nom du décor, cameraName = Nom de la caméra à utiliser. Mode image simple (pas de groupe de caméras). Tx/Ty/Tz = Translation (coordonnées X,Y,Z), Rx/Ry/Rz = Rotation (angles en degrés) de l\'avion, appliqués dans le bloc configuration de la requête API.'
                 };
             }
         }
+    }
+
+    if (paramName === 'Position') {
+        return {
+            pattern: `Position.{decorName}`,
+            description: 'V0.3-V0.6 : Définit la position/pose de l\'avion dans l\'environnement 3D. decorName = Nom du décor (extrait du paramètre Decor). IMPORTANT : Le {decorName} de Position DOIT correspondre au {decorName} de Decor. Exemple : Decor.Fjord_Flight → Position.Fjord. V0.1-V0.2 : Paramètre absent (coordonnées Translation/Rotation directement dans Decor).'
+        };
     }
 
     if (paramName.includes('PaintScheme')) {
@@ -333,13 +340,13 @@ function detectValuePattern(paramName, options) {
             // V0.6 : Pattern avec index pour tri personnalisé
             return {
                 pattern: `${paramName}.{schemeName}_{index}_{pair0}_{pair1}_{pair2}_{pair3}_{pair4}`,
-                description: '✨ V0.6 : schemeName = Nom du schéma (Zephir, Tehuano, etc.), index = Position de tri dans le dropdown (démarre à 1), pair0-4 = Paires de couleurs (format: Zone-Index comme B-0, A-D). Le dropdown est trié par index.'
+                description: 'V0.6+ : schemeName = Nom du schéma (Zephir, Tehuano, etc.), index = Position de tri dans le dropdown (démarre à 1), pair0-4 = Paires de couleurs pour l\'immatriculation. Chaque paire X-Y définit 2 zones : X couleur lettre {Layer0} + Y couleur contour/ombre {Layer1}. Format paire: A-0 (pas de 2ème zone) ou A-D (2 zones). Tri par index.'
             };
         } else {
             // V0.2-V0.5 : Pattern sans index (tri alphabétique)
             return {
                 pattern: `${paramName}.{schemeName}_{pair0}_{pair1}_{pair2}_{pair3}_{pair4}`,
-                description: 'V0.2-V0.5 : schemeName = Nom du schéma (Zephir, Tehuano, etc.), pair0-4 = Paires de couleurs (format: Zone-Index comme B-0, A-D). Le dropdown est trié alphabétiquement.'
+                description: 'V0.2-V0.5 : schemeName = Nom du schéma (Zephir, Tehuano, etc.), pair0-4 = Paires de couleurs pour l\'immatriculation. Chaque paire X-Y définit 2 zones : X couleur lettre {Layer0} + Y couleur contour/ombre {Layer1}. Format paire: A-0 (pas de 2ème zone) ou A-D (2 zones). Tri alphabétique.'
             };
         }
     }
@@ -368,8 +375,8 @@ function detectValuePattern(paramName, options) {
     if (paramName.includes('Lighting') || paramName.includes('Mood')) {
         const lightType = paramName.includes('Ceiling') ? 'plafond' : 'd\'ambiance (Mood Lights)';
         return {
-            pattern: `${paramName}.{Lighting_Mood_ON|Lighting_Mood_OFF}`,
-            description: `V0.3-V0.6 : Contrôle l'éclairage ${lightType}. Lighting_Mood_ON = lumières allumées, Lighting_Mood_OFF = lumières éteintes.`
+            pattern: `${paramName}.{ON|OFF}`,
+            description: `V0.3-V0.6 : Contrôle l'éclairage ${lightType}. ON = lumières allumées, OFF = lumières éteintes.`
         };
     }
 
@@ -380,12 +387,8 @@ function detectValuePattern(paramName, options) {
         };
     }
 
-    if (paramName.includes('Stitching')) {
-        return {
-            pattern: `${paramName}.{color}_Premium`,
-            description: 'V0.3-V0.6 : Couleur du fil de couture des sièges. Format: 1 segment avec couleur et suffixe _Premium. Exemples: BeigeGrey_Premium, White_Premium, etc.'
-        };
-    }
+    // ⚠️ Stitching est maintenant géré dans la section Interior_ (ligne 452)
+    // Ce code a été supprimé pour éviter les doublons
 
     if (paramName.includes('Colors_Zone')) {
         // Analyser le pattern selon le nombre de segments
@@ -395,19 +398,20 @@ function detectValuePattern(paramName, options) {
         if (maxSegments <= 4) {
             // V0.1 : Format POC simple (4 segments)
             return {
-                pattern: `${paramName}.{colorName}-{code}-{hex}-{tag}`,
-                description: 'V0.1 (POC) : colorName = Nom couleur, code = Code Daher, hex = Code HTML (#RRGGBB), tag = Métadonnées (noA+, A+, etc.)'
+                pattern: `${paramName}.{colorName}-{code}-{hex}-{tagVoilure}`,
+                description: 'V0.1 (POC) : 4 segments. colorName = Nom de la couleur, code = Code Daher, hex = Code HTML (#RRGGBB), tagVoilure = Métadonnées de voilure (A+, noA+) pour filtrer les couleurs disponibles dans le dropdown Zone A+.'
             };
         } else if (maxSegments >= 10 && maxSegments <= 14) {
             // V0.2-V0.6 : Format production étendu (10 segments pour A/B/C/D, 14 pour A+)
             // Exemple: AlbeilleBlack-22505-#414142-#424243-noA+-22505-albeille-black-dark-metallic
+            // Structure: colorName-code-hexLAB-hexLumiscaphe-tagVoilure-metadata...
             const isZoneAPlus = paramName.includes('ZoneA+');
             const description = isZoneAPlus
-                ? 'V0.2-V0.6 : ZoneA+ (14 segments) = {colorName}-{code}-{hex}-{hexLumiscaphe}-{tagVoilure}-{code2}-{metadata...} avec mots-clés recherche étendus'
-                : 'V0.2-V0.6 : Zones A/B/C/D (10 segments) = {colorName}-{code}-{hex}-{hexLumiscaphe}-{tagVoilure}-{code2}-{metadata...} avec métadonnées recherche (ex: albeille-black-dark-metallic)';
+                ? 'V0.2-V0.6 : ZoneA+ (14 segments). Structure: {colorName}-{code}-{hexLAB}-{hexLumiscaphe}-{tagVoilure}-{metadata...}. hexLAB = Code navigateur pour calculer contraste, hexLumiscaphe = Code API Lumiscaphe pour colorer les lettres d\'immatriculation, tagVoilure = Filtrage dropdown Zone A+ (A+, noA+), metadata = Mots-clés recherche (code répété + tags).'
+                : 'V0.2-V0.6 : Zones A/B/C/D (10 segments). Structure: {colorName}-{code}-{hexLAB}-{hexLumiscaphe}-{tagVoilure}-{metadata...}. hexLAB = Code navigateur (#414142) pour calculer contraste, hexLumiscaphe = Code API Lumiscaphe (#424243) pour colorer les lettres d\'immatriculation, tagVoilure = Filtrage dropdown Zone A+ (A+, noA+), metadata = Mots-clés recherche (ex: 22505-albeille-black-dark-metallic).';
 
             return {
-                pattern: `${paramName}.{colorName}-{code}-{hex}-{hexLumiscaphe}-{tagVoilure}-{code2}-{metadata}`,
+                pattern: `${paramName}.{colorName}-{code}-{hexLAB}-{hexLumiscaphe}-{tagVoilure}-{metadata...}`,
                 description: description
             };
         } else {
@@ -419,13 +423,73 @@ function detectValuePattern(paramName, options) {
         }
     }
 
-    // Patterns Interior_ génériques (V0.2-V0.6)
+    // Patterns Interior_ (V0.2-V0.6) - 7 catégories distinctes selon DATABASE-PATTERNS.md
     if (paramName.startsWith('Interior_')) {
-        // Tous les paramètres Interior_ suivent un format simple à 1 segment
-        // Exemples: CharcoalBlack_carpet_Premium, Aegean_2242_Leather, Carbon_table_carbonFiber_Premium
+        // Catégorie 1 : Matériaux Cuir/Suède avec Code Daher (4 segments)
+        // Interior_SeatCovers, Interior_UpperSidePanel, Interior_LowerSidePanel, Interior_Ultra-SuedeRibbon
+        if (paramName === 'Interior_SeatCovers' || paramName === 'Interior_UpperSidePanel' ||
+            paramName === 'Interior_LowerSidePanel' || paramName === 'Interior_Ultra-SuedeRibbon') {
+            return {
+                pattern: `${paramName}.{Name}_{Code}_{Type}_{Premium}`,
+                description: 'V0.2-V0.6 : Matériau avec code Daher (4 segments). Name = Nom couleur (ex: BeigeGray), Code = Code Daher 4 chiffres (ex: 2176), Type = Leather ou Suede, Premium = Niveau de finition pour filtrage.'
+            };
+        }
+
+        // Catégorie 2 : Finitions sans Code (3 segments)
+        // Interior_Carpet, Interior_MetalFinish
+        if (paramName === 'Interior_Carpet' || paramName === 'Interior_MetalFinish') {
+            return {
+                pattern: `${paramName}.{Name}_{Type}_{Premium}`,
+                description: 'V0.2-V0.6 : Finition sans code (3 segments). Format: {Name}_{Type}_{Premium}. Exemples: LightBrown_carpet_Premium, BrushedStainless_metal_Premium.'
+            };
+        }
+
+        // Catégorie 3 : TabletFinish - Type composé (4 segments)
+        if (paramName === 'Interior_TabletFinish') {
+            return {
+                pattern: `${paramName}.{Name}_{Type}_{SubType}_{Premium}`,
+                description: 'V0.2-V0.6 : Finition tablette (4 segments). Name = Nom du bois/matériau (ex: SapelliMat, Carbon), Type = Identifiant fixe, SubType = wood ou carbonFiber, Premium = Niveau de finition.'
+            };
+        }
+
+        // Catégorie 4 : Couleurs simples (2 segments) - Stitching
+        if (paramName === 'Interior_Stitching') {
+            return {
+                pattern: `${paramName}.{ColorName}_{Premium}`,
+                description: 'V0.3-V0.6 : Couleur du fil de couture des sièges (2 segments). ColorName = Nom de la couleur (ex: BeigeGrey, White, Black, Charcoal), Premium = Niveau de finition.'
+            };
+        }
+
+        // Catégorie 5 : Options binaires (2 segments) - PerforatedSeatOptions
+        if (paramName === 'Interior_PerforatedSeatOptions') {
+            return {
+                pattern: `${paramName}.{OptionName}_{Premium}`,
+                description: 'V0.2-V0.6 : Option perforation sièges (2 segments). Format: {OptionName}_{Premium}. Exemples: NoSeatPerforation_Premium, SeatPerforation_Premium.'
+            };
+        }
+
+        // Catégorie 6 : Type matériau seul (2 segments) - CentralSeatMaterial
+        if (paramName === 'Interior_CentralSeatMaterial') {
+            return {
+                pattern: `${paramName}.{Type}_{Premium}`,
+                description: 'V0.2-V0.6 : Matériau central siège (2 segments). Format: {Type}_{Premium}. Exemples: Leather_Premium, Suede_Premium.'
+            };
+        }
+
+        // Catégorie 7 : Seatbelts - EXCEPTION sans Premium (2 segments)
+        if (paramName === 'Interior_Seatbelts') {
+            return {
+                pattern: `${paramName}.{ColorName}_{Type}`,
+                description: 'V0.2-V0.6 : Couleur ceintures (2 segments). Format: {ColorName}_{Type}. Exemples: OatMeal_belt, Black_belt, Charcoal_belt. ⚠️ Pas de suffixe _Premium.'
+            };
+        }
+
+        // Fallback générique si nouveau paramètre Interior_ inconnu
+        const firstValue = samples.length > 0 ? samples[0].label : '';
+        const segments = firstValue.split('_').length;
         return {
             pattern: `${paramName}.{materialName}`,
-            description: 'V0.2-V0.6 : Format à 1 segment contenant le nom du matériau/couleur. Peut inclure des informations de type (carpet, leather, suede) et niveau (Premium, Standard).'
+            description: `V0.2-V0.6 : Paramètre Interior détecté (${segments} segments). Voir les exemples ci-dessous pour la structure exacte.`
         };
     }
 
