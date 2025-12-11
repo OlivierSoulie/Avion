@@ -1304,7 +1304,8 @@ _Sprint terminé - Tous tests validés_
 **Lignes modifiées** : ~200 lignes (suppressions majoritaires)
 **Durée totale** : ~2h
 
-**Commit** : À faire
+**Commit** : `7ef93ea` - fix: Maintenance critique - Décor dynamique + Nettoyage console.log
+**GitHub** : ✅ Poussé vers origin/main
 
 ---
 

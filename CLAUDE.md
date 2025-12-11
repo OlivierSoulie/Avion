@@ -338,7 +338,8 @@ git push origin main
   - `code/favicon.ico` (nouveau fichier - 4.5KB)
 - **Résultat** : Plus d'erreur 404, icône Lumiscaphe visible
 
-**Commit** : À faire - Regroupera toutes les corrections maintenance
+**Commit** : `7ef93ea` - fix: Maintenance critique - Décor dynamique + Nettoyage console.log
+**GitHub** : ✅ Poussé vers origin/main le 11/12/2025
 
 ### 09/12/2025 (Fix critique V0.6+ immatriculation + améliorations)
 - **BUG FIX CRITIQUE** : Direction V0.6+ pour immatriculation
