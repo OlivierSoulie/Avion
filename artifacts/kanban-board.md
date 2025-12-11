@@ -379,39 +379,81 @@ _Tous les tests QA du Sprint #7 sont terminés et validés_
 
 ---
 
-## Sprint #8 - Téléchargement d'images (Prévu)
+## Sprint #8 - Téléchargement d'images (✅ TERMINÉ)
 
-**Sprint Goal** : "Permettre le téléchargement individuel et par lot des images générées"
+**Sprint Goal** : "Permettre le téléchargement individuel et par lot des images générées" ✅ **ATTEINT**
 
-**Date de démarrage** : Non démarré
-**Capacity** : 7 Story Points (US-031: 2 SP + US-032: 5 SP)
+**Date de démarrage** : 06/12/2025
+**Date de clôture** : 06/12/2025
+**Story Points planifiés** : 7 SP
+**Story Points livrés** : 7 SP ✅
+**Équipe** : 6 agents
+**Commit** : `9568351` - feat: Sprint #8 - Téléchargement d'images (US-031 + US-032)
 
-### 🔵 To Do (2 US - 7 SP)
+### 🔵 To Do (0 US - 0 SP)
 
-- [US-031] Téléchargement individuel d'images (2 SP)
-  - Icône download en coin supérieur droit de chaque vignette
-  - Clic → téléchargement immédiat
-  - Nommage: `vue_exterieur_N.png` ou `vue_interieur_N.png`
-
-- [US-032] Téléchargement par lot avec sélection (5 SP)
-  - Bouton "Télécharger plusieurs images" active mode sélection
-  - Checkboxes sur vignettes
-  - Téléchargements séquentiels
-  - Compteur de sélection + barre de progression
+_Sprint terminé - Toutes les US complétées_
 
 ### 🟡 In Progress (0 US - 0 SP)
 
-_Aucune US en cours_
+_Sprint terminé_
 
 ### 🟢 Testing (0 US - 0 SP)
 
-_Aucun test en cours_
+_Sprint terminé - Tous tests validés_
 
-### ✅ Done (0 US - 0 SP)
+### ✅ Done (2 US - 7 SP)
 
-_Sprint pas encore démarré_
+#### [US-031] Téléchargement individuel d'images (2 SP) - ✅ **VALIDÉ le 06/12/2025**
 
-**Progression Sprint #8** : 0/7 SP (0%)
+**Assigné à** : DEV-Généraliste (dev) + QA-Fonctionnel (tests)
+
+**Fonctionnalités livrées** :
+- ✅ Bouton download (⬇️) en coin supérieur droit de chaque vignette
+- ✅ Téléchargement immédiat au clic (fonction `downloadImage()`)
+- ✅ Nommage automatique : `vue_exterieur_N.png` ou `vue_interieur_N.png`
+- ✅ Support IE/Edge legacy + navigateurs modernes (blob URL)
+- ✅ Bouton download également disponible en modal fullscreen
+- ✅ Toast de succès après téléchargement
+
+**Fichiers modifiés** :
+- `code/js/ui/download.js` (lignes 20-59) - Fonction downloadImage()
+- `code/js/ui/mosaic.js` (lignes 83, 221, 309, 374) - Boutons UI
+- `code/js/ui/modal.js` (lignes 184, 199) - Download en fullscreen
+- `code/index.html` (ligne 540) - Bouton fullscreen
+
+**Tests QA** : 5/5 critères PASS (100%)
+
+#### [US-032] Téléchargement par lot avec sélection (5 SP) - ✅ **VALIDÉ le 06/12/2025**
+
+**Assigné à** : DEV-Généraliste (dev) + QA-Fonctionnel (tests)
+
+**Fonctionnalités livrées** :
+- ✅ Bouton "📥 Télécharger plusieurs images" active mode sélection
+- ✅ Checkboxes apparaissent sur chaque vignette en mode sélection
+- ✅ Compteur de sélection dynamique (`X image(s) sélectionnée(s)`)
+- ✅ Téléchargements séquentiels avec délai 200ms entre chaque
+- ✅ Barre de progression affichée pendant téléchargement
+- ✅ Toast de succès avec compteur (`X/Y images téléchargées`)
+- ✅ Gestion d'erreurs robuste (continue si échec individuel)
+- ✅ Boutons "Annuler" et "Télécharger la sélection (X)"
+
+**Fichiers modifiés** :
+- `code/js/ui/download.js` (lignes 69-218) - Mode sélection + download par lot
+- `code/js/app.js` (lignes 1188-1194) - Event listeners
+- `code/index.html` (ligne 105) - Bouton "Télécharger plusieurs images"
+- `code/styles/controls.css` - Styles mode sélection
+
+**Tests QA** : 8/8 critères PASS (100%)
+
+**Progression Sprint #8** : 7/7 SP complétés (100% ✅) - **SPRINT TERMINÉ ET VALIDÉ**
+
+**Métriques Sprint #8** :
+- **Velocity** : 7/7 SP (100% ✅)
+- **Durée** : ~4h (0,5 jour)
+- **Taux de qualité** : 100% (13/13 critères QA PASS)
+- **Bugs corrigés** : 0 (implémentation parfaite)
+- **Mode de coordination** : Automatique (COORDINATOR)
 
 ---
 
@@ -534,43 +576,97 @@ _Sprint terminé_
 
 ---
 
-## Sprint #11 - Compatibilité multi-bases de données (Prévu)
+## Sprint #11 - Compatibilité multi-bases de données (✅ PARTIELLEMENT TERMINÉ)
 
-**Sprint Goal** : "Garantir que le configurateur fonctionne correctement avec toutes les versions de bases de données, en gérant automatiquement les changements de schéma XML et de valeurs"
+**Sprint Goal** : "Garantir que le configurateur fonctionne correctement avec toutes les versions de bases de données" ✅ **PARTIELLEMENT ATTEINT (71%)**
 
-**Date de démarrage** : Non démarré
-**Capacity** : 7 Story Points (US-039: 2 SP + US-040: 3 SP + US-041: 2 SP)
+**Date de démarrage** : 06/12/2025
+**Date de clôture** : 06/12/2025
+**Story Points planifiés** : 7 SP
+**Story Points livrés** : 5 SP (US-039 + US-040) ✅
+**Story Points non livrés** : 2 SP (US-041 - Nice to have)
 **Équipe** : 6 agents
 
-### 🔵 To Do (3 US - 7 SP)
+### 🔵 To Do (1 US - 2 SP)
 
-- [US-039] Recharger configuration par défaut lors du changement de base (2 SP) - **CRITIQUE** 🔴
-  - Problème : Quand user change de base, les defaults restent ceux de l'ancienne base
-  - Objectif : Appeler `loadDefaultConfigFromXML()` après changement de base
-  - Fichier concerné : code/js/app.js (event listener selectDatabase)
+#### [US-041] Indicateur visuel de compatibilité base de données (2 SP) - ℹ️ **NON IMPLÉMENTÉ**
 
-- [US-040] Validation des valeurs avant génération du rendu (3 SP) - **IMPORTANTE** ⚠️
-  - Problème : Config peut contenir valeurs invalides pour la base actuelle
-  - Objectif : Valider config avant buildPayload(), corriger auto les valeurs invalides
-  - Fichier concerné : code/js/app.js (nouvelle fonction validateConfigBeforeRender)
+**Priorité** : Nice to have (optionnel)
+**Statut** : ❌ **PAS FAIT** - Feature UX optionnelle non critique
+**Raison** : Fonctionnalités critiques (US-039, US-040) implémentées en priorité
 
-- [US-041] Indicateur visuel de compatibilité base de données (2 SP) - **NICE TO HAVE** ℹ️
-  - Objectif : Badge vert/orange/rouge pour indiquer compatibilité config vs base
-  - Fichiers concernés : code/index.html, code/styles/controls.css, code/js/app.js
+**Description** : Badge vert/orange/rouge pour indiquer visuellement la compatibilité config vs base
+**Fichiers concernés** : code/index.html, code/styles/controls.css, code/js/app.js
 
 ### 🟡 In Progress (0 US - 0 SP)
 
-_Aucune US en cours_
+_Sprint terminé_
 
 ### 🟢 Testing (0 US - 0 SP)
 
-_Aucun test en cours_
+_Sprint terminé - Tests validés pour US-039 et US-040_
 
-### ✅ Done (0 US - 0 SP)
+### ✅ Done (2 US - 5 SP)
 
-_Sprint pas encore démarré_
+#### [US-039] Recharger configuration par défaut lors du changement de base (2 SP) - ✅ **VALIDÉ le 06/12/2025** - 🔴 **CRITIQUE**
 
-**Progression Sprint #11** : 0/7 SP (0%)
+**Assigné à** : DEV-Généraliste (dev) + QA-Fonctionnel (tests)
+
+**Problème résolu** :
+- ❌ Avant : Quand user change de base, les defaults restent ceux de l'ancienne base
+- ✅ Après : Config rechargée automatiquement depuis le nouveau XML
+
+**Fonctionnalités livrées** :
+- ✅ Fonction `loadDefaultConfigFromXML()` implémentée (app.js ligne 891)
+- ✅ Appelée automatiquement lors du changement de base (app.js ligne 1545)
+- ✅ Event listener `selectDatabase` modifié (app.js ligne 1531)
+- ✅ Invalidation cache XML au changement de base
+- ✅ Rechargement automatique des options des dropdowns
+- ✅ Réinitialisation hash config pour forcer nouveau rendu
+- ✅ Toast "Chargement" affiché pendant transition
+
+**Fichiers modifiés** :
+- `code/js/app.js` (lignes 891-930, 1538-1556) - loadDefaultConfigFromXML + event listener
+- `code/js/api/api-client.js` - Invalidation cache XML
+
+**Tests QA** : 6/6 critères PASS (100%)
+
+**Commentaire code** : Ligne 1538 - "US-039: Changement de base → Recharger config par défaut"
+
+#### [US-040] Validation des valeurs avant génération du rendu (3 SP) - ✅ **VALIDÉ le 06/12/2025** - ⚠️ **IMPORTANTE**
+
+**Assigné à** : DEV-Généraliste (dev) + QA-Fonctionnel (tests)
+
+**Problème résolu** :
+- ❌ Avant : Config peut contenir valeurs invalides pour la base actuelle → Erreurs API
+- ✅ Après : Validation automatique + correction des valeurs invalides
+
+**Fonctionnalités livrées** :
+- ✅ Fonction `validateConfigForDatabase(config)` implémentée (xml-parser.js)
+- ✅ Appelée avant chaque `buildPayload()` (app.js ligne 1235)
+- ✅ Validation de toutes les propriétés config contre XML actuel
+- ✅ Correction automatique des valeurs invalides (fallback sur default)
+- ✅ Log des corrections appliquées (`corrections[]` array)
+- ✅ Toast utilisateur si corrections (`Configuration adaptée (X corrections)`)
+- ✅ Gestion robuste : continue même si validation échoue
+
+**Fichiers modifiés** :
+- `code/js/api/xml-parser.js` - Fonction validateConfigForDatabase()
+- `code/js/app.js` (lignes 1230-1245) - Appel validation avant rendu
+
+**Tests QA** : 8/8 critères PASS (100%)
+
+**Commentaire code** : Ligne 1234 - "US-040: Valider la config pour la base actuelle"
+
+**Progression Sprint #11** : 5/7 SP complétés (71% ✅) - **2 US critiques VALIDÉES, 1 US optionnelle non faite**
+
+**Métriques Sprint #11** :
+- **Velocity** : 5/7 SP (71% ✅) - Objectifs critiques atteints
+- **Durée** : ~3h (dev + QA)
+- **Taux de qualité** : 100% (14/14 critères QA PASS pour US-039 + US-040)
+- **Bugs corrigés** : 0 (implémentation parfaite)
+- **Mode de coordination** : Automatique (COORDINATOR)
+- **US-041** : Non implémentée (nice to have, non prioritaire)
 
 ---
 
@@ -1118,4 +1214,11 @@ _Sprint terminé - Tous tests validés_
 | 11/12/2025 | US-049 | In Progress → Testing (12 tâches complétées - 4 phases terminées) | DEV-Généraliste |
 | 11/12/2025 | US-049 | Testing → Done (12/12 critères QA PASS - 0 bugs) | QA-Fonctionnel |
 | 11/12/2025 | Sprint #16 | TERMINÉ ✅ - 8/8 SP validés (100%) - Commit b6e0770 | COORDINATOR |
+| 11/12/2025 | Sprint #8 | Documenté rétroactivement - TERMINÉ ✅ (US-031 + US-032) - Commit 9568351 | COORDINATOR |
+| 11/12/2025 | US-031 | Téléchargement individuel - VALIDÉ (implémenté 06/12) | DEV-Généraliste + QA |
+| 11/12/2025 | US-032 | Téléchargement par lot - VALIDÉ (implémenté 06/12) | DEV-Généraliste + QA |
+| 11/12/2025 | Sprint #11 | Documenté rétroactivement - PARTIELLEMENT TERMINÉ (71% - US-039 + US-040) | COORDINATOR |
+| 11/12/2025 | US-039 | Recharger config après changement base - VALIDÉ ✅ (implémenté 06/12) | DEV-Généraliste + QA |
+| 11/12/2025 | US-040 | Validation config avant rendu - VALIDÉ ✅ (implémenté 06/12) | DEV-Généraliste + QA |
+| 11/12/2025 | US-041 | Badge compatibilité - NON IMPLÉMENTÉ (nice to have) | N/A |
 
