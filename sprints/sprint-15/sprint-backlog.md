@@ -1,10 +1,10 @@
-# Sprint Backlog #15 - Normalisation Décor + Analyse Patterns Multi-Versions
+# Sprint Backlog #15 - Analyse Patterns Multi-Versions
 
-**Sprint Goal** : "Normaliser le dropdown Décor pour supporter V0.1/V0.2 + Analyser exhaustivement tous les patterns de données V0.1 à V0.6"
+**Sprint Goal** : "Analyser exhaustivement tous les patterns de données V0.1 à V0.6"
 
-**Dates** : 08/12/2025 - 08/12/2025
+**Dates** : 08/12/2025 - 10/12/2025
 **Équipe** : 6 agents
-**Capacity** : 8 Story Points
+**Capacity** : 5 Story Points
 
 ---
 
@@ -12,48 +12,38 @@
 
 | Statut | User Stories | Tasks | Story Points | % Complété |
 |--------|--------------|-------|--------------|------------|
-| ✅ Done | 1 | 7 | 5 SP | 62.5% |
+| ✅ Done | 1 | 7 | 5 SP | 100% |
 | 🏗️ In Progress | 0 | 0 | 0 SP | 0% |
-| 📋 To Do | 1 | 4 | 3 SP | 37.5% |
-| **TOTAL** | **2** | **11** | **8 SP** | **62.5%** |
+| 📋 To Do | 0 | 0 | 0 SP | 0% |
+| ❌ Annulée | 1 | 4 | 3 SP (non comptés) | N/A |
+| **TOTAL** | **1** | **7** | **5 SP** | **100%** |
 
 ---
 
-## 📋 To Do (1 US - 3 SP)
+## ❌ Annulée (1 US - 3 SP non comptés)
 
-### [US-047] Normalisation dropdown Décor pour V0.1/V0.2 (3 SP)
+### [US-047] Normalisation dropdown Décor pour V0.1/V0.2 (3 SP) - ❌ **ANNULÉE le 10/12/2025**
 
-**Priorité** : Haute
-**Assigné à** : DEV-Généraliste
-**Dépendances** : US-048 terminée (patterns analysés)
+**Raison de l'annulation** : Fonctionnalité déjà implémentée dans le code existant.
 
-#### Tâches
+**Détail** :
+- La fonction `extractDecorName()` dans `code/js/api/xml-parser.js` (lignes 524-547) implémente déjà la normalisation des labels Décor pour toutes les versions (V0.2 avec coordonnées → "Fjord", V0.3+ avec Flight/Ground → "Studio").
+- Le dropdown Décor affiche déjà les valeurs correctement formatées.
+- Aucune modification nécessaire.
 
-- [ ] [T047-1] Parser V0.2 : Extraire decorName sans coordonnées (30min)
-  - **Fichier** : `code/js/api/xml-parser.js`
-  - **Description** : Ajouter logique pour extraire uniquement le nom du décor en V0.2
-  - **Statut** : 📋 To Do
+**Impact** : Sprint Goal ajusté pour refléter uniquement l'analyse des patterns (US-048).
 
-- [ ] [T047-2] Fonction formatDecorLabel() avec détection format (30min)
-  - **Fichier** : `code/js/api/xml-parser.js`
-  - **Description** : Créer fonction qui formate le label selon la version détectée
-  - **Statut** : 📋 To Do
+---
 
-- [ ] [T047-3] Tests avec XML V0.1/V0.2/V0.3 (1h)
-  - **Assigné à** : QA-Fonctionnel
-  - **Description** : Tester le dropdown Décor avec les 3 formats de données
-  - **Statut** : 📋 To Do
+## 📋 To Do (0 US - 0 SP)
 
-- [ ] [T047-4] Mise à jour documentation patterns (30min)
-  - **Assigné à** : DOC
-  - **Description** : Documenter le nouveau comportement dans PATTERNS_REFERENCE.md
-  - **Statut** : 📋 To Do
+_Sprint terminé - Toutes les US complétées ou annulées_
 
 ---
 
 ## 🏗️ In Progress (0 US - 0 SP)
 
-_Aucune tâche en cours_
+_Sprint terminé_
 
 ---
 

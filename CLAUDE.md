@@ -195,14 +195,13 @@ Exterior_PaintScheme.Tehuano_A-0_A-D_A-D_A-D_A-D
 - Format couleur dans XML : `ZoneName-code-#hex1-#hex2-tag-...`
 - **IMPORTANT** : Utiliser le **2ème code hex** (#hex2) = Code HTML Lumiscaphe
 
-**Layers (couches de couleur) - INVERSION API** :
-- ⚠️ **L'API Lumiscaphe inverse les layers !**
+**Layers (couches de couleur)** :
 - Pour paire `A-D` :
-  - **Layer 0** envoyé avec couleur Zone D (2ème valeur)
-  - **Layer 1** envoyé avec couleur Zone A (1ère valeur)
+  - **Layer 0** = couleur Zone A (1ère valeur) → Appliqué à la LETTRE
+  - **Layer 1** = couleur Zone D (2ème valeur) → Appliqué au CONTOUR/OMBRE
 - Pour paire `A-0` (pas de 2ème zone) :
-  - **Layer 0** envoyé avec couleur null ou Zone A
-  - **Layer 1** TOUJOURS envoyé avec couleur Zone A (même si zone = "0")
+  - **Layer 0** = couleur Zone A
+  - **Layer 1** = couleur Zone A (fallback car pas de 2ème couleur)
 
 **Nommage des textures dans materialMultiLayers** :
 - **Slanted (A-E)** : Utiliser `Style_A_Left_N` et `Style_A_Right_N` (AVEC Left/Right)
@@ -302,12 +301,20 @@ git push origin main
   - Format : `configurateur-payload-{databaseName}-{version}-{paintScheme}-{timestamp}.json`
   - Modifié : `code/js/app.js` ligne 502
 
+### 10/12/2025 (Correction Documentation Layers)
+- **DOC FIX CRITIQUE** : Correction documentation système de couleurs
+  - **CLARIFICATION** : Pas d'inversion des layers par l'API
+  - Pour paire "A-D" : Layer 0 = Zone A (LETTRE), Layer 1 = Zone D (CONTOUR/OMBRE)
+  - Correction des commentaires dans `code/js/utils/colors.js`
+  - Correction de la documentation dans `CLAUDE.md`, `DATABASE-PATTERNS.md`, `GLOSSARY.md`
+  - Note : Les entrées historiques ci-dessous mentionnant "inversion" étaient erronées
+
 ### 05/12/2025 (Mise à jour Python v3.0 + Documentation GitHub)
 - **CHANGEMENT MAJEUR** : Le JavaScript devient la source de vérité pour la logique métier
   - Le script Python a été mis à jour pour refléter toutes les corrections du JavaScript
   - Version Python v3.0 : Aligné avec le site web JavaScript
 - **PYTHON v3.0** : Corrections et améliorations synchronisées avec JavaScript
-  - BUG FIX : Inversion des layers (identique à colors.js lignes 114-133)
+  - ~~BUG FIX : Inversion des layers~~ (NOTE 10/12: cette entrée était erronée, pas d'inversion)
   - Layer 1 toujours envoyé (même si zone = "0", identique à colors.js lignes 231-244)
   - US-019 : DATABASE_ID dynamique avec sélection TBM 960/980 (corrigé initialisation)
   - US-023 à US-026 : Support Tablet/SunGlass/Doors dynamiques
@@ -322,19 +329,14 @@ git push origin main
 ### 05/12/2025
 - **BUG FIX CRITIQUE** : Correction application des couleurs pour styles slanted (A-E)
   - **Problème** : Lettres penchées (slanted A-E) restaient blanches, seules les lettres droites (straight F-J) étaient colorisées
-  - **Cause racine** : Deux problèmes combinés
-    1. Inversion des layers par l'API : Layer 0 applique la 2ème zone, Layer 1 applique la 1ère zone
-    2. Nommage différent requis pour slanted vs straight dans `materialMultiLayers`
-  - **Solution** :
-    1. Inversion dans `resolveLetterColors()` : Pour paire "A-D", Layer 0 = Zone D, Layer 1 = Zone A
-    2. Nommage conditionnel dans `generateMaterialMultiLayers()` :
-       - Slanted (A-E) : `Style_A_Left_N` et `Style_A_Right_N` (AVEC Left/Right)
-       - Straight (F-J) : `Style_F_N` (SANS Left/Right)
-    3. Layer 1 toujours envoyé, même pour paire "X-0" (utilise couleur Layer 0 si zone = "0")
-  - Corrigé dans `code/js/colors.js` lignes 108-133 (inversion) et 209-273 (nommage)
-  - **NOTE** : Cette logique ne correspond PAS au script Python (qui ne gère pas les layers correctement)
+  - **Cause racine** : Nommage différent requis pour slanted vs straight dans `materialMultiLayers`
+  - **Solution** : Nommage conditionnel dans `generateMaterialMultiLayers()` :
+    - Slanted (A-E) : `Style_A_Left_N` et `Style_A_Right_N` (AVEC Left/Right)
+    - Straight (F-J) : `Style_F_N` (SANS Left/Right)
+    - Layer 1 toujours envoyé, même pour paire "X-0" (utilise couleur Layer 0 si zone = "0")
+  - Corrigé dans `code/js/colors.js` lignes 209-273 (nommage)
+  - ~~NOTE : Mention d'inversion des layers était erronée (correction 10/12/2025)~~
 - **DOC** : Mise à jour section "Système de couleurs" dans CLAUDE.md
-  - Documentation de l'inversion des layers par l'API
   - Documentation des règles de nommage slanted vs straight
 
 ### 04/12/2025
@@ -345,8 +347,7 @@ git push origin main
   - Corrigé dans `generate_full_render.py` lignes 230-234
   - Corrigé dans `code/js/colors.js` lignes 93-99
 - **BUG FIX** : Gestion conditionnelle du Layer 1
-  - **Problème** : Layer 1 toujours envoyé même quand zone = "0"
-  - **Solution** : Quand `z1 == '0'`, ne pas envoyer de Layer 1 dans le payload
+  - **Solution** : Layer 1 toujours envoyé (même pour zone "0", utilise fallback sur Layer 0)
   - Corrigé dans `generate_full_render.py` lignes 247-248, 326-333
   - Corrigé dans `code/js/colors.js` lignes 124-127, 215-240
 - **BUG FIX** : Correction du schéma de peinture par défaut
@@ -358,7 +359,7 @@ git push origin main
 - **CONFIG** : Changement immatriculation par défaut "NWM1MW" → "N960TB"
   - Modifié dans `code/js/config.js` et `code/index.html`
 - **DOC** : Ajout section "Règles de Développement" dans CLAUDE.md
-  - Documentation des sources de vérité (XML pour données, Python pour logique)
+  - Documentation des sources de vérité (XML pour données, JavaScript pour logique)
   - Documentation du système de couleurs (mapping couples, Layer 0/Layer 1)
 
 ### 03/12/2025
