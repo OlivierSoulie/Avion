@@ -19,8 +19,6 @@ import { setLastPayload } from '../state.js';
  * @throws {Error} Si la génération échoue
  */
 export async function fetchRenderImages(config) {
-    console.log('🎬 === GÉNÉRATION DES RENDUS ===');
-    console.log('Configuration:', config);
 
     try {
         // Détecter si format V0.1/V0.2 (coordonnées dans decor) pour vue extérieure
@@ -29,19 +27,16 @@ export async function fetchRenderImages(config) {
                                /^[A-Za-z]+_[A-Za-z0-9]+_[\d\-_]+$/.test(config.decor);
 
         if (isV01V02Format) {
-            console.log('🔍 Format V0.1/V0.2 détecté : mode image simple');
             return await fetchRenderImagesSingle(config);
         }
 
         // Format V0.3+ : Mode groupe de caméras (logique actuelle)
-        console.log('🔍 Format V0.3+ détecté : mode groupe de caméras');
 
         // 1. Construire le payload (ASYNC - télécharge le XML pour le camera group ID)
         const payload = await buildPayload(config);
 
         // US-021 : Sauvegarder le payload pour téléchargement ultérieur
         setLastPayload(payload);
-        console.log('💾 Payload sauvegardé pour téléchargement JSON');
 
         // 2. Appeler l'API (retourne maintenant {url, cameraId})
         const images = await callLumiscapheAPI(payload);
@@ -72,7 +67,6 @@ export async function fetchRenderImages(config) {
             };
         });
 
-        console.log('✅ Génération terminée avec succès');
         return enrichedImages;
 
     } catch (error) {
@@ -88,7 +82,6 @@ export async function fetchRenderImages(config) {
  * @returns {Promise<Array<Object>>} Tableau avec une seule image {url, cameraId, cameraName}
  */
 async function fetchRenderImagesSingle(config) {
-    console.log('📷 Mode image simple (V0.1/V0.2)');
 
     // Parser le décor : {decorName}_{cameraName}_Tx_Ty_Tz_Rx_Ry_Rz
     const parts = config.decor.split('_');
@@ -100,8 +93,6 @@ async function fetchRenderImagesSingle(config) {
     const decorName = parts[0]; // Ex: "Fjord"
     const cameraName = parts[1]; // Ex: "001" ou nom de caméra
 
-    console.log(`   > Décor : ${decorName}`);
-    console.log(`   > Caméra : ${cameraName}`);
 
     // Trouver l'ID de la caméra dans le XML
     const xmlDoc = await getDatabaseXML();
@@ -112,7 +103,6 @@ async function fetchRenderImagesSingle(config) {
     }
 
     const cameraId = cameraElement.getAttribute('id');
-    console.log(`   > Caméra ID : ${cameraId}`);
 
     // Construire le payload avec la caméra unique (utiliser buildPayloadForSingleCamera)
     const payload = await buildPayloadForSingleCamera({
@@ -133,7 +123,6 @@ async function fetchRenderImagesSingle(config) {
         groupName: 'Single Camera (V0.1/V0.2)'
     }));
 
-    console.log('✅ Image unique générée avec succès');
     return enrichedImages;
 }
 
@@ -144,8 +133,6 @@ async function fetchRenderImagesSingle(config) {
  * @throws {Error} Si la génération échoue
  */
 export async function fetchOverviewImages(config) {
-    console.log('🎬 === GÉNÉRATION VUE OVERVIEW ===');
-    console.log('Configuration:', config);
 
     try {
         // 1. Récupérer les caméras du groupe Overview
@@ -155,17 +142,14 @@ export async function fetchOverviewImages(config) {
             throw new Error('Aucune caméra trouvée dans le groupe Overview');
         }
 
-        console.log(`   > ${cameras.length} caméras récupérées pour Overview`);
 
         // 2. Appel API pour caméra A (PNG transparent)
-        console.log('   > Génération image A (PNG transparent)...');
         const payloadA = await buildOverviewPayload(cameras[0].id, true, config);
         setLastPayload(payloadA); // Sauvegarder le dernier payload
         const imageAData = await callLumiscapheAPI(payloadA);
         const imageAValidated = await downloadImages(imageAData);
 
         // 3. Appels API pour caméras B, C, D (JPEG)
-        console.log('   > Génération images B, C, D (JPEG)...');
         const secondaryCameras = cameras.slice(1); // Prendre caméras 1, 2, 3 (B, C, D)
         const secondaryPromises = secondaryCameras.map(async (camera) => {
             const payload = await buildOverviewPayload(camera.id, false, config);
@@ -191,7 +175,6 @@ export async function fetchOverviewImages(config) {
             groupName: 'Overview'
         }));
 
-        console.log('✅ Vue Overview générée avec succès');
         return {
             imageA: imageA,
             imagesSecondary: enrichedSecondary

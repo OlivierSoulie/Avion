@@ -42,7 +42,6 @@ function detectDatabaseType(xmlDoc) {
  * @returns {Promise<Object>} Schéma complet de la base
  */
 export async function analyzeDatabaseStructure(databaseId) {
-    console.log(`🔍 Analyse de la base de données: ${databaseId}`);
 
     const xmlDoc = await getDatabaseXML(databaseId);
 
@@ -61,7 +60,6 @@ export async function analyzeDatabaseStructure(databaseId) {
         prestigeOptions: analyzePrestigeOptions(xmlDoc)
     };
 
-    console.log(`✅ Analyse terminée: ${databaseType} database`, structure);
     return structure;
 }
 
@@ -618,5 +616,4 @@ export function exportStructureAsJSON(structure, filename = 'database-schema.jso
     a.click();
     URL.revokeObjectURL(url);
 
-    console.log(`📥 Schéma exporté: ${filename} (${(jsonString.length / 1024).toFixed(2)} KB)`);
 }

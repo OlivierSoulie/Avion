@@ -7,12 +7,10 @@ import { getConfig, updateConfig, setImages, setLoading, setError, hashConfig, g
 import {
     STYLES_SLANTED,
     STYLES_STRAIGHT,
-    DECORS_CONFIG,
     DEFAULT_CONFIG,
     getAirplaneType // US-044
-    // IMPORTANT : Toutes les listes de choix (VERSION, PAINT_SCHEMES, PRESTIGE, SPINNER, etc.)
+    // IMPORTANT : Toutes les listes de choix (VERSION, PAINT_SCHEMES, PRESTIGE, SPINNER, DECORS, etc.)
     // sont maintenant extraites dynamiquement du XML via getExteriorOptionsFromXML() et getInteriorOptionsFromXML()
-    // DECORS_CONFIG est conservé car il contient de la logique (type, suffix), pas seulement des données
 } from './config.js';
 import {
     renderMosaic,
@@ -124,7 +122,6 @@ function renderDatabaseStructure(structure) {
         return;
     }
 
-    console.log('📊 Affichage de la structure:', structure);
 
     // Infos générales - avec vérification null
     const dbNameEl = document.getElementById('configDbName');
@@ -466,7 +463,6 @@ function populateDropdown(selectId, optionsList, defaultValue) {
  * Génère un fichier JSON avec le payload envoyé à l'API
  */
 function downloadJSON() {
-    console.log('📥 Téléchargement du payload JSON...');
 
     // Récupérer le dernier payload
     const payload = getLastPayload();
@@ -505,7 +501,6 @@ function downloadJSON() {
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
 
-        console.log(`✅ JSON téléchargé : ${filename}`);
         showSuccessToast('JSON téléchargé avec succès !');
 
     } catch (error) {
@@ -527,47 +522,35 @@ function downloadJSON() {
  * @returns {Object} Config parsée {version, paintScheme, prestige, decor, spinner}
  */
 function parseDefaultConfigString(configString) {
-    console.log('🔧 Parsing de la config string par défaut...');
-    console.log('   Config string complète:', configString);
 
     const config = {};
     const parts = configString.split('/');
 
-    console.log('   Parties trouvées:', parts);
 
     for (const part of parts) {
-        console.log('   > Analyse de:', part);
 
         if (part.startsWith('Version.')) {
             config.version = part.replace('Version.', '');
-            console.log('     ✅ Version:', config.version);
         } else if (part.startsWith('Exterior_PaintScheme.')) {
             // Prendre la valeur complète après "Exterior_PaintScheme."
             const fullValue = part.replace('Exterior_PaintScheme.', '');
             config.paintScheme = fullValue;
-            console.log('     ✅ PaintScheme (valeur complète):', config.paintScheme);
         } else if (part.startsWith('Interior_PrestigeSelection.')) {
             const fullValue = part.replace('Interior_PrestigeSelection.', '');
             config.prestige = fullValue.split('_')[0];
-            console.log('     ✅ Prestige:', config.prestige);
         } else if (part.startsWith('Position.')) {
             config.decor = part.replace('Position.', '');
-            console.log('     ✅ Decor (Position):', config.decor);
         } else if (part.startsWith('Decor.')) {
             // Extraire le nom du décor (avant _Ground ou _Flight)
             const decorFull = part.replace('Decor.', '');
             config.decor = decorFull.split('_')[0];
-            console.log('     ✅ Decor:', config.decor);
         } else if (part.startsWith('Exterior_Spinner.')) {
             config.spinner = part.replace('Exterior_Spinner.', '');
-            console.log('     ✅ Spinner:', config.spinner);
         } else if (part.startsWith('Interior_Stitching.')) {
             config.stitching = part.replace('Interior_Stitching.', '');
-            console.log('     ✅ Stitching:', config.stitching);
         }
     }
 
-    console.log('✅ Config parsée finale:', config);
     return config;
 }
 
@@ -576,7 +559,6 @@ function parseDefaultConfigString(configString) {
  * US-040: V0.1/V0.2 n'ont pas tous les groupes (Overview, Configuration, etc.)
  */
 async function checkViewAvailability() {
-    console.log('🔍 Vérification disponibilité des vues...');
 
     try {
         const xmlDoc = await getDatabaseXML();
@@ -592,9 +574,7 @@ async function checkViewAvailability() {
             }
         }
 
-        console.log('   Groupes disponibles (avec caméras):');
         availableGroups.forEach((count, name) => {
-            console.log(`     - ${name}: ${count} caméra(s)`);
         });
 
         // Mapping: bouton → groupe caméra requis (avec fallbacks pour anciennes versions)
@@ -638,12 +618,9 @@ async function checkViewAvailability() {
             }
 
             if (isAvailable) {
-                console.log(`   ✅ ${id}: groupe "${foundGroup}" trouvé avec caméras`);
                 btn.classList.remove('hidden');
                 btn.disabled = false;
             } else {
-                console.log(`   ⚠️ ${id}: groupe "${groups.join(', ')}" absent ou vide → masqué`);
-                console.log(`      → Ajout classe 'hidden' et disabled=true sur`, btn);
                 btn.classList.add('hidden');
                 btn.disabled = true;
             }
@@ -659,7 +636,6 @@ async function checkViewAvailability() {
  * US-040: V0.1/V0.2 n'ont pas tous les parameters (Door_pilot, Door_passenger, Tablet, SunGlass)
  */
 async function checkActionButtonsAvailability() {
-    console.log('🔍 Vérification disponibilité boutons d\'actions...');
 
     try {
         const xmlDoc = await getDatabaseXML();
@@ -674,7 +650,6 @@ async function checkActionButtonsAvailability() {
             }
         }
 
-        console.log('   Parameters disponibles:', Array.from(availableParams).join(', '));
 
         // Mapping: groupe de boutons → parameter requis (avec variantes de nommage)
         const actionButtons = [
@@ -723,11 +698,9 @@ async function checkActionButtonsAvailability() {
             }
 
             if (isAvailable) {
-                console.log(`   ✅ ${name}: trouvé sous "${foundVariant}"`);
                 formGroup.classList.remove('hidden');
                 formGroup.style.display = '';
             } else {
-                console.log(`   ⚠️ ${name}: aucune variante trouvée (${params.join(' / ')}) → masqué`);
                 formGroup.classList.add('hidden');
                 formGroup.style.display = 'none';
             }
@@ -743,7 +716,6 @@ async function checkActionButtonsAvailability() {
  * US-040: V0.1/V0.2 n'ont pas tous les parameters (Version, Spinner, Stitching, etc.)
  */
 async function checkConfigFieldsAvailability() {
-    console.log('🔍 Vérification disponibilité champs de configuration...');
 
     try {
         const xmlDoc = await getDatabaseXML();
@@ -762,7 +734,6 @@ async function checkConfigFieldsAvailability() {
         const prestigeBookmarks = xmlDoc.querySelectorAll('ConfigurationBookmark[label^="Interior_PrestigeSelection_"]');
         const hasPrestige = prestigeBookmarks.length > 0;
 
-        console.log('   Parameters de configuration disponibles:', Array.from(availableParams).join(', '));
 
         // Mapping: sélecteur de form-group → parameter requis (avec variantes de nommage)
         const configFields = [
@@ -817,7 +788,6 @@ async function checkConfigFieldsAvailability() {
                 // Parameter classique: vérifier toutes les variantes
                 for (let paramName of params) {
                     if (availableParams.has(paramName)) {
-                        console.log(`   ✅ ${name}: trouvé sous "${paramName}"`);
                         isAvailable = true;
                         break;
                     }
@@ -828,7 +798,6 @@ async function checkConfigFieldsAvailability() {
                 formGroup.classList.remove('hidden');
                 formGroup.style.display = '';
             } else {
-                console.log(`   ⚠️ ${name}: aucune variante trouvée (${params.join(' / ')}) → masqué`);
                 formGroup.classList.add('hidden');
                 formGroup.style.display = 'none';
             }
@@ -889,7 +858,6 @@ async function populateAllDropdowns() {
  * Retourne true si une config a été chargée, false sinon
  */
 async function loadDefaultConfigFromXML() {
-    console.log('📦 Chargement de la configuration par défaut depuis le XML...');
 
     try {
         // D'abord recharger les options des dropdowns depuis le nouveau XML
@@ -928,7 +896,6 @@ async function loadDefaultConfigFromXML() {
             // V0.6+     : "Sirocco_6_B-0_..." → "Sirocco"
             const schemeName = parsedConfig.paintScheme.split('_')[0];
             await syncZonesWithPaintScheme(schemeName);
-            console.log('✅ Zones resynchronisées après chargement du paintScheme depuis XML');
         }
         if (parsedConfig.prestige) {
             const selectPrestige = document.getElementById('selectPrestige');
@@ -950,7 +917,6 @@ async function loadDefaultConfigFromXML() {
             if (selectStitching) selectStitching.value = parsedConfig.stitching;
         }
 
-        console.log('✅ Configuration par défaut appliquée depuis le XML');
 
         // US-040 V0.1/V0.2 : Vérifier quelles vues sont disponibles et masquer les boutons inexistants
         await checkViewAvailability();
@@ -977,7 +943,6 @@ async function loadDefaultConfigFromXML() {
  * Charge la liste des bases de données et peuple le sélecteur
  */
 async function loadDatabases() {
-    console.log('📋 Chargement de la liste des bases de données...');
 
     const selectDatabase = document.getElementById('selectDatabase');
     if (!selectDatabase) {
@@ -989,6 +954,8 @@ async function loadDatabases() {
     try {
         // Appeler l'API pour récupérer les bases
         const databases = await fetchDatabases();
+
+        // DEBUG : Afficher la liste complète des bases
 
         // Vider le select et ajouter les options
         selectDatabase.innerHTML = '';
@@ -1102,7 +1069,6 @@ function populateColorZone(selectId, colors) {
         select.value = colors[0].name;
     }
 
-    console.log(`   > ${selectId}: ${colors.length} couleurs`);
 }
 
 /**
@@ -1141,7 +1107,6 @@ async function syncZonesWithPaintScheme(schemeName) {
                 if (select) {
                     select.value = colorName;
                     updateConfig(stateKey, colorName);
-                    console.log(`   ✅ ${stateKey}: ${colorName}`);
                 }
             }
         }
@@ -1165,9 +1130,7 @@ async function initUI() {
 
     // Peupler tous les dropdowns depuis le XML
     try {
-        log.init('Extraction de toutes les options depuis XML...');
         await populateAllDropdowns();
-        log.success('Tous les dropdowns peuplés depuis le XML');
     } catch (error) {
         log.error('Erreur chargement options depuis XML:', error);
         // En cas d'erreur, les dropdowns resteront vides
@@ -1193,7 +1156,6 @@ async function initUI() {
     btnCancelSelection?.addEventListener('click', exitSelectionMode);
     btnDownloadSelected?.addEventListener('click', downloadSelectedImages);
 
-    console.log('Interface initialisée avec succès');
 }
 
 // ======================================
@@ -1225,7 +1187,6 @@ function triggerRender() {
  * Gère loader, erreurs et mise à jour du carrousel
  */
 async function loadRender() {
-    console.log('Chargement du rendu...');
 
     try {
         // 1. Récupérer la config actuelle
@@ -1243,7 +1204,6 @@ async function loadRender() {
         // BUG-001 FIX: Vérifier si la config a changé
         const currentHash = hashConfig(validatedConfig);
         if (currentHash === lastConfigHash) {
-            console.log('Configuration identique à la dernière - API non appelée');
             return;
         }
         lastConfigHash = currentHash;
@@ -1261,7 +1221,6 @@ async function loadRender() {
 
         // US-042: Pour la vue Configuration, utiliser fetchConfigurationImages() qui fait 2 appels API
         if (viewType === 'configuration') {
-            console.log('📸 Vue Configuration: appel API avec tailles multiples...');
             images = await fetchConfigurationImages(validatedConfig);
         } else {
             // Pour exterior/interior, appel API classique
@@ -1285,7 +1244,6 @@ async function loadRender() {
         // BUG-002 FIX: Afficher le message de succès
         showSuccessToast('Rendu généré avec succès !');
 
-        console.log('Rendu chargé avec succès');
 
     } catch (error) {
         // Gérer l'erreur
@@ -1355,7 +1313,6 @@ function toggleViewControls(viewType) {
         // Afficher le panneau d'actions
         if (actionsPanel) actionsPanel.style.display = 'block';
 
-        console.log('✅ Contrôles et actions EXTÉRIEUR affichés');
     } else if (viewType === 'interior') {
         // Masquer contrôles extérieur, afficher contrôles intérieur
         controlsExterior.style.display = 'none';
@@ -1368,7 +1325,6 @@ function toggleViewControls(viewType) {
         // Afficher le panneau d'actions
         if (actionsPanel) actionsPanel.style.display = 'block';
 
-        console.log('✅ Contrôles et actions INTÉRIEUR affichés');
     } else if (viewType === 'configuration') {
         // US-042: Vue Configuration - masquer tous les contrôles (pas de personnalisation)
         controlsExterior.style.display = 'none';
@@ -1392,18 +1348,7 @@ function toggleViewControls(viewType) {
         // Masquer le panneau d'actions (vide)
         if (actionsPanel) actionsPanel.style.display = 'none';
 
-        console.log('✅ Vue OVERVIEW - Contrôles masqués');
     }
-}
-
-/**
- * DEPRECATED : Utiliser toggleViewControls() à la place
- * US-027 : Toggle section configuration intérieur personnalisée
- * @param {string} viewType - 'exterior' ou 'interior'
- */
-function toggleInteriorConfig(viewType) {
-    console.warn('⚠️ toggleInteriorConfig() est DEPRECATED. Utilisez toggleViewControls() à la place.');
-    // Gardé pour compatibilité mais ne fait plus rien
 }
 
 // ======================================
@@ -1421,7 +1366,6 @@ function updateDefaultImmatFromModel(model) {
 
     // Si l'utilisateur a customisé l'immat, ne rien faire
     if (currentConfig.hasCustomImmat) {
-        console.log('🔒 Immatriculation personnalisée, pas de mise à jour automatique');
         return;
     }
 
@@ -1430,7 +1374,6 @@ function updateDefaultImmatFromModel(model) {
 
     // Mettre à jour l'immat si elle est différente
     if (currentConfig.immat !== defaultImmat) {
-        console.log(`🔄 Mise à jour immat par défaut: ${defaultImmat} (modèle ${model})`);
 
         // Mettre à jour le state
         updateConfig('immat', defaultImmat);
@@ -1511,7 +1454,6 @@ function filterColorDropdown(zoneId, searchTerm) {
         dropdown.innerHTML = '<option value="">Aucune correspondance</option>';
     }
 
-    console.log(`🔍 Filtrage ${zoneKey}: "${term}" → ${filteredColors.length} résultats`);
 }
 
 // ======================================
@@ -1523,7 +1465,6 @@ function filterColorDropdown(zoneId, searchTerm) {
  * Met à jour le state quand l'utilisateur change une valeur
  */
 function attachEventListeners() {
-    console.log('Attachement des event listeners...');
 
     // US-019: Dropdown Base de données
     const selectDatabase = document.getElementById('selectDatabase');
@@ -1532,7 +1473,6 @@ function attachEventListeners() {
             const databaseId = e.target.value;
             const databaseName = e.target.options[e.target.selectedIndex].text;
 
-            console.log(`🔄 Changement de base: ${databaseName} (${databaseId})`);
 
             try {
                 // US-039: Changement de base → Recharger config par défaut
@@ -1552,7 +1492,6 @@ function attachEventListeners() {
 
                 showSuccessToast(`Base "${databaseName}" chargée avec succès`);
 
-                console.log('✅ Base changée et configuration rechargée');
             } catch (error) {
                 hideLoader();
                 console.error('❌ Erreur lors du changement de base:', error);
@@ -1567,7 +1506,6 @@ function attachEventListeners() {
         selectVersion.addEventListener('change', (e) => {
             updateConfig('version', e.target.value);
             updateDefaultImmatFromModel(e.target.value); // US-034: Mettre à jour immat par défaut
-            console.log('Version changée:', e.target.value);
             triggerRender(); // US-005: Appel API automatique
         });
     }
@@ -1578,7 +1516,6 @@ function attachEventListeners() {
         selectPaintScheme.addEventListener('change', async (e) => {
             const schemeValue = e.target.value; // Valeur complète : "Tehuano_6_B-0_..."
             updateConfig('paintScheme', schemeValue);
-            console.log('Schéma peinture changé:', schemeValue);
 
             // Synchroniser les zones de couleurs avec le schéma
             // Extraire le nom court pour chercher le bookmark
@@ -1597,7 +1534,6 @@ function attachEventListeners() {
     if (selectPrestige) {
         selectPrestige.addEventListener('change', async (e) => {
             const prestigeName = e.target.value;
-            console.log('🎨 Changement de prestige:', prestigeName);
 
             updateConfig('prestige', prestigeName);
 
@@ -1622,7 +1558,6 @@ function attachEventListeners() {
                 updateConfig('perforatedSeatOptions', prestigeConfig.perforatedSeatOptions);
 
                 // 4. Mettre à jour les dropdowns visuellement
-                log.int('Mise à jour dropdowns avec prestige:', prestigeName);
 
                 const carpetSelect = document.getElementById('carpet');
                 const seatCoversSelect = document.getElementById('seat-covers');
@@ -1644,7 +1579,6 @@ function attachEventListeners() {
                 if (ultraSuedeRibbonSelect) ultraSuedeRibbonSelect.value = prestigeConfig.ultraSuedeRibbon;
                 if (stitchingSelect) stitchingSelect.value = prestigeConfig.stitching; // US-036
 
-                log.debug('Dropdowns mis à jour - carpet:', carpetSelect?.value, 'seatCovers:', seatCoversSelect?.value);
 
                 // Mettre à jour les radio buttons perforation
                 const perforatedRadios = document.querySelectorAll('input[name="perforated-seat"]');
@@ -1668,7 +1602,6 @@ function attachEventListeners() {
                     }
                 }
 
-                console.log('✅ Prestige config appliquée:', prestigeConfig);
 
                 // 5. Réinitialiser le hash pour forcer la regénération de la vue Configuration
                 lastConfigHash = null;
@@ -1691,7 +1624,6 @@ function attachEventListeners() {
     if (selectDecor) {
         selectDecor.addEventListener('change', (e) => {
             updateConfig('decor', e.target.value);
-            console.log('Décor changé:', e.target.value);
 
             // Synchroniser le dropdown décor de la section intérieur
             const selectDecorInterior = document.getElementById('selectDecorInterior');
@@ -1706,7 +1638,6 @@ function attachEventListeners() {
     if (selectDecorInterior) {
         selectDecorInterior.addEventListener('change', (e) => {
             updateConfig('decor', e.target.value);
-            console.log('Décor changé (intérieur):', e.target.value);
 
             // Synchroniser le dropdown décor de la section extérieur
             const selectDecor = document.getElementById('selectDecor');
@@ -1721,7 +1652,6 @@ function attachEventListeners() {
     if (selectSpinner) {
         selectSpinner.addEventListener('change', (e) => {
             updateConfig('spinner', e.target.value);
-            console.log('Hélice changée:', e.target.value);
             triggerRender(); // US-005: Appel API automatique
         });
     }
@@ -1735,7 +1665,6 @@ function attachEventListeners() {
             if (radioSlanted.checked) {
                 updateConfig('fontType', 'slanted');
                 updateStyleDropdown('slanted');
-                console.log('Type police changé: slanted');
                 triggerRender(); // US-005: Appel API automatique
             }
         });
@@ -1746,7 +1675,6 @@ function attachEventListeners() {
             if (radioStraight.checked) {
                 updateConfig('fontType', 'straight');
                 updateStyleDropdown('straight');
-                console.log('Type police changé: straight');
                 triggerRender(); // US-005: Appel API automatique
             }
         });
@@ -1757,7 +1685,6 @@ function attachEventListeners() {
     if (selectStyle) {
         selectStyle.addEventListener('change', (e) => {
             updateConfig('style', e.target.value);
-            console.log('Style changé:', e.target.value);
             triggerRender(); // US-005: Appel API automatique
         });
     }
@@ -1789,7 +1716,6 @@ function attachEventListeners() {
                 errorImmat.classList.add('hidden');
             }
 
-            console.log('Immatriculation input:', value);
         });
     }
 
@@ -1805,10 +1731,8 @@ function attachEventListeners() {
             if (currentImmat !== previousImmat) {
                 updateConfig('immat', currentImmat);
                 updateConfig('hasCustomImmat', true); // US-034: Marquer comme personnalisée
-                console.log('Immatriculation personnalisée:', currentImmat);
                 triggerRender(); // US-005: Appel API
             } else {
-                console.log('Immatriculation inchangée');
             }
         });
     }
@@ -1844,7 +1768,6 @@ function attachEventListeners() {
 
             // Mettre à jour le state
             updateConfig('viewType', 'exterior');
-            console.log('Vue changée: exterior');
 
             // US-028 : Affichage conditionnel des contrôles
             toggleViewControls('exterior');
@@ -1862,7 +1785,6 @@ function attachEventListeners() {
 
             // Mettre à jour le state
             updateConfig('viewType', 'interior');
-            console.log('Vue changée: interior');
 
             // US-028 : Affichage conditionnel des contrôles
             toggleViewControls('interior');
@@ -1883,7 +1805,6 @@ function attachEventListeners() {
 
             // Mettre à jour le state
             updateConfig('viewType', 'configuration');
-            console.log('Vue changée: configuration');
 
             // Masquer tous les contrôles (pas de personnalisation en vue Configuration)
             toggleViewControls('configuration');
@@ -1908,7 +1829,6 @@ function attachEventListeners() {
                 if (btnViewInterior) btnViewInterior.classList.remove('active');
                 if (btnViewConfiguration) btnViewConfiguration.classList.remove('active');
 
-                console.log('Vue changée: overview');
 
                 // Masquer tous les contrôles (pas de personnalisation en vue Overview)
                 toggleViewControls('overview');
@@ -1962,7 +1882,6 @@ function attachEventListeners() {
             btnSunGlassOFF.classList.add('active');
             btnSunGlassON.classList.remove('active');
             updateConfig('sunglass', 'SunGlassOFF');
-            console.log('Lunettes de soleil: OFF');
             triggerRender();
         });
 
@@ -1970,7 +1889,6 @@ function attachEventListeners() {
             btnSunGlassON.classList.add('active');
             btnSunGlassOFF.classList.remove('active');
             updateConfig('sunglass', 'SunGlassON');
-            console.log('Lunettes de soleil: ON');
             triggerRender();
         });
     }
@@ -1984,7 +1902,6 @@ function attachEventListeners() {
             btnTabletClosed.classList.add('active');
             btnTabletOpen.classList.remove('active');
             updateConfig('tablet', 'Closed');
-            console.log('Tablette: Fermée');
             triggerRender();
         });
 
@@ -1992,7 +1909,6 @@ function attachEventListeners() {
             btnTabletOpen.classList.add('active');
             btnTabletClosed.classList.remove('active');
             updateConfig('tablet', 'Open');
-            console.log('Tablette: Ouverte');
             triggerRender();
         });
     }
@@ -2006,7 +1922,6 @@ function attachEventListeners() {
             btnMoodLightsOFF.classList.add('active');
             btnMoodLightsON.classList.remove('active');
             updateConfig('moodLights', 'Lighting_Mood_OFF');
-            console.log('Mood Lights: OFF');
             triggerRender();
         });
 
@@ -2014,7 +1929,6 @@ function attachEventListeners() {
             btnMoodLightsON.classList.add('active');
             btnMoodLightsOFF.classList.remove('active');
             updateConfig('moodLights', 'Lighting_Mood_ON');
-            console.log('Mood Lights: ON');
             triggerRender();
         });
     }
@@ -2028,7 +1942,6 @@ function attachEventListeners() {
             btnDoorPilotClosed.classList.add('active');
             btnDoorPilotOpen.classList.remove('active');
             updateConfig('doorPilot', 'Closed');
-            console.log('Porte pilote: Fermée');
             triggerRender();
         });
 
@@ -2036,7 +1949,6 @@ function attachEventListeners() {
             btnDoorPilotOpen.classList.add('active');
             btnDoorPilotClosed.classList.remove('active');
             updateConfig('doorPilot', 'Open');
-            console.log('Porte pilote: Ouverte');
             triggerRender();
         });
     }
@@ -2050,7 +1962,6 @@ function attachEventListeners() {
             btnDoorPassengerClosed.classList.add('active');
             btnDoorPassengerOpen.classList.remove('active');
             updateConfig('doorPassenger', 'Closed');
-            console.log('Porte passager: Fermée');
             triggerRender();
         });
 
@@ -2058,7 +1969,6 @@ function attachEventListeners() {
             btnDoorPassengerOpen.classList.add('active');
             btnDoorPassengerClosed.classList.remove('active');
             updateConfig('doorPassenger', 'Open');
-            console.log('Porte passager: Ouverte');
             triggerRender();
         });
     }
@@ -2069,56 +1979,47 @@ function attachEventListeners() {
 
     document.getElementById('carpet').addEventListener('change', (e) => {
         updateConfig('carpet', e.target.value);
-        console.log('Tapis changé:', e.target.value);
         triggerRender();
     });
 
     document.getElementById('seat-covers').addEventListener('change', (e) => {
         updateConfig('seatCovers', e.target.value);
-        console.log('Cuir sièges changé:', e.target.value);
         triggerRender();
     });
 
     document.getElementById('tablet-finish').addEventListener('change', (e) => {
         updateConfig('tabletFinish', e.target.value);
-        console.log('Bois tablette changé:', e.target.value);
         triggerRender();
     });
 
     document.getElementById('seatbelts').addEventListener('change', (e) => {
         updateConfig('seatbelts', e.target.value);
-        console.log('Ceintures changées:', e.target.value);
         triggerRender();
     });
 
     document.getElementById('metal-finish').addEventListener('change', (e) => {
         updateConfig('metalFinish', e.target.value);
-        console.log('Finition métal changée:', e.target.value);
         triggerRender();
     });
 
     document.getElementById('upper-side-panel').addEventListener('change', (e) => {
         updateConfig('upperSidePanel', e.target.value);
-        console.log('Panneau latéral sup changé:', e.target.value);
         triggerRender();
     });
 
     document.getElementById('lower-side-panel').addEventListener('change', (e) => {
         updateConfig('lowerSidePanel', e.target.value);
-        console.log('Panneau latéral inf changé:', e.target.value);
         triggerRender();
     });
 
     document.getElementById('ultra-suede-ribbon').addEventListener('change', (e) => {
         updateConfig('ultraSuedeRibbon', e.target.value);
-        console.log('Ruban Ultra-Suede changé:', e.target.value);
         triggerRender();
     });
 
     // US-036 : Event listener Stitching
     document.getElementById('stitching').addEventListener('change', (e) => {
         updateConfig('stitching', e.target.value);
-        console.log('Stitching changé:', e.target.value);
         triggerRender();
     });
 
@@ -2131,7 +2032,6 @@ function attachEventListeners() {
             btnCentralSeatSuede.classList.add('active');
             btnCentralSeatCuir.classList.remove('active');
             updateConfig('centralSeatMaterial', 'Ultra-Suede_Premium');
-            console.log('Matériau siège central: Suede');
             triggerRender();
         });
 
@@ -2139,7 +2039,6 @@ function attachEventListeners() {
             btnCentralSeatCuir.classList.add('active');
             btnCentralSeatSuede.classList.remove('active');
             updateConfig('centralSeatMaterial', 'Leather_Premium');
-            console.log('Matériau siège central: Cuir');
             triggerRender();
         });
     }
@@ -2149,7 +2048,6 @@ function attachEventListeners() {
     perforatedRadios.forEach(radio => {
         radio.addEventListener('change', (e) => {
             updateConfig('perforatedSeatOptions', e.target.value);
-            console.log('Perforation sièges changée:', e.target.value);
             triggerRender();
         });
     });
@@ -2168,13 +2066,11 @@ function attachEventListeners() {
             const colorTag = selectedOption.dataset.tag;
 
             updateConfig('zoneA', colorName);
-            console.log(`Zone A changée: ${colorName} (tag: ${colorTag})`);
 
             // Auto-sync: Si la couleur a le tag A+, mettre à jour Zone A+
             if (colorTag === 'A+' && selectZoneAPlus) {
                 selectZoneAPlus.value = colorName;
                 updateConfig('zoneAPlus', colorName);
-                console.log(`   → Auto-sync Zone A+ → ${colorName}`);
             }
 
             triggerRender();
@@ -2184,7 +2080,6 @@ function attachEventListeners() {
     if (selectZoneB) {
         selectZoneB.addEventListener('change', (e) => {
             updateConfig('zoneB', e.target.value);
-            console.log('Zone B changée:', e.target.value);
             triggerRender();
         });
     }
@@ -2192,7 +2087,6 @@ function attachEventListeners() {
     if (selectZoneC) {
         selectZoneC.addEventListener('change', (e) => {
             updateConfig('zoneC', e.target.value);
-            console.log('Zone C changée:', e.target.value);
             triggerRender();
         });
     }
@@ -2200,7 +2094,6 @@ function attachEventListeners() {
     if (selectZoneD) {
         selectZoneD.addEventListener('change', (e) => {
             updateConfig('zoneD', e.target.value);
-            console.log('Zone D changée:', e.target.value);
             triggerRender();
         });
     }
@@ -2208,7 +2101,6 @@ function attachEventListeners() {
     if (selectZoneAPlus) {
         selectZoneAPlus.addEventListener('change', (e) => {
             updateConfig('zoneAPlus', e.target.value);
-            console.log('Zone A+ changée:', e.target.value);
             triggerRender();
         });
     }
@@ -2253,7 +2145,6 @@ function attachEventListeners() {
         });
     }
 
-    console.log('Event listeners attachés');
 }
 
 /**
@@ -2261,7 +2152,6 @@ function attachEventListeners() {
  * @param {string} fontType - 'slanted' ou 'straight'
  */
 function updateStyleDropdown(fontType, stylesSlanted = null, stylesStraight = null) {
-    console.log(`🎨 updateStyleDropdown appelée: fontType=${fontType}, slanted=${stylesSlanted}, straight=${stylesStraight}`);
 
     // Utiliser les styles fournis en paramètre, ou fallback sur les constantes
     // BUGFIX: Gérer les chaînes vides (pas seulement null/undefined)
@@ -2271,7 +2161,6 @@ function updateStyleDropdown(fontType, stylesSlanted = null, stylesStraight = nu
     const styles = fontType === 'slanted' ? slantedList : straightList;
     const defaultStyle = fontType === 'slanted' ? 'A' : 'F';
 
-    console.log(`🎨 Styles à peupler: ${styles.join(', ')} (défaut: ${defaultStyle})`);
 
     // Repeupler le dropdown
     populateSelect('selectStyle', styles, defaultStyle);
@@ -2279,7 +2168,6 @@ function updateStyleDropdown(fontType, stylesSlanted = null, stylesStraight = nu
     // Mettre à jour le state avec la nouvelle valeur par défaut
     updateConfig('style', defaultStyle);
 
-    log.ui(`Dropdown style mis à jour pour ${fontType}: ${styles.join(', ')}`);
 }
 
 // ======================================
@@ -2293,7 +2181,6 @@ function updateStyleDropdown(fontType, stylesSlanted = null, stylesStraight = nu
  * Permet d'ouvrir/fermer les sections en cliquant sur les headers
  */
 function initAccordion() {
-    console.log('🎯 Initialisation accordéon');
 
     // Récupérer tous les headers d'accordéon
     const accordionHeaders = document.querySelectorAll('.accordion-header');
@@ -2313,14 +2200,11 @@ function initAccordion() {
             // Si la section n'était pas active, l'ouvrir
             if (!isActive) {
                 section.classList.add('active');
-                console.log(`✅ Accordéon ouvert: ${header.textContent.trim()}`);
             } else {
-                console.log(`📁 Accordéon fermé: ${header.textContent.trim()}`);
             }
         });
     });
 
-    console.log(`✅ ${accordionHeaders.length} accordéons initialisés`);
 }
 
 // ======================================
@@ -2330,9 +2214,6 @@ function initAccordion() {
  * Appelé quand le DOM est prêt
  */
 async function init() {
-    console.log('Configurateur TBM Daher - Initialisation');
-    console.log('Version : 1.0');
-    console.log('Configuration initiale :', getConfig());
 
     // Initialiser l'UI (async car charge les bases de données)
     await initUI();
@@ -2360,7 +2241,6 @@ async function init() {
 
     // Initialiser le bouton Réessayer (US-005)
     initRetryButton(() => {
-        console.log('Réessayer cliqué');
         loadRender();
     });
 
@@ -2371,33 +2251,25 @@ async function init() {
     initAccordion();
 
     // US-027 : Afficher/masquer section intérieur selon vue initiale
-    toggleInteriorConfig(getConfig().viewType);
+    toggleViewControls(getConfig().viewType);
 
     // Modes de test
     if (window.location.search.includes('test-carousel')) {
-        console.log('Mode test carrousel activé');
         testCarousel();
     } else if (window.location.search.includes('test-controls')) {
-        console.log('Mode test contrôles activé');
         testControls();
     } else if (window.location.search.includes('test-immat')) {
-        console.log('Mode test immatriculation activé');
         testImmatriculation();
     } else if (window.location.search.includes('test-payload')) {
-        console.log('Mode test payload activé');
         console.warn('⚠️ testPayloadBuild() a été supprimé lors du refactoring');
     } else {
         // Charger automatiquement le rendu initial avec la config par défaut
-        console.log('🚀 Chargement automatique du rendu initial...');
         if (defaultConfigLoaded) {
-            console.log('   > Config par défaut du XML chargée, génération du rendu...');
         } else {
-            console.log('   > Utilisation de la config hardcodée, génération du rendu...');
         }
         loadRender();
     }
 
-    console.log('Application prête');
 }
 
 // ======================================
@@ -2413,36 +2285,27 @@ function testCarousel() {
         'https://picsum.photos/1920/1080?random=5'
     ];
 
-    console.log('Test mosaïque avec', testImages.length, 'images');
 
     setTimeout(() => {
         renderMosaic(testImages, 'exterior');
-        console.log('Mosaïque de test chargée');
     }, 500);
 }
 
 function testControls() {
-    console.log('Test des contrôles interactifs');
-    console.log('Configuration initiale:', getConfig());
 
     setTimeout(() => {
-        console.log('Changement automatique version → 980');
         document.getElementById('selectVersion').value = '980';
         document.getElementById('selectVersion').dispatchEvent(new Event('change'));
 
         setTimeout(() => {
-            console.log('Changement automatique peinture → Mistral');
             document.getElementById('selectPaintScheme').value = 'Mistral';
             document.getElementById('selectPaintScheme').dispatchEvent(new Event('change'));
 
             setTimeout(() => {
-                console.log('Changement automatique type police → Straight');
                 document.getElementById('radioStraight').checked = true;
                 document.getElementById('radioStraight').dispatchEvent(new Event('change'));
 
                 setTimeout(() => {
-                    console.log('Tests terminés !');
-                    console.log('Configuration finale:', getConfig());
                 }, 1000);
             }, 1000);
         }, 1000);
@@ -2450,7 +2313,6 @@ function testControls() {
 }
 
 function testImmatriculation() {
-    console.log('Test de l\'immatriculation (US-004)');
 
     const inputImmat = document.getElementById('inputImmat');
     const btnSubmitImmat = document.getElementById('btnSubmitImmat');
@@ -2461,20 +2323,16 @@ function testImmatriculation() {
     }
 
     setTimeout(() => {
-        console.log('Test 1: Conversion en majuscules');
         inputImmat.value = 'abc123';
         inputImmat.dispatchEvent(new Event('input'));
         setTimeout(() => {
-            console.log('Résultat:', inputImmat.value === 'ABC123' ? 'PASS' : 'FAIL');
         }, 100);
     }, 500);
 
     setTimeout(() => {
-        console.log('Test 2: Soumission immatriculation');
         inputImmat.value = 'XYZ789';
         inputImmat.dispatchEvent(new Event('input'));
         btnSubmitImmat.click();
-        console.log('Résultat:', getConfig().immat === 'XYZ789' ? 'PASS' : 'FAIL');
     }, 1500);
 }
 

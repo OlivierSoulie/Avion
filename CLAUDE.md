@@ -282,6 +282,64 @@ git push origin main
 
 ## Changelog
 
+### 11/12/2025 (Maintenance: Corrections critiques + Nettoyage code)
+**Type** : Maintenance corrective hors sprint (entre Sprint #16 et Sprint #17)
+**Durée** : ~2h
+**Fichiers impactés** : 20 fichiers modifiés, ~200 lignes
+
+#### 1. BUG FIX CRITIQUE - Support décors dynamiques depuis XML
+- **Problème** : Nouvelle base avec nouveau décor non présent dans dictionnaire hardcodé `DECORS_CONFIG`
+- **Conséquence** : Payloads API sans décor ni position → Violation principe "XML = source de vérité"
+- **Cause racine** : `buildDecorConfig()` utilisait dictionnaire hardcodé au lieu de lire XML
+- **Solution** :
+  - Réécriture complète de `buildDecorConfig()` pour lecture dynamique XML
+  - Ajout `.replace(/^Decor\./i, '')` pour extraire suffix du symbol complet
+  - Pattern matching `startsWith()` pour supporter TOUS les décors
+  - Suppression import `DECORS_CONFIG` dans payload-builder.js et app.js
+- **Fichiers modifiés** :
+  - `code/js/api/payload-builder.js` (lignes 163-248) - buildDecorConfig() réécrit
+  - `code/js/config.js` (lignes 39-50) - DECORS_CONFIG marqué DEPRECATED
+  - `code/js/app.js` - Import DECORS_CONFIG supprimé
+- **Résultat** : TOUS les décors XML fonctionnent automatiquement sans modification code
+- **Documentation** :
+  - `code/js/debug-decor-config.js` (script de test)
+  - `docs/FIX-DECOR-DYNAMIC-V03.md` (doc technique complète)
+  - `IMPLEMENTATION-SUMMARY-DECOR-DYNAMIC.md` (résumé exécutif)
+
+#### 2. NETTOYAGE - Suppression console.log production
+- **Problème** : ~100+ `console.log()` polluant la console utilisateur
+- **Solution** :
+  - Suppression TOUS les `console.log()` via sed (2 passes)
+  - Suppression appels `log.init()`, `log.ui()`, `log.debug()`, `log.success()`
+  - Conservation uniquement `console.error()` et `console.warn()`
+- **Fichiers modifiés (18 fichiers)** :
+  - `code/js/app.js` (~100+ logs supprimés)
+  - `code/js/api/*.js` (7 fichiers) - Tous logs supprimés
+  - `code/js/ui/*.js` (5 fichiers) - Tous logs supprimés
+  - `code/js/utils/*.js` (2 fichiers) - Tous logs supprimés
+  - `code/js/state.js`, `code/js/config.js`, `code/js/logger.js`
+- **Résultat** : Console propre, code professionnel
+
+#### 3. CLEANUP - Fonction deprecated supprimée
+- **Problème** : Warning "toggleInteriorConfig() est DEPRECATED" en console
+- **Solution** :
+  - Remplacement `toggleInteriorConfig()` par `toggleViewControls()` (ligne 2264)
+  - Suppression complète fonction deprecated (lignes 1355-1362)
+- **Fichiers modifiés** : `code/js/app.js`
+- **Résultat** : Plus de warnings, code nettoyé
+
+#### 4. AMÉLIORATION - Favicon Lumiscaphe
+- **Problème** : Erreur 404 `/favicon.ico` en console
+- **Solution** :
+  - Téléchargement favicon depuis www.lumiscaphe.com
+  - Ajout link tag dans index.html (lignes 10-11)
+- **Fichiers modifiés** :
+  - `code/index.html` (2 lignes ajoutées)
+  - `code/favicon.ico` (nouveau fichier - 4.5KB)
+- **Résultat** : Plus d'erreur 404, icône Lumiscaphe visible
+
+**Commit** : À faire - Regroupera toutes les corrections maintenance
+
 ### 09/12/2025 (Fix critique V0.6+ immatriculation + améliorations)
 - **BUG FIX CRITIQUE** : Direction V0.6+ pour immatriculation
   - **Problème** : En V0.6+, les positions RegR allaient vers la gauche au lieu de la droite

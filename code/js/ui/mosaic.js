@@ -20,8 +20,6 @@ import { downloadImage } from './download.js';
  * @public
  */
 export function renderMosaic(imageData, viewType = 'exterior') {
-    console.log(`🖼️ Affichage mosaïque avec ${imageData.length} images (vue: ${viewType})`);
-
     const mosaicGrid = document.getElementById('mosaicGrid');
     const overviewMosaic = document.getElementById('overviewMosaic');
 
@@ -120,8 +118,6 @@ export function renderMosaic(imageData, viewType = 'exterior') {
 
     // Afficher la mosaïque
     mosaicGrid.classList.remove('hidden');
-
-    console.log('✅ Mosaïque affichée');
 }
 
 // ======================================
@@ -134,8 +130,6 @@ export function renderMosaic(imageData, viewType = 'exterior') {
  * @public
  */
 export async function renderConfigMosaic(imagesData) {
-    console.log(`🖼️ Affichage mosaïque Configuration avec ${imagesData.length} vignettes`);
-
     const mosaicGrid = document.getElementById('mosaicGrid');
     const overviewMosaic = document.getElementById('overviewMosaic');
 
@@ -184,8 +178,6 @@ export async function renderConfigMosaic(imagesData) {
 
         // Utiliser le ratioType fourni ou par défaut '1:1'
         const finalRatioType = ratioType || '1:1';
-
-        console.log(`📸 Image ${i + 1}: ratio=${finalRatioType}, camera=${cameraName || 'NULL'}`);
 
         // Créer wrapper
         const wrapper = document.createElement('div');
@@ -258,8 +250,6 @@ export async function renderConfigMosaic(imagesData) {
 
     // Afficher la mosaïque
     mosaicGrid.classList.remove('hidden');
-
-    console.log('✅ Mosaïque Configuration affichée');
 }
 
 // ======================================
@@ -274,8 +264,6 @@ export async function renderConfigMosaic(imagesData) {
  * @public
  */
 export function renderOverviewMosaic(imageA, imagesSecondary, airplaneType) {
-    console.log(`🖼️ Affichage mosaïque Overview (type avion: ${airplaneType})`);
-
     const overviewMosaic = document.getElementById('overviewMosaic');
     const mainWrapper = document.getElementById('overviewMainWrapper');
     const secondaryWrapper = document.getElementById('overviewSecondaryWrapper');
@@ -413,8 +401,6 @@ export function renderOverviewMosaic(imageA, imagesSecondary, airplaneType) {
     }
 
     overviewMosaic.classList.remove('hidden');
-
-    console.log('✅ Mosaïque Overview affichée avec boutons download');
 }
 
 // ======================================

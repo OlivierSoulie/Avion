@@ -90,8 +90,6 @@ export function openFullscreen(imageIndex) {
 
     // Bloquer le scroll du body
     document.body.style.overflow = 'hidden';
-
-    console.log(`Plein écran ouvert : image ${currentIndex + 1}/${currentImages.length}`);
 }
 
 /**
@@ -104,8 +102,6 @@ export function closeFullscreen() {
 
     // Restaurer le scroll du body
     document.body.style.overflow = '';
-
-    console.log('Plein écran fermé');
 }
 
 /**
@@ -117,8 +113,6 @@ export function fullscreenPrev() {
 
     currentIndex = (currentIndex - 1 + currentImages.length) % currentImages.length;
     updateFullscreenImage();
-
-    console.log(`Navigation plein écran : image ${currentIndex + 1}/${currentImages.length}`);
 }
 
 /**
@@ -130,8 +124,6 @@ export function fullscreenNext() {
 
     currentIndex = (currentIndex + 1) % currentImages.length;
     updateFullscreenImage();
-
-    console.log(`Navigation plein écran : image ${currentIndex + 1}/${currentImages.length}`);
 }
 
 /**
@@ -182,9 +174,8 @@ async function downloadCurrentImage() {
 
     try {
         await downloadImage(imageUrl, filename);
-        console.log(`✅ Image téléchargée depuis le modal : ${filename}`);
     } catch (error) {
-        console.error(`❌ Erreur téléchargement depuis le modal :`, error);
+        console.error(`Erreur téléchargement depuis le modal :`, error);
     }
 }
 
@@ -239,6 +230,4 @@ export function initFullscreen() {
             }
         }
     });
-
-    console.log('Plein écran initialisé');
 }

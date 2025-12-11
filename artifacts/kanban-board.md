@@ -1,8 +1,8 @@
 # Kanban Board - Configurateur_Daher
 
 **Projet** : 005-Configurateur_Daher
-**Sprint actuel** : Sprint #16 (🚀 EN COURS - 1 US, 8 SP)
-**Derniere mise a jour** : 10/12/2025 - Sprint #16 démarré - US-049 To Do (8 SP)
+**Sprint actuel** : Aucun (Sprint #16 terminé ✅)
+**Derniere mise a jour** : 11/12/2025 - Maintenance et corrections hors sprint
 **Équipe** : 6 agents (PO + ARCH + COORDINATOR + 1 DEV-Généraliste + 1 QA-Fonctionnel + 1 DOC)
 
 ---
@@ -1185,6 +1185,129 @@ _Sprint terminé - Tous tests validés_
 
 ---
 
+## 🔧 Maintenance (11/12/2025) - Corrections hors sprint
+
+**Type** : Maintenance corrective + Nettoyage code
+**Date** : 11/12/2025
+**Durée** : ~2h
+**Context** : Travaux de maintenance effectués entre Sprint #16 et Sprint #17
+
+### ✅ Corrections effectuées
+
+#### 1. 🐛 BUG FIX CRITIQUE - Décor dynamique depuis XML
+
+**Problème** :
+- Une nouvelle base de données ajoutait un nouveau décor non présent dans le dictionnaire hardcodé `DECORS_CONFIG`
+- Les payloads API ne contenaient ni décor ni position
+- Violation du principe "XML comme source de vérité"
+
+**Cause racine** :
+- `buildDecorConfig()` utilisait un dictionnaire hardcodé au lieu de lire directement depuis le XML
+- Le code ne supportait pas les nouveaux décors ajoutés dans les bases futures
+
+**Solution implémentée** :
+- Réécriture complète de `buildDecorConfig()` pour lecture dynamique depuis XML
+- Ajout de `.replace(/^Decor\./i, '')` pour extraire le suffix du symbol complet
+- Pattern matching avec `startsWith()` pour supporter TOUS les décors
+- Suppression de l'import `DECORS_CONFIG` dans payload-builder.js et app.js
+
+**Fichiers modifiés** :
+- `code/js/api/payload-builder.js` (lignes 163-248) - buildDecorConfig() réécrit
+- `code/js/config.js` (lignes 39-50) - DECORS_CONFIG marqué DEPRECATED
+- `code/js/app.js` - Import DECORS_CONFIG supprimé
+
+**Résultat** :
+- ✅ Tous les décors présents dans le XML fonctionnent automatiquement
+- ✅ Pas besoin de modifier le code pour ajouter de nouveaux décors
+- ✅ Principe "XML source de vérité" respecté
+
+**Documentation mise à jour** :
+- `CLAUDE.md` - Section "Sources de Vérité" clarifiée
+- `DATABASE-PATTERNS.md` - Patterns décor documentés
+
+---
+
+#### 2. 🧹 NETTOYAGE - Suppression console.log
+
+**Problème** :
+- ~100+ `console.log()` dans le code de production
+- Logs de debug polluant la console utilisateur
+- Logger.js utilisé avec préfixes ([INIT], [UI], [DEBUG], etc.)
+
+**Solution implémentée** :
+- Suppression de TOUS les `console.log()` via sed en 2 passes
+- Suppression des appels `log.init()`, `log.ui()`, `log.debug()`, `log.success()`
+- Conservation uniquement de `console.error()` et `console.warn()`
+
+**Fichiers modifiés (18 fichiers)** :
+- `code/js/app.js` (~100+ logs supprimés)
+- `code/js/api/*.js` (7 fichiers) - Tous logs supprimés
+- `code/js/ui/*.js` (5 fichiers) - Tous logs supprimés
+- `code/js/utils/*.js` (2 fichiers) - Tous logs supprimés
+- `code/js/state.js`, `code/js/config.js`, `code/js/logger.js`
+
+**Résultat** :
+- ✅ Console propre en production
+- ✅ Uniquement erreurs et warnings visibles
+- ✅ Code plus professionnel
+
+---
+
+#### 3. 🗑️ CLEANUP - Fonction deprecated supprimée
+
+**Problème** :
+- Warning console : "toggleInteriorConfig() est DEPRECATED"
+- Fonction obsolète encore appelée dans le code
+
+**Solution implémentée** :
+- Remplacement de `toggleInteriorConfig()` par `toggleViewControls()` (ligne 2264)
+- Suppression complète de la fonction deprecated (lignes 1355-1362)
+
+**Fichiers modifiés** :
+- `code/js/app.js` (1 appel remplacé, 1 fonction supprimée)
+
+**Résultat** :
+- ✅ Plus de warnings en console
+- ✅ Code nettoyé
+
+---
+
+#### 4. 🎨 AMÉLIORATION - Favicon Lumiscaphe
+
+**Problème** :
+- Erreur 404 dans la console pour `/favicon.ico`
+- Pas d'icône dans l'onglet navigateur
+
+**Solution implémentée** :
+- Téléchargement du favicon depuis www.lumiscaphe.com
+- Ajout du link tag dans index.html (lignes 10-11)
+
+**Fichiers modifiés** :
+- `code/index.html` (2 lignes ajoutées)
+- `code/favicon.ico` (nouveau fichier - 4.5KB)
+
+**Résultat** :
+- ✅ Plus d'erreur 404
+- ✅ Icône Lumiscaphe visible dans l'onglet
+
+---
+
+### 📊 Résumé Maintenance
+
+**Impact** :
+- 🐛 1 bug critique corrigé (décor dynamique)
+- 🧹 ~100+ console.log supprimés
+- 🗑️ 1 fonction deprecated supprimée
+- 🎨 1 amélioration UX (favicon)
+
+**Fichiers impactés** : 20 fichiers modifiés
+**Lignes modifiées** : ~200 lignes (suppressions majoritaires)
+**Durée totale** : ~2h
+
+**Commit** : À faire
+
+---
+
 ## 📋 Historique des mouvements (Sprint #12, #13, #14, #15, #16)
 
 | Date | US | Mouvement | Responsable |
@@ -1221,4 +1344,8 @@ _Sprint terminé - Tous tests validés_
 | 11/12/2025 | US-039 | Recharger config après changement base - VALIDÉ ✅ (implémenté 06/12) | DEV-Généraliste + QA |
 | 11/12/2025 | US-040 | Validation config avant rendu - VALIDÉ ✅ (implémenté 06/12) | DEV-Généraliste + QA |
 | 11/12/2025 | US-041 | Badge compatibilité - NON IMPLÉMENTÉ (nice to have) | N/A |
+| 11/12/2025 | Maintenance | BUG FIX CRITIQUE - Décor dynamique depuis XML (buildDecorConfig réécrit) | DEV-Généraliste |
+| 11/12/2025 | Maintenance | NETTOYAGE - Suppression ~100+ console.log dans 18 fichiers | DEV-Généraliste |
+| 11/12/2025 | Maintenance | CLEANUP - Fonction toggleInteriorConfig() deprecated supprimée | DEV-Généraliste |
+| 11/12/2025 | Maintenance | AMÉLIORATION - Favicon Lumiscaphe ajouté (plus d'erreur 404) | DEV-Généraliste |
 

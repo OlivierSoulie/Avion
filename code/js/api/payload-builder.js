@@ -4,7 +4,6 @@
  * @version 1.0
  */
 
-import { DECORS_CONFIG } from '../config.js';
 import { getDatabaseXML, getConfigFromLabel, findColorDataInXML, findCameraGroupId } from './xml-parser.js';
 import { getDatabaseId } from './api-client.js';
 import { extractAnchors, generateSurfaces } from '../utils/positioning.js';
@@ -61,14 +60,12 @@ function extractPaintConfig(xmlDoc, config) {
 
             if (bookmarkHasIndex) {
                 // Le bookmark contient déjà l'index, ne rien faire
-                console.log(`   ℹ️ V0.6 : Index ${schemeValueParts[1]} déjà présent dans bookmark → ${schemePart}`);
             } else {
                 // Le bookmark n'a pas d'index, l'ajouter
                 const schemeName = schemeValueParts[0]; // "Tehuano"
                 const restOfScheme = schemeValue.substring(schemeName.length + 1); // "A-0_A-D_..."
 
                 schemePart = `Exterior_PaintScheme.${schemeName}_${index}_${restOfScheme}`;
-                console.log(`   ⚠️ WORKAROUND V0.6 : Index ${index} ajouté → ${schemePart}`);
             }
         }
     }
@@ -81,7 +78,6 @@ function extractPaintConfig(xmlDoc, config) {
         return buildPaintConfigWithZones(xmlDoc, config, schemePart);
     } else {
         // Utiliser le bookmark complet (zones pas encore initialisées)
-        console.log('   > Utilisation du bookmark complet (zones non initialisées)');
         return paintBookmarkValue;
     }
 }
@@ -94,7 +90,6 @@ function extractPaintConfig(xmlDoc, config) {
  * @returns {string} Configuration complète avec zones
  */
 function buildPaintConfigWithZones(xmlDoc, config, schemePart) {
-    console.log('   > Construction config avec zones depuis state');
 
     // Construire les parties zones depuis le state
     const zoneParts = [];
@@ -149,8 +144,6 @@ function buildInteriorConfigString(config) {
     ].join('/');
 
     // DEBUG: Afficher ce qui est envoyé à l'API pour vérification
-    log.debug('Interior SeatCovers envoyé:', config.seatCovers);
-    log.debug('Interior Config complète:', interiorConfig);
 
     return interiorConfig;
 }
@@ -165,39 +158,82 @@ function buildDecorConfig(xmlDoc, decorName) {
     // ⚠️ IMPORTANT : Supporte UNIQUEMENT les bases Production (V0.2+)
     // Les bases POC (V0.1) avec "POC Decor" ne sont PAS supportées
 
+
     // Chercher le paramètre Decor dans le XML (PRODUCTION uniquement)
     const decorParam = xmlDoc.querySelector('Parameter[label="Decor"]');
 
     if (!decorParam) {
         console.warn('⚠️ Paramètre Decor non trouvé - Base POC (V0.1) non supportée ou XML invalide');
-        console.warn('   Utilisation fallback V0.3+ par défaut');
-        const fallback = DECORS_CONFIG[decorName] || { suffix: `${decorName}_Ground`, type: 'Ground' };
-        return { prefix: 'Decor', suffix: fallback.suffix, positionValue: decorName };
+        console.warn('   Utilisation fallback générique');
+        return { prefix: 'Decor', suffix: `${decorName}_Ground`, positionValue: decorName };
     }
 
     // Extraire les valeurs pour détecter le format
     const values = decorParam.querySelectorAll('Value');
-    const firstValue = values[0]?.getAttribute('symbol') || '';
+
+    if (values.length === 0) {
+        console.warn('⚠️ Aucune valeur trouvée dans Parameter[label="Decor"]');
+        console.warn('   Utilisation fallback générique');
+        return { prefix: 'Decor', suffix: `${decorName}_Ground`, positionValue: decorName };
+    }
+
+    const firstSymbol = values[0]?.getAttribute('symbol') || '';
+    // Extraire le suffix (enlever "Decor." au début)
+    const firstValue = firstSymbol.replace(/^Decor\./i, '');
 
     // Détecter le format Production (V0.2 ou V0.3+)
     if (/^[A-Za-z]+_[A-Za-z0-9]+_[\d\-_]+$/.test(firstValue)) {
         // V0.2 : Format "{decorName}_{cameraName}_Tx_Ty_Tz_Rx_Ry_Rz"
+
         // Chercher la première valeur qui correspond au décor demandé
         for (const value of values) {
             const symbol = value.getAttribute('symbol');
-            if (symbol.toLowerCase().startsWith(decorName.toLowerCase() + '_')) {
-                console.log(`   > Format V0.2 détecté : ${symbol}`);
-                return { prefix: 'Decor', suffix: symbol, positionValue: decorName };
+            // Extraire le suffix (enlever "Decor." au début)
+            const suffix = symbol.replace(/^Decor\./i, '');
+            if (suffix.toLowerCase().startsWith(decorName.toLowerCase() + '_')) {
+                return { prefix: 'Decor', suffix: suffix, positionValue: decorName };
             }
         }
+
         // Fallback si aucune correspondance
-        console.warn(`Aucune valeur V0.2 trouvée pour "${decorName}", utilisation première valeur`);
+        console.warn(`   ⚠️ Aucune valeur V0.2 trouvée pour "${decorName}", utilisation première valeur`);
         return { prefix: 'Decor', suffix: firstValue, positionValue: decorName };
     } else {
         // V0.3+ : Format "{decorName}_{Ground|Flight}"
-        const decorData = DECORS_CONFIG[decorName] || { suffix: `${decorName}_Ground`, type: 'Ground' };
-        console.log(`   > Format V0.3+ détecté : ${decorData.suffix}`);
-        return { prefix: 'Decor', suffix: decorData.suffix, positionValue: decorName };
+
+        // DEBUG : Afficher TOUTES les valeurs du XML
+        for (const value of values) {
+            const sym = value.getAttribute('symbol');
+            const suf = sym.replace(/^Decor\./i, '');
+        }
+
+        // CORRECTION : Lire depuis le XML au lieu du dictionnaire hardcodé
+        // Chercher la première valeur qui correspond au décor demandé
+        for (const value of values) {
+            const symbol = value.getAttribute('symbol');
+
+            // Le symbol contient "Decor.Fjord_Flight" → extraire "Fjord_Flight"
+            const suffix = symbol.replace(/^Decor\./i, '');
+
+            // Vérifier si le suffix commence par le decorName
+            // Exemples : "Studio_Ground", "Fjord_Flight", "NewDecor_Ground"
+            if (suffix.toLowerCase().startsWith(decorName.toLowerCase() + '_')) {
+                return { prefix: 'Decor', suffix: suffix, positionValue: decorName };
+            }
+        }
+
+        // Fallback 1 : Si decorName est vide, utiliser la première valeur
+        if (!decorName || decorName.trim() === '') {
+            console.warn(`   ⚠️ decorName vide, utilisation première valeur : "${firstValue}"`);
+            // Extraire le decorName de la première valeur (ex: "Studio_Ground" → "Studio")
+            const extractedName = firstValue.split('_')[0];
+            return { prefix: 'Decor', suffix: firstValue, positionValue: extractedName };
+        }
+
+        // Fallback 2 : Si aucune correspondance, utiliser un fallback générique
+        console.warn(`   ⚠️ Aucune valeur V0.3+ trouvée pour "${decorName}"`);
+        console.warn(`   ⚠️ Utilisation fallback générique : "${decorName}_Ground"`);
+        return { prefix: 'Decor', suffix: `${decorName}_Ground`, positionValue: decorName };
     }
 }
 
@@ -217,7 +253,6 @@ function extractPaintSchemePart(configString) {
  * @returns {string} Configuration string complète
  */
 export function buildConfigString(xmlDoc, config) {
-    console.log('🔧 Construction config string depuis XML...');
 
     const paintConfig = extractPaintConfig(xmlDoc, config);
     const interiorConfig = buildInteriorConfigString(config);
@@ -244,7 +279,6 @@ export function buildConfigString(xmlDoc, config) {
     ];
 
     const fullConfigStr = configParts.filter(Boolean).join('/');
-    console.log('✅ Config string construite:', fullConfigStr);
 
     return fullConfigStr;
 }
@@ -260,8 +294,6 @@ export function buildConfigString(xmlDoc, config) {
  * @returns {Promise<Object>} Payload prêt pour l'API
  */
 async function buildPayloadBase(config, mode) {
-    console.log(`🔧 === Construction du payload API (mode: ${mode}) ===`);
-    console.log('Config reçue:', config);
 
     // 1. Télécharger le XML pour extraire les données
     const xmlDoc = await getDatabaseXML();
@@ -271,7 +303,6 @@ async function buildPayloadBase(config, mode) {
     const fullConfigStr = config.configurationString
         ? config.configurationString
         : buildConfigString(xmlDoc, config);
-    console.log('Config string:', fullConfigStr);
 
     // 3. Extraire la partie PaintScheme depuis la config string (pour les couleurs)
     // US-049 : Skip si skipExtras activé (vignettes Prestige)
@@ -281,7 +312,6 @@ async function buildPayloadBase(config, mode) {
 
     if (!config.skipExtras) {
         const paintSchemePart = extractPaintSchemePart(fullConfigStr) || `Exterior_PaintScheme.${config.paintScheme}`;
-        console.log('Paint scheme part:', paintSchemePart);
 
         // 4. Générer les matériaux et couleurs
         const generated = generateMaterialsAndColors(
@@ -306,7 +336,6 @@ async function buildPayloadBase(config, mode) {
             surfaces = generateSurfaces(config.immat, anchors);
         }
     } else {
-        console.log('⚡ skipExtras activé : materials/materialMultiLayers/surfaces non générés');
     }
 
     // 6. Construire le mode (cameraGroup vs camera)
@@ -354,9 +383,7 @@ async function buildPayloadBase(config, mode) {
     // US-049 [T049-3] : Nettoyer product si null (ne pas envoyer dans le payload)
     if (!payload.scene[0].product) {
         delete payload.scene[0].product;
-        console.log('   > Produit : Par défaut (pas de product dans le payload)');
     } else {
-        console.log(`   > Produit : ${payload.scene[0].product}`);
     }
 
     // US-049 : Nettoyer materials/materialMultiLayers/surfaces si skipExtras activé
@@ -364,10 +391,8 @@ async function buildPayloadBase(config, mode) {
         delete payload.scene[0].materials;
         delete payload.scene[0].materialMultiLayers;
         delete payload.scene[0].surfaces;
-        console.log('   > skipExtras : materials/materialMultiLayers/surfaces supprimés');
     }
 
-    console.log('✅ Payload construit:', JSON.stringify(payload, null, 2));
     return payload;
 }
 
@@ -397,7 +422,6 @@ export async function buildPayloadForSingleCamera(config) {
  * @returns {Promise<Object>} Payload prêt pour l'API
  */
 export async function buildOverviewPayload(cameraId, isMainImage, config) {
-    console.log(`🔧 === Construction payload Overview (camera: ${cameraId}, main: ${isMainImage}) ===`);
 
     // 1. Télécharger le XML pour extraire les données
     const xmlDoc = await getDatabaseXML();
@@ -481,6 +505,5 @@ export async function buildOverviewPayload(cameraId, isMainImage, config) {
         encoder: encoderParams
     };
 
-    console.log('✅ Payload Overview construit:', JSON.stringify(payload, null, 2));
     return payload;
 }

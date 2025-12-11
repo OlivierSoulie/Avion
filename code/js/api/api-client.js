@@ -24,7 +24,6 @@ let currentDatabaseId = null;
  * @param {string} databaseId - L'ID de la base à utiliser
  */
 export function setDatabaseId(databaseId) {
-    console.log(`📦 Changement de base de données: ${databaseId}`);
     currentDatabaseId = databaseId;
     // Invalider le cache XML pour forcer le rechargement
     // Note: L'invalidation est gérée via un callback pour éviter import circulaire
@@ -69,14 +68,12 @@ export function getDatabaseId() {
  * @throws {Error} Si l'appel échoue après toutes les tentatives
  */
 export async function callLumiscapheAPI(payload, retryCount = MAX_RETRIES) {
-    console.log('🚀 Appel API Lumiscaphe...');
 
     const url = `${API_BASE_URL}/Snapshot`;
     const timeout = DEFAULT_TIMEOUT;
 
     for (let attempt = 1; attempt <= retryCount; attempt++) {
         try {
-            console.log(`   Tentative ${attempt}/${retryCount}...`);
 
             // Créer un AbortController pour gérer le timeout
             const controller = new AbortController();
@@ -133,7 +130,6 @@ export async function callLumiscapheAPI(payload, retryCount = MAX_RETRIES) {
                 throw new Error('Aucune URL d\'image dans la réponse');
             }
 
-            console.log(`✅ ${images.length} images reçues`);
             return images;
 
         } catch (error) {
@@ -151,7 +147,6 @@ export async function callLumiscapheAPI(payload, retryCount = MAX_RETRIES) {
 
             // Sinon, attendre avant de réessayer (backoff exponentiel)
             const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
-            console.log(`   Nouvelle tentative dans ${delay}ms...`);
             await new Promise(resolve => setTimeout(resolve, delay));
         }
     }
@@ -171,14 +166,11 @@ export async function callLumiscapheAPI(payload, retryCount = MAX_RETRIES) {
  * @returns {Promise<Array<Object>>} Les images avec URLs et cameraId
  */
 export async function downloadImages(images) {
-    console.log(`📥 Préparation de ${images.length} images...`);
 
     // Afficher les URLs dans la console pour debug
     images.forEach((img, i) => {
-        console.log(`   Image ${i + 1}: ${img.url}${img.cameraId ? ` (camera: ${img.cameraId})` : ''}`);
     });
 
-    console.log(`✅ ${images.length} images prêtes à charger`);
 
     // Retourner directement les images, le navigateur les chargera
     return images;

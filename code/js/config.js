@@ -36,9 +36,11 @@ export const IMAGE_HEIGHT = 1080;
 export const STYLES_SLANTED = ["A", "B", "C", "D", "E"];
 export const STYLES_STRAIGHT = ["F", "G", "H", "I", "J"];
 
-// Configuration des décors (mapping vers camera groups)
-// NOTE : Cette config est conservée car elle contient de la LOGIQUE (type, suffix)
-// pas seulement des DONNÉES. Les noms de décors viennent toujours du XML.
+// ⚠️ DEPRECATED - NE PLUS UTILISER
+// Ce dictionnaire hardcodé est conservé uniquement pour compatibilité avec generate_full_render.py
+// Le JavaScript lit maintenant les décors DIRECTEMENT depuis le XML (source de vérité)
+// depuis le 11/12/2025 : buildDecorConfig() dans payload-builder.js utilise startsWith() sur le XML
+// pour supporter TOUS les décors dynamiquement, même ceux non présents dans ce dictionnaire
 export const DECORS_CONFIG = {
     "Tarmac":   { suffix: "Tarmac_Ground",   type: "Ground" },
     "Studio":   { suffix: "Studio_Ground",   type: "Ground" },

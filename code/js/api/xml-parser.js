@@ -138,8 +138,6 @@ export async function getCameraListFromGroup(groupId) {
         throw new Error(`Group ${groupId} not found in XML`);
     }
 
-    console.log(`   > Groupe trouvé: ${group.getAttribute('name')}`);
-    console.log(`   > Contenu du groupe (innerHTML):`, group.innerHTML.substring(0, 500));
 
     // Récupérer toutes les caméras du groupe
     const cameras = [];
@@ -147,7 +145,6 @@ export async function getCameraListFromGroup(groupId) {
     // Pour le groupe Configuration, les caméras sont directement dans le groupe (balises <Camera>)
     const cameraElements = group.querySelectorAll('Camera');
 
-    console.log(`   > Nombre de Camera trouvées: ${cameraElements.length}`);
 
     for (let index = 0; index < cameraElements.length; index++) {
         const camera = cameraElements[index];
@@ -186,7 +183,6 @@ export async function getCameraListFromGroup(groupId) {
         }
     }
 
-    console.log(`   > Groupe ${groupId}: ${cameras.length} caméras trouvées`);
     return cameras;
 }
 
@@ -247,12 +243,10 @@ export async function getCameraSensorInfo(cameraId) {
  * @throws {Error} Si le groupe "Overview" n'existe pas ou si moins de 4 caméras
  */
 export async function getCameraGroupOverview() {
-    console.log('📷 Récupération du groupe caméra "Overview"...');
 
     const xmlDoc = await getDatabaseXML();
     const groups = xmlDoc.querySelectorAll('Group');
 
-    console.log(`   > ${groups.length} groupes trouvés dans le XML`);
 
     // Rechercher le groupe avec name="Overview"
     let overviewGroup = null;
@@ -269,11 +263,9 @@ export async function getCameraGroupOverview() {
     }
 
     const groupId = overviewGroup.getAttribute('id');
-    console.log(`   ✅ Groupe "Overview" trouvé (ID: ${groupId})`);
 
     // Récupérer toutes les caméras du groupe
     const cameraElements = overviewGroup.querySelectorAll('Camera');
-    console.log(`   > ${cameraElements.length} caméras trouvées dans le groupe Overview`);
 
     if (cameraElements.length === 0) {
         throw new Error('❌ Aucune caméra trouvée dans le groupe "Overview"');
@@ -300,14 +292,12 @@ export async function getCameraGroupOverview() {
                 sensorWidth: sensorInfo.width,
                 sensorHeight: sensorInfo.height
             });
-            console.log(`   > Caméra ${i + 1}: ${cameraName} (${sensorInfo.width}x${sensorInfo.height})`);
         } catch (error) {
             console.error(`   ❌ Erreur récupération sensor pour caméra ${cameraId}:`, error);
             throw new Error(`Impossible de récupérer le sensor de la caméra ${cameraName}`);
         }
     }
 
-    console.log(`✅ Groupe "Overview" : ${cameras.length} caméra(s) parsée(s)`);
     return cameras;
 }
 
@@ -323,7 +313,6 @@ export async function getCameraGroupOverview() {
  * @returns {string|null} La valeur du bookmark ou null si non trouvé
  */
 export function getConfigFromLabel(xmlRoot, targetLabel) {
-    console.log(`   > Recherche Bookmark : '${targetLabel}'`);
 
     const nodes = xmlRoot.querySelectorAll('ConfigurationBookmark');
 
@@ -332,7 +321,6 @@ export function getConfigFromLabel(xmlRoot, targetLabel) {
         if (label === targetLabel) {
             const value = node.getAttribute('value');
             if (value) {
-                console.log(`   ✅ Bookmark trouvé : ${value}`);
                 return value;
             }
         }
@@ -422,7 +410,6 @@ export function extractParameterOptions(xmlDoc, parameterLabel, formatLabel = tr
 
                 // Debug log pour tracer le formatage (US-038)
                 if (rawLabel.includes('Onyx') || rawLabel.includes('Sand') || rawLabel.includes('Suede')) {
-                    console.log(`[US-038 DEBUG] rawLabel: "${rawLabel}" → namePart: "${namePart}" → cleanName: "${cleanName}" → displayLabel: "${displayLabel}"`);
                 }
             } else {
                 // Utiliser le label brut
@@ -648,7 +635,6 @@ export function getInteriorOptionsFromXML(xmlDoc) {
  * @throws {Error} Si le bookmark n'est pas trouvé
  */
 export function getInteriorPrestigeConfig(xmlDoc, prestigeName) {
-    console.log(`🔍 Parsing prestige config: ${prestigeName}`);
 
     const bookmarkLabel = `Interior_PrestigeSelection_${prestigeName}`;
     const bookmark = xmlDoc.querySelector(`ConfigurationBookmark[label="${bookmarkLabel}"]`);
@@ -662,7 +648,6 @@ export function getInteriorPrestigeConfig(xmlDoc, prestigeName) {
         throw new Error(`Prestige "${prestigeName}" sans valeur dans le XML`);
     }
 
-    console.log(`   Config string prestige: ${value}`);
 
     // Parser la config string : Interior_Carpet.XXX/Interior_CentralSeatMaterial.YYY/...
     const parts = value.split('/');
@@ -694,7 +679,6 @@ export function getInteriorPrestigeConfig(xmlDoc, prestigeName) {
         }
     });
 
-    console.log('   Prestige config parsed:', config);
     return config;
 }
 
@@ -708,7 +692,6 @@ export function getInteriorPrestigeConfig(xmlDoc, prestigeName) {
  * @returns {Promise<string|null>} La config string par défaut ou null si non trouvée
  */
 export async function getDefaultConfig() {
-    console.log('🔍 Récupération de la configuration par défaut depuis le XML...');
 
     try {
         const xmlDoc = await getDatabaseXML();
@@ -719,7 +702,6 @@ export async function getDefaultConfig() {
         if (defaultNode) {
             const defaultValue = defaultNode.getAttribute('value');
             if (defaultValue) {
-                console.log('✅ Config par défaut trouvée:', defaultValue);
                 return defaultValue;
             }
         }
@@ -826,7 +808,6 @@ export function parseColorString(colorStr) {
  * }
  */
 export function parsePaintSchemeBookmark(xmlDoc, schemeName) {
-    console.log(`🎨 Recherche bookmark pour schéma: ${schemeName}`);
 
     // Chercher le ConfigurationBookmark avec label="Exterior_{schemeName}"
     const bookmarkLabel = `Exterior_${schemeName}`;
@@ -854,7 +835,6 @@ export function parsePaintSchemeBookmark(xmlDoc, schemeName) {
         return null;
     }
 
-    console.log(`   > Value bookmark (200 premiers chars): ${valueStr.substring(0, 200)}...`);
 
     // Parser les parties
     const parts = valueStr.split('/');
@@ -884,7 +864,6 @@ export function parsePaintSchemeBookmark(xmlDoc, schemeName) {
         }
     }
 
-    console.log(`✅ Bookmark "${bookmarkLabel}" parsé:`, zones);
     return zones;
 }
 
@@ -1091,7 +1070,6 @@ export async function validateConfigForDatabase(config) {
         console.warn(`⚠️ Configuration corrigée (${corrections.length} corrections):`);
         corrections.forEach(c => console.warn(`   - ${c}`));
     } else {
-        console.log('✅ Configuration 100% compatible avec la base actuelle');
     }
 
     return { config: validatedConfig, corrections };
@@ -1108,19 +1086,16 @@ export async function validateConfigForDatabase(config) {
  * @throws {Error} Si le produit n'est pas trouvé dans le XML
  */
 export async function getProductIdByName(productName) {
-    console.log(`🔍 Recherche produit: "${productName}"`);
 
     try {
         const xmlDoc = await getDatabaseXML();
         const products = xmlDoc.querySelectorAll('Product');
 
-        console.log(`   > ${products.length} produits trouvés dans le XML`);
 
         for (let product of products) {
             const label = product.getAttribute('label');  // 🔧 CORRECTION : "label" pas "name"
             if (label === productName) {
                 const id = product.getAttribute('id');
-                console.log(`   ✅ Produit "${productName}" trouvé, ID: ${id}`);
                 return id;
             }
         }
@@ -1140,13 +1115,11 @@ export async function getProductIdByName(productName) {
  * @returns {Promise<Array<string>>} Liste des noms de prestige (ex: ["Oslo", "London", ...])
  */
 export async function getAllPrestigeNames() {
-    console.log('🔍 Récupération de tous les noms de prestige...');
 
     try {
         const xmlDoc = await getDatabaseXML();
         const bookmarks = xmlDoc.querySelectorAll('ConfigurationBookmark[label^="Interior_PrestigeSelection_"]');
 
-        console.log(`   > ${bookmarks.length} bookmarks prestige trouvés`);
 
         const prestigeNames = Array.from(bookmarks).map(bookmark => {
             const label = bookmark.getAttribute('label');
@@ -1154,7 +1127,6 @@ export async function getAllPrestigeNames() {
             return label.replace('Interior_PrestigeSelection_', '');
         });
 
-        console.log(`   ✅ Prestiges disponibles:`, prestigeNames);
         return prestigeNames;
 
     } catch (error) {
@@ -1171,7 +1143,6 @@ export async function getAllPrestigeNames() {
  * @throws {Error} Si le bookmark n'est pas trouvé
  */
 export function parsePrestigeBookmarkOrdered(xmlDoc, prestigeName) {
-    console.log(`🔍 Parsing bookmark prestige: ${prestigeName}`);
 
     const bookmarkLabel = `Interior_PrestigeSelection_${prestigeName}`;
     const bookmark = xmlDoc.querySelector(`ConfigurationBookmark[label="${bookmarkLabel}"]`);
@@ -1185,16 +1156,13 @@ export function parsePrestigeBookmarkOrdered(xmlDoc, prestigeName) {
         throw new Error(`Bookmark prestige "${prestigeName}" sans valeur dans le XML`);
     }
 
-    console.log(`   > Configuration string: ${value.substring(0, 100)}...`);
 
     // Parser la config string : Interior_Carpet.XXX/Interior_CentralSeatMaterial.YYY/...
     // IMPORTANT : Garder l'ordre du bookmark XML
     const materials = value.split('/').filter(m => m.trim().length > 0);
 
-    console.log(`   ✅ ${materials.length} matériaux trouvés dans l'ordre:`);
     materials.forEach((mat, i) => {
         const paramName = mat.split('.')[0];
-        console.log(`      ${i + 1}. ${paramName}`);
     });
 
     return materials;

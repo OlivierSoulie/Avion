@@ -15,8 +15,6 @@
  * @public
  */
 export function showLoader(message = 'Génération en cours...') {
-    console.log('⏳ Affichage loader');
-
     const loader = document.getElementById('viewportLoader');
     if (loader) {
         const p = loader.querySelector('p');
@@ -37,8 +35,6 @@ export function showLoader(message = 'Génération en cours...') {
  * @public
  */
 export function hideLoader() {
-    console.log('✅ Masquage loader');
-
     const loader = document.getElementById('viewportLoader');
     if (loader) {
         loader.classList.add('hidden');
@@ -114,7 +110,6 @@ export function showPlaceholder(message = 'Sélectionnez une configuration pour 
         const p = placeholder.querySelector('p');
         if (p) p.textContent = message;
         placeholder.classList.remove('hidden');
-        console.log('✅ Placeholder affiché');
     }
 
     // Masquer la mosaïque
@@ -132,7 +127,6 @@ export function hidePlaceholder() {
     const placeholder = document.querySelector('.viewport-placeholder');
     if (placeholder) {
         placeholder.classList.add('hidden');
-        console.log('✅ Placeholder masqué');
     }
 }
 
@@ -146,8 +140,6 @@ export function hidePlaceholder() {
  * @public
  */
 export function showSuccessToast(message = 'Rendu généré avec succès !') {
-    console.log('✅ Toast succès:', message);
-
     // Créer le toast s'il n'existe pas
     let toast = document.getElementById('successToast');
     if (!toast) {
@@ -176,19 +168,15 @@ export function showSuccessToast(message = 'Rendu généré avec succès !') {
  * @public
  */
 export function initConnectionStatus() {
-    console.log('Initialisation du statut de connexion...');
-
     // Afficher le statut initial
     updateConnectionStatus(navigator.onLine);
 
     // Écouter les changements de connexion
     window.addEventListener('online', () => {
-        console.log('Connexion établie');
         updateConnectionStatus(true);
     });
 
     window.addEventListener('offline', () => {
-        console.log('Connexion perdue');
         updateConnectionStatus(false);
     });
 }

@@ -247,17 +247,11 @@ export function generateSurfaces(immatString, anchors) {
  * Pour tester : Appeler testPositioning() dans la console
  */
 export function testPositioning() {
-    console.log('🧪 === TEST POSITIONING ===');
 
     const testImmat = "NWM1MW";
     const anchors = extractAnchors("Sirocco");
     const surfaces = generateSurfaces(testImmat, anchors);
 
-    console.log('\n📊 Résultats du test:');
-    console.log('Immatriculation:', testImmat);
-    console.log('Anchors:', anchors);
-    console.log('Surfaces:', JSON.stringify(surfaces, null, 2));
 
-    console.log('\n✅ Test terminé');
     return surfaces;
 }

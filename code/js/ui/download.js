@@ -50,8 +50,6 @@ export async function downloadImage(imageUrl, filename) {
                 URL.revokeObjectURL(blobUrl);
             }, 100);
         }
-
-        console.log(`✅ Image téléchargée : ${filename}`);
     } catch (error) {
         console.error(`❌ Erreur téléchargement ${filename}:`, error);
         throw error;
@@ -84,8 +82,6 @@ export function enterSelectionMode() {
     document.querySelectorAll('.image-checkbox').forEach(checkbox => {
         checkbox.addEventListener('change', updateSelectionCounter);
     });
-
-    console.log('Mode sélection activé');
 }
 
 /**
@@ -112,7 +108,6 @@ export function exitSelectionMode() {
     });
 
     updateSelectionCounter();
-    console.log('Mode sélection désactivé');
 }
 
 /**
@@ -213,6 +208,4 @@ export async function downloadSelectedImages(e) {
     } else {
         showError(`Erreur : aucune image n'a pu être téléchargée`);
     }
-
-    console.log(`✅ ${successCount} images téléchargées, ${errorCount} erreurs`);
 }

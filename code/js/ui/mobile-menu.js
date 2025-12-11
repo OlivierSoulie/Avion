@@ -87,6 +87,4 @@ export function initMobileMenu() {
     // Déplacer les contrôles au chargement et au resize
     moveTechnicalControlsToSidebar();
     window.addEventListener('resize', moveTechnicalControlsToSidebar);
-
-    console.log('✅ Menu burger mobile initialisé');
 }

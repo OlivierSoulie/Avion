@@ -28,7 +28,6 @@ import { STYLES_SLANTED } from '../config.js';
  *   // Output: { "A": "#000000" } (2ème couleur = Code HTML Lumiscaphe)
  */
 export function parseColorsFromConfig(fullConfigStr) {
-    console.log('🎨 Parse des couleurs depuis config...');
 
     const colorMap = {};
     const parts = fullConfigStr.split('/');
@@ -367,25 +366,15 @@ export function generateMaterialsAndColors(immatString, styleLetter, fullConfigS
  * Pour tester : Appeler testColors() dans la console
  */
 export function testColors() {
-    console.log('🧪 === TEST COLORS ===');
 
     // Config de test (simulée) - avec zone "0" pour tester le Layer 1 conditionnel
     const testConfig = "Version.960/Exterior_PaintScheme.Zephir_B-0_B-D_B-D_B-D_B-D/Exterior_Colors_ZoneB.#c6c7c8-#C4C5C6/Exterior_Colors_ZoneD.#dcdcd7-#D9D7C8";
 
     const paintSchemePart = "Exterior_PaintScheme.Zephir_B-0_B-D_B-D_B-D_B-D";
 
-    console.log('\n--- Test Style A (slanted, paire 0: B-0) ---');
     const resultA = generateMaterialsAndColors("N960TB", "A", testConfig, paintSchemePart);
-    console.log('Materials:', resultA.materials);
-    console.log('Material Multi-Layers:', resultA.materialMultiLayers);
-    console.log('Colors:', resultA.colors);
 
-    console.log('\n--- Test Style F (straight, paire 0: B-0) ---');
     const resultF = generateMaterialsAndColors("N960TB", "F", testConfig, paintSchemePart);
-    console.log('Materials:', resultF.materials);
-    console.log('Material Multi-Layers:', resultF.materialMultiLayers);
-    console.log('Colors:', resultF.colors);
 
-    console.log('\n✅ Test terminé - A et F devraient avoir les mêmes couleurs');
     return { resultA, resultF };
 }
