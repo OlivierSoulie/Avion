@@ -24,7 +24,6 @@ import { CHAR_WIDTHS, SPACING } from '../config.js';
  * @returns {Object} Les paramètres d'ancrage { Left: {Start, Direction}, Right: {Start, Direction}, Y }
  */
 export function extractAnchors(xmlRoot, scheme) {
-    console.log(`📍 Extraction anchors depuis XML pour scheme: ${scheme}`);
 
     const params = {
         Left: null,
@@ -37,8 +36,6 @@ export function extractAnchors(xmlRoot, scheme) {
     candidates.push(...xmlRoot.querySelectorAll('ConfigurationBookmark'));
     candidates.push(...xmlRoot.querySelectorAll('Bookmark'));
 
-    console.log(`   > ${candidates.length} bookmarks trouvés dans le XML`);
-    console.log(`   > Recherche des bookmarks pour schéma: "${scheme.toUpperCase()}"`);
 
     for (const item of candidates) {
         const name = (item.getAttribute('name') || item.getAttribute('label') || '').toUpperCase();
@@ -52,7 +49,6 @@ export function extractAnchors(xmlRoot, scheme) {
         const targetRight = `${scheme.toUpperCase()}_REGR`;
 
         if (name.startsWith(targetLeft) || name.startsWith(targetRight)) {
-            console.log(`   🎯 Bookmark trouvé: ${name}`);
             const parts = name.split('_');
             const isLeft = name.startsWith(targetLeft);
 
@@ -81,7 +77,6 @@ export function extractAnchors(xmlRoot, scheme) {
                         } else {
                             direction = 1.0;
                         }
-                        console.log(`   📍 Format V0.2-V0.5 détecté (6 positions)`);
                     } else {
                         // V0.6+ : Format court (1 seule position)
                         // parts = [SCHEME, REGL/REGR, X1, Y]
@@ -91,7 +86,6 @@ export function extractAnchors(xmlRoot, scheme) {
                         // Direction TOUJOURS positive en V0.6+ car le signe est déjà dans startX
                         // Ex: REGL_0.34_0.0 → startX=+0.34, REGR_-0.34_0.0 → startX=-0.34
                         direction = 1.0;
-                        console.log(`   📍 Format V0.6+ détecté (1 position)`);
                     }
 
                     // Construire les données du côté
@@ -104,10 +98,8 @@ export function extractAnchors(xmlRoot, scheme) {
                     if (isLeft) {
                         params.Left = sideData;
                         params.Y = y;
-                        console.log(`   ✅ Anchors LEFT trouvés: Start=${startX}, Direction=${direction}, Y=${y}`);
                     } else {
                         params.Right = sideData;
-                        console.log(`   ✅ Anchors RIGHT trouvés: Start=${startX}, Direction=${direction}`);
                     }
                 } catch (error) {
                     console.warn(`   ⚠️ Erreur parsing bookmark "${name}":`, error);
@@ -125,7 +117,6 @@ export function extractAnchors(xmlRoot, scheme) {
         params.Y = 0.0;
     }
 
-    console.log('✅ Anchors extraits:', params);
     return params;
 }
 
@@ -142,7 +133,6 @@ export function extractAnchors(xmlRoot, scheme) {
  * @returns {Array<number>} Les positions X absolues de chaque lettre
  */
 export function calculateTransformsAbsolute(immatString, startX, directionSign) {
-    console.log(`🔢 Calcul positions pour "${immatString}" | Start=${startX}, Dir=${directionSign}`);
 
     const transforms = [];
 
@@ -150,7 +140,6 @@ export function calculateTransformsAbsolute(immatString, startX, directionSign) 
         if (i === 0) {
             // Première lettre : centre exactement à start_x
             transforms.push(startX);
-            console.log(`  Lettre ${i} (${immatString[i]}): X=${startX} (première lettre)`);
         } else {
             // 1. Moitié de la première lettre (pour partir de son bord droit)
             const wFirst = CHAR_WIDTHS[immatString[0]] || CHAR_WIDTHS.DEFAULT;
@@ -181,11 +170,9 @@ export function calculateTransformsAbsolute(immatString, startX, directionSign) 
 
             transforms.push(roundedPosition);
 
-            console.log(`  Lettre ${i} (${immatString[i]}): offset=${offset.toFixed(4)}, X=${roundedPosition}`);
         }
     }
 
-    console.log('✅ Positions calculées:', transforms);
     return transforms;
 }
 
@@ -198,7 +185,6 @@ export function calculateTransformsAbsolute(immatString, startX, directionSign) 
  * @returns {Array<Object>} Les surfaces à injecter dans le payload
  */
 export function generateSurfaces(immatString, anchors) {
-    console.log('🎨 Génération des surfaces...');
 
     // Calculer positions Left
     const absXLeft = calculateTransformsAbsolute(
@@ -249,7 +235,6 @@ export function generateSurfaces(immatString, anchors) {
         labels: labelsR
     });
 
-    console.log('✅ Surfaces générées:', surfaces);
     return surfaces;
 }
 

@@ -6,20 +6,23 @@ Générateur de rendus TBM Daher - Version Python
 Ce script Python a été mis à jour pour refléter les concepts et corrections
 implémentés dans le site web JavaScript (code/js/).
 
+NOTE : Le JavaScript (code/js/) est la SOURCE DE VÉRITÉ pour la logique métier.
+
 CORRECTIONS MAJEURES (09/12/2025) :
 - FIX CRITIQUE : Direction V0.6+ toujours positive (1.0) car signe dans startX
   * V0.6+ : REGL_0.34 → startX=+0.34, direction=1.0
   * V0.6+ : REGR_-0.34 → startX=-0.34, direction=1.0 (pas -1.0 !)
-  * Le signe est déjà encodé dans le bookmark, pas besoin d'inverser
+  * Le signe est déjà encodé dans le bookmark
 - FIX : Respect des conventions aviation civile pour lettres penchées (slanted)
   * Côté GAUCHE (RegL) → texture Right (penché vers l'arrière /)
   * Côté DROIT (RegR) → texture Left (penché vers l'arrière \)
 
-CORRECTIONS (05/12/2025) :
-- BUG FIX CRITIQUE : Inversion des layers par l'API Lumiscaphe
-  * Pour paire "A-D" : Layer 0 envoyé avec couleur Zone D, Layer 1 avec Zone A
-  * Logique inversée implémentée dans resolve_letter_colors()
-- Layer 1 TOUJOURS envoyé (même si zone = "0", utilise couleur Layer 0 dans ce cas)
+CORRECTIONS (10/12/2025) :
+- DOC FIX : Correction commentaires layers
+  * Layer 0 = couleur zone X (1ère valeur) → LETTRE
+  * Layer 1 = couleur zone Y (2ème valeur) → CONTOUR/OMBRE
+  * Pour paire "A-D" : Layer 0 = Zone A, Layer 1 = Zone D
+  * Layer 1 TOUJOURS envoyé (même si zone = "0", utilise fallback sur Zone X)
 - Nommage conditionnel des textures (slanted vs straight)
 
 ALIGNEMENT AVEC JAVASCRIPT :
@@ -282,12 +285,14 @@ def resolve_letter_colors(style_letter, paint_scheme_config_part, color_map):
     """
     Résout les couleurs des lettres selon le style et la config de peinture
 
-    BUG FIX 05/12/2025: INVERSION DES LAYERS PAR L'API
-    - Pour paire "A-D" : on veut Layer 0 = Zone A, Layer 1 = Zone D
-    - Mais l'API applique Layer 0 = deuxième valeur, Layer 1 = première valeur
-    - Donc on inverse l'attribution : c0 = z1, c1 = z0
+    LOGIQUE DIRECTE (synchronisé avec JavaScript colors.js) :
+    - Chaque paire "X-Y" définit 2 zones de couleur via diffuseColor
+    - Layer 0 = couleur zone X (1ère valeur) → Appliqué à la LETTRE
+    - Layer 1 = couleur zone Y (2ème valeur) → Appliqué au CONTOUR/OMBRE
+    - Pour paire "A-D" : Layer 0 = Zone A, Layer 1 = Zone D
+    - Pour paire "A-0" : Layer 0 = Zone A, Layer 1 = Zone A (fallback)
 
-    Layer 1 TOUJOURS envoyé (même si z0 = '0', utilise couleur de z1 dans ce cas)
+    Layer 1 TOUJOURS envoyé (même si z1 = '0', utilise fallback sur z0)
     """
     try:
         segments = paint_scheme_config_part.split('.')[1].split('_')
@@ -305,18 +310,16 @@ def resolve_letter_colors(style_letter, paint_scheme_config_part, color_map):
         target_pair = config_pairs[style_idx]
         z0, z1 = target_pair.split('-')
 
-        # INVERSION : L'API interprète les layers à l'envers
-        # Pour "A-D" : on veut Layer 0 = Zone A, Layer 1 = Zone D
-        # Mais l'API applique Layer 0 = deuxième valeur, Layer 1 = première valeur
-        # Donc on inverse l'attribution
-        c0 = color_map.get(z1) if z1 != '0' else None  # Layer 0 = deuxième zone (z1)
-        c1 = color_map.get(z0) if z0 != '0' else None  # Layer 1 = première zone (z0)
+        # LOGIQUE DIRECTE (aligné avec JavaScript)
+        # Pour paire "A-D" : Layer 0 = Zone A (z0), Layer 1 = Zone D (z1)
+        c0 = color_map.get(z0) if z0 != '0' else None  # Layer 0 = première zone (z0)
+        c1 = color_map.get(z1) if z1 != '0' else None  # Layer 1 = deuxième zone (z1)
 
         # Layer 1 TOUJOURS défini (flag True)
-        # Si z0 = '0', utiliser la couleur de z1 (= c0)
+        # Si z1 = '0', utiliser la couleur de z0 (fallback)
         has_layer1 = True
-        if z0 == '0':
-            c1 = c0  # Utiliser la couleur du Layer 0
+        if z1 == '0':
+            c1 = c0  # Fallback sur Layer 0
 
         return c0, c1, has_layer1
     except Exception: return "#000000", "#FFFFFF", True

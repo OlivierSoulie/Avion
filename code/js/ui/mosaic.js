@@ -167,7 +167,20 @@ export async function renderConfigMosaic(imagesData) {
 
     // Créer les vignettes avec détection de ratio
     for (let i = 0; i < imagesData.length; i++) {
-        const { url, cameraId, cameraName, groupName, ratioType } = imagesData[i];
+        const imageData = imagesData[i];
+
+        // Détecter les séparateurs
+        if (imageData.type === 'divider') {
+            const divider = document.createElement('div');
+            divider.classList.add('mosaic-divider');
+            if (imageData.label) {
+                divider.innerHTML = `<span>${imageData.label}</span>`;
+            }
+            mosaicGrid.appendChild(divider);
+            continue;
+        }
+
+        const { url, cameraId, cameraName, groupName, ratioType } = imageData;
 
         // Utiliser le ratioType fourni ou par défaut '1:1'
         const finalRatioType = ratioType || '1:1';
@@ -181,6 +194,9 @@ export async function renderConfigMosaic(imagesData) {
         // Ajouter classe selon ratio
         if (finalRatioType === '16:9') {
             wrapper.classList.add('vignette-16-9');
+        } else if (finalRatioType === '3:1') {
+            // US-049 : Support ratio 3:1 pour vignettes Prestige composites (300×100)
+            wrapper.classList.add('vignette-3-1');
         } else {
             wrapper.classList.add('vignette-1-1');
         }

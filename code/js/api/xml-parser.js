@@ -30,11 +30,8 @@ registerXMLCacheInvalidator(invalidateXMLCache);
  */
 export async function getDatabaseXML() {
     if (cachedXML) {
-        console.log('   > Utilisation du XML en cache');
         return cachedXML;
     }
-
-    console.log('   > Téléchargement du XML depuis l\'API...');
     const databaseId = getDatabaseId();
     const url = `${API_BASE_URL}/Database?databaseId=${databaseId}`;
 
@@ -53,10 +50,9 @@ export async function getDatabaseXML() {
             throw new Error('Erreur de parsing XML: ' + parserError.textContent);
         }
 
-        console.log('   > XML téléchargé et parsé avec succès');
         return cachedXML;
     } catch (error) {
-        console.error('❌ Erreur téléchargement XML:', error);
+        console.error('[ERROR] XML téléchargement:', error.message);
         throw error;
     }
 }
@@ -73,96 +69,58 @@ export async function getDatabaseXML() {
  * @throws {Error} Si aucun groupe n'est trouvé
  */
 export async function findCameraGroupId(decorName, viewType = "exterior") {
-    console.log(`📷 Recherche camera group - Décor: ${decorName}, Vue: ${viewType}`);
-
-    // Télécharger le XML
     const xmlDoc = await getDatabaseXML();
     const groups = xmlDoc.querySelectorAll('Group');
 
-    console.log(`   > ${groups.length} groupes trouvés dans le XML`);
-
-    // US-022: Si vue intérieure, chercher "Interieur"
     if (viewType === "interior") {
-        console.log(`   > Recherche vue intérieure: name="Interieur"`);
-
         for (let group of groups) {
             const groupName = group.getAttribute('name');
             if (groupName === "Interieur") {
-                const id = group.getAttribute('id');
-                console.log(`   ✅ Camera group intérieur trouvé: ${id}`);
-                return id;
+                return group.getAttribute('id');
             }
         }
-
-        throw new Error(`❌ Groupe caméra "Interieur" introuvable dans le XML`);
+        throw new Error(`Groupe caméra "Interieur" introuvable`);
     }
 
-    // US-042: Si vue configuration, chercher "Configuration"
     if (viewType === "configuration") {
-        console.log(`   > Recherche vue configuration: name="Configuration"`);
-
         for (let group of groups) {
             const groupName = group.getAttribute('name');
             if (groupName === "Configuration") {
-                const id = group.getAttribute('id');
-                console.log(`   ✅ Camera group Configuration trouvé: ${id}`);
-                return id;
+                return group.getAttribute('id');
             }
         }
-
-        throw new Error(`❌ Groupe caméra "Configuration" introuvable dans le XML`);
+        throw new Error(`Groupe caméra "Configuration" introuvable`);
     }
 
-    // Vue extérieure: comportement original
-    // US-040 V0.2 : Si decorName contient coordonnées (ex: "Fjord_201_0_0_0_0_-90_-15"),
-    // extraire juste le nom du décor (ex: "Fjord")
     let decorBaseName = decorName;
     if (/^[A-Za-z]+_[\d\-_]+$/.test(decorName)) {
-        // Format V0.2 avec coordonnées : extraire juste le nom (avant premier underscore)
         decorBaseName = decorName.split('_')[0];
-        console.log(`   > Détection format V0.2: "${decorName}" → "${decorBaseName}"`);
     }
 
-    // Recherche 1 : Nom exact "Exterieur_Decor{decorBaseName}"
     const target = `Exterieur_Decor${decorBaseName}`;
-    console.log(`   > Recherche exacte: "${target}"`);
-
     for (let group of groups) {
         const groupName = group.getAttribute('name');
         if (groupName === target) {
-            const id = group.getAttribute('id');
-            console.log(`   ✅ Camera group trouvé (exact): ${id}`);
-            return id;
+            return group.getAttribute('id');
         }
     }
 
-    // Recherche 2 : Nom partiel contenant "Decor{decorBaseName}"
     const partialTarget = `Decor${decorBaseName}`;
-    console.log(`   > Recherche partielle: contient "${partialTarget}"`);
-
     for (let group of groups) {
         const groupName = group.getAttribute('name') || '';
         if (groupName.includes(partialTarget)) {
-            const id = group.getAttribute('id');
-            console.log(`   ✅ Camera group trouvé (partiel): ${id} (nom: ${groupName})`);
-            return id;
+            return group.getAttribute('id');
         }
     }
-
-    // Recherche 3 : Fallback V0.1/V0.2 - chercher juste "Exterieur"
-    console.log(`   > Recherche fallback: "Exterieur" (V0.1/V0.2)`);
 
     for (let group of groups) {
         const groupName = group.getAttribute('name');
         if (groupName === 'Exterieur') {
-            const id = group.getAttribute('id');
-            console.log(`   ✅ Camera group trouvé (fallback V0.1/V0.2): ${id}`);
-            return id;
+            return group.getAttribute('id');
         }
     }
 
-    // Pas trouvé
-    throw new Error(`❌ Groupe caméra introuvable pour décor: ${decorName}`);
+    throw new Error(`Groupe caméra introuvable pour décor: ${decorName}`);
 }
 
 /**
@@ -475,7 +433,6 @@ export function extractParameterOptions(xmlDoc, parameterLabel, formatLabel = tr
         }
     });
 
-    console.log(`${parameterLabel}: ${options.length} options extraites`);
     return options;
 }
 
@@ -490,7 +447,6 @@ export function extractParameterOptions(xmlDoc, parameterLabel, formatLabel = tr
  * @returns {Object} Objet contenant les listes d'options pour chaque dropdown
  */
 export function getExteriorOptionsFromXML(xmlDoc) {
-    console.log('Extraction des options extérieur depuis XML...');
 
     // Fonctions spéciales pour formater les labels
 
@@ -579,11 +535,8 @@ export function getExteriorOptionsFromXML(xmlDoc) {
             const indexB = b.index ?? Infinity;
             return indexA - indexB;
         });
-        console.log('📊 Paint Schemes triés par INDEX (V0.6+):', paintWithIndex.map(p => `${p.label} (${p.index})`));
     } else {
-        // V0.2-V0.5 : Tri alphabétique
         paintWithIndex.sort((a, b) => a.label.localeCompare(b.label));
-        console.log('📊 Paint Schemes triés ALPHABÉTIQUEMENT (V0.2-V0.5):', paintWithIndex.map(p => p.label));
     }
 
     // Garder seulement label/value pour l'API finale
@@ -647,12 +600,6 @@ export function getExteriorOptionsFromXML(xmlDoc) {
         options.styleStraight = ['F', 'G', 'H', 'I', 'J'];
     }
 
-    console.log('✓ Version:', options.version.length, 'options');
-    console.log('✓ PaintScheme:', options.paintScheme.length, 'options');
-    console.log('✓ Prestige:', options.prestige.length, 'options');
-    console.log('✓ Spinner:', options.spinner.length, 'options');
-    console.log('✓ Decor:', options.decor.length, 'options');
-    console.log('✓ Styles:', options.styleSlanted.length + options.styleStraight.length, 'options');
 
     return options;
 }
@@ -668,9 +615,9 @@ export function getExteriorOptionsFromXML(xmlDoc) {
  * @returns {Object} Objet contenant les listes d'options pour chaque dropdown
  */
 export function getInteriorOptionsFromXML(xmlDoc) {
-    console.log('Extraction des options intérieur depuis XML...');
 
     const options = {
+        prestige: [],
         carpet: extractParameterOptions(xmlDoc, 'Interior_Carpet'),
         seatCovers: extractParameterOptions(xmlDoc, 'Interior_SeatCovers'),
         tabletFinish: extractParameterOptions(xmlDoc, 'Interior_TabletFinish'),
@@ -683,10 +630,13 @@ export function getInteriorOptionsFromXML(xmlDoc) {
         stitching: extractParameterOptions(xmlDoc, 'Interior_Stitching') // US-036
     };
 
-    console.log('✓ Carpet:', options.carpet.length, 'options');
-    console.log('✓ SeatCovers:', options.seatCovers.length, 'options');
-    console.log('✓ Seatbelts:', options.seatbelts.length, 'options');
-    console.log('✓ Stitching:', options.stitching.length, 'options'); // US-036
+    // Prestige - SPECIAL : Les prestiges sont des ConfigurationBookmark, pas des Parameters
+    const prestigeBookmarks = xmlDoc.querySelectorAll('ConfigurationBookmark[label^="Interior_PrestigeSelection_"]');
+    options.prestige = Array.from(prestigeBookmarks).map(bookmark => {
+        const label = bookmark.getAttribute('label').replace('Interior_PrestigeSelection_', '');
+        return { label, value: label };
+    });
+
     return options;
 }
 
@@ -790,70 +740,39 @@ export async function getDefaultConfig() {
  * @throws {Error} Si l'appel API échoue
  */
 export async function fetchDatabases() {
-    console.log('📋 Récupération de la liste des bases de données...');
-
     const url = `${API_BASE_URL}/Databases`;
-    console.log('   URL:', url);
 
     try {
-        console.log('   > Envoi requête GET...');
         const response = await fetch(url);
-
-        console.log('   > Réponse reçue, status:', response.status);
-        console.log('   > Content-Type:', response.headers.get('content-type'));
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('   ❌ Erreur HTTP:', errorText);
             throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
         }
 
-        // L'API retourne du XML, pas du JSON !
         const xmlText = await response.text();
-
-        // DEBUG: Afficher le XML brut
-        console.log('   > XML brut (100 premiers caractères):', xmlText.substring(0, 100));
-        console.log('   > XML complet:', xmlText);
-
         const xmlDoc = new DOMParser().parseFromString(xmlText, 'text/xml');
 
-        // Vérifier qu'il n'y a pas d'erreur de parsing
         const parserError = xmlDoc.querySelector('parsererror');
         if (parserError) {
             throw new Error('Erreur de parsing XML: ' + parserError.textContent);
         }
 
-        console.log('   > XML parsé avec succès');
-        console.log('   > Root element:', xmlDoc.documentElement.tagName);
-        console.log('   > Tous les enfants du root:', xmlDoc.documentElement.children);
-
-        // Extraire les bases depuis le XML
-        // Les balises sont en minuscules: <database>
         const databases = [];
         const databaseNodes = xmlDoc.querySelectorAll('database');
 
-        console.log(`   > ${databaseNodes.length} balises <database> trouvées (querySelectorAll)`);
-
-        databaseNodes.forEach((node, i) => {
+        databaseNodes.forEach((node) => {
             const name = node.getAttribute('name');
             const id = node.getAttribute('id');
-
             if (name && id) {
                 databases.push({ name, id });
-                console.log(`   Base ${i + 1}: ${name} (${id})`);
-            } else {
-                console.warn(`   ⚠️ Base ${i} incomplète:`, { name, id });
             }
         });
-
-        console.log(`✅ ${databases.length} base(s) de données disponible(s)`);
 
         return databases;
 
     } catch (error) {
-        console.error('❌ Erreur récupération bases de données:', error);
-        console.error('   Type d\'erreur:', error.name);
-        console.error('   Message:', error.message);
+        console.error('[ERROR] Bases de données:', error.message);
         throw error;
     }
 }
@@ -983,11 +902,8 @@ export function parsePaintSchemeBookmark(xmlDoc, schemeName) {
  * }
  */
 export async function getExteriorColorZones() {
-    console.log('🎨 Récupération des zones de couleurs depuis le XML...');
-
     try {
         const xmlDoc = await getDatabaseXML();
-        console.log('   > XML récupéré:', xmlDoc ? 'OK' : 'ECHEC');
 
         const zones = {
             zoneA: [],
@@ -1006,11 +922,7 @@ export async function getExteriorColorZones() {
             'Exterior_Colors_ZoneA+': 'zoneAPlus'
         };
 
-        // Parser chaque zone
         for (const [xmlLabel, zoneKey] of Object.entries(zoneLabels)) {
-            console.log(`   > Recherche paramètre: ${xmlLabel}`);
-
-            // Trouver le paramètre en parcourant tous les Parameter (évite problème échappement CSS)
             let param = null;
             const allParams = xmlDoc.querySelectorAll('Parameter');
             for (const p of allParams) {
@@ -1020,26 +932,9 @@ export async function getExteriorColorZones() {
                 }
             }
 
-            if (!param) {
-                console.warn(`   ⚠️ Paramètre ${xmlLabel} NON TROUVÉ dans le XML`);
-                console.log(`   > Tous les paramètres Exterior_Colors:`, xmlDoc.querySelectorAll('Parameter[label^="Exterior_Colors"]').length);
-                continue;
-            }
+            if (!param) continue;
 
-            // Récupérer toutes les valeurs (options)
             const values = param.querySelectorAll('Value');
-            console.log(`   > ${xmlLabel}: ${values.length} Value trouvées`);
-
-            if (values.length === 0) {
-                console.warn(`   ⚠️ Aucune Value dans ${xmlLabel}`);
-            }
-
-            // DEBUG: Afficher les 3 premières valeurs pour comprendre le format
-            if (values.length > 0) {
-                console.log(`   > Exemple valeur 1: "${values[0].getAttribute('label')}"`);
-                if (values.length > 1) console.log(`   > Exemple valeur 2: "${values[1].getAttribute('label')?.substring(0, 50)}..."`);
-                if (values.length > 2) console.log(`   > Exemple valeur 3: "${values[2].getAttribute('label')?.substring(0, 50)}..."`);
-            }
 
             for (const value of values) {
                 // Les couleurs sont dans l'attribut label, pas dans textContent !
@@ -1058,18 +953,10 @@ export async function getExteriorColorZones() {
             }
         }
 
-        console.log('✅ Zones de couleurs chargées:');
-        console.log(`   - Zone A: ${zones.zoneA.length} couleurs`);
-        console.log(`   - Zone B: ${zones.zoneB.length} couleurs`);
-        console.log(`   - Zone C: ${zones.zoneC.length} couleurs`);
-        console.log(`   - Zone D: ${zones.zoneD.length} couleurs`);
-        console.log(`   - Zone A+: ${zones.zoneAPlus.length} couleurs`);
-
         return zones;
 
     } catch (error) {
-        console.error('❌ Erreur récupération zones de couleurs:', error);
-        console.error('   Stack:', error.stack);
+        console.error('[ERROR] Zones de couleurs:', error.message);
         throw error;
     }
 }
@@ -1085,7 +972,6 @@ export async function getExteriorColorZones() {
  * @returns {Promise<{config: Object, corrections: Array<string>}>} Config validée + corrections appliquées
  */
 export async function validateConfigForDatabase(config) {
-    console.log('🔍 Validation de la configuration pour la base actuelle...');
 
     const xmlDoc = await getDatabaseXML();
     const corrections = [];
@@ -1115,8 +1001,8 @@ export async function validateConfigForDatabase(config) {
 
     // 3. Valider prestige
     const prestigeOptions = getInteriorOptionsFromXML(xmlDoc).prestige || [];
+
     if (!prestigeOptions || prestigeOptions.length === 0) {
-        // V0.1 : AUCUN prestige → Fallback hardcodé
         validatedConfig.prestige = 'Oslo';
         corrections.push('prestige: Aucun disponible → Fallback "Oslo" (WARNING: peut échouer)');
     } else if (!prestigeOptions.find(p => p.value === config.prestige)) {
@@ -1209,4 +1095,107 @@ export async function validateConfigForDatabase(config) {
     }
 
     return { config: validatedConfig, corrections };
+}
+
+// ======================================
+// US-049 : Support Produits et Prestige
+// ======================================
+
+/**
+ * US-049 [T049-1] : Récupère l'ID d'un produit par son nom
+ * @param {string} productName - Nom du produit (ex: "PresetThumbnail", "TBM 960 980")
+ * @returns {Promise<string>} ID du produit
+ * @throws {Error} Si le produit n'est pas trouvé dans le XML
+ */
+export async function getProductIdByName(productName) {
+    console.log(`🔍 Recherche produit: "${productName}"`);
+
+    try {
+        const xmlDoc = await getDatabaseXML();
+        const products = xmlDoc.querySelectorAll('Product');
+
+        console.log(`   > ${products.length} produits trouvés dans le XML`);
+
+        for (let product of products) {
+            const label = product.getAttribute('label');  // 🔧 CORRECTION : "label" pas "name"
+            if (label === productName) {
+                const id = product.getAttribute('id');
+                console.log(`   ✅ Produit "${productName}" trouvé, ID: ${id}`);
+                return id;
+            }
+        }
+
+        // Produit non trouvé
+        throw new Error(`Produit "${productName}" introuvable dans le XML`);
+
+    } catch (error) {
+        console.error(`❌ Erreur récupération produit "${productName}":`, error);
+        throw error;
+    }
+}
+
+/**
+ * US-049 [T049-2] : Récupère tous les noms de prestige disponibles
+ * Parse tous les bookmarks Interior_PrestigeSelection_*
+ * @returns {Promise<Array<string>>} Liste des noms de prestige (ex: ["Oslo", "London", ...])
+ */
+export async function getAllPrestigeNames() {
+    console.log('🔍 Récupération de tous les noms de prestige...');
+
+    try {
+        const xmlDoc = await getDatabaseXML();
+        const bookmarks = xmlDoc.querySelectorAll('ConfigurationBookmark[label^="Interior_PrestigeSelection_"]');
+
+        console.log(`   > ${bookmarks.length} bookmarks prestige trouvés`);
+
+        const prestigeNames = Array.from(bookmarks).map(bookmark => {
+            const label = bookmark.getAttribute('label');
+            // Extraire le nom après "Interior_PrestigeSelection_"
+            return label.replace('Interior_PrestigeSelection_', '');
+        });
+
+        console.log(`   ✅ Prestiges disponibles:`, prestigeNames);
+        return prestigeNames;
+
+    } catch (error) {
+        console.error('❌ Erreur récupération noms prestige:', error);
+        throw error;
+    }
+}
+
+/**
+ * US-049 [T049-4] : Parse le bookmark prestige et retourne les matériaux dans l'ordre
+ * @param {Document} xmlDoc - Document XML parsé
+ * @param {string} prestigeName - Nom du prestige (ex: "Oslo")
+ * @returns {Array<string>} Tableau ordonné des 10 matériaux complets
+ * @throws {Error} Si le bookmark n'est pas trouvé
+ */
+export function parsePrestigeBookmarkOrdered(xmlDoc, prestigeName) {
+    console.log(`🔍 Parsing bookmark prestige: ${prestigeName}`);
+
+    const bookmarkLabel = `Interior_PrestigeSelection_${prestigeName}`;
+    const bookmark = xmlDoc.querySelector(`ConfigurationBookmark[label="${bookmarkLabel}"]`);
+
+    if (!bookmark) {
+        throw new Error(`Bookmark prestige "${prestigeName}" introuvable dans le XML`);
+    }
+
+    const value = bookmark.getAttribute('value');
+    if (!value) {
+        throw new Error(`Bookmark prestige "${prestigeName}" sans valeur dans le XML`);
+    }
+
+    console.log(`   > Configuration string: ${value.substring(0, 100)}...`);
+
+    // Parser la config string : Interior_Carpet.XXX/Interior_CentralSeatMaterial.YYY/...
+    // IMPORTANT : Garder l'ordre du bookmark XML
+    const materials = value.split('/').filter(m => m.trim().length > 0);
+
+    console.log(`   ✅ ${materials.length} matériaux trouvés dans l'ordre:`);
+    materials.forEach((mat, i) => {
+        const paramName = mat.split('.')[0];
+        console.log(`      ${i + 1}. ${paramName}`);
+    });
+
+    return materials;
 }

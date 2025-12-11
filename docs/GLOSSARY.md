@@ -64,14 +64,13 @@ const is16by9 = Math.abs(ratio - 16/9) < 0.01;
 ## Termes Immatriculation
 
 ### Layer (Couche de couleur)
-**Définition** : Couche de couleur pour les lettres d'immatriculation
-**Important** : ⚠️ **L'API Lumiscaphe inverse les layers !**
+**Définition** : Couche de couleur pour les lettres d'immatriculation (via `materialMultiLayers` et `diffuseColor` dans le payload API)
 **Mapping** :
-- **Layer 0** dans payload → Applique la **2ème couleur** (zone secondaire)
-- **Layer 1** dans payload → Applique la **1ère couleur** (zone principale)
+- **Layer 0** : diffuseColor = couleur zone X (1ère valeur de la paire) → Appliqué à la LETTRE
+- **Layer 1** : diffuseColor = couleur zone Y (2ème valeur de la paire) → Appliqué au CONTOUR/OMBRE
 **Exemple** : Pour paire `A-D` :
-- Layer 0 envoyé avec couleur Zone D
-- Layer 1 envoyé avec couleur Zone A
+- Layer 0 envoyé avec couleur Zone A (LETTRE)
+- Layer 1 envoyé avec couleur Zone D (CONTOUR/OMBRE)
 
 ### Style (Style de lettres)
 **Définition** : Style visuel des lettres d'immatriculation

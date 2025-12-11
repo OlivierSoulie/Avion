@@ -431,10 +431,6 @@ function populateDropdown(selectId, optionsList, defaultValue) {
         return;
     }
 
-    console.log(`📋 populateDropdown: ${selectId}, ${optionsList.length} options, défaut="${defaultValue}"`);
-
-    // US-046 : Masquer TOUT dropdown vide (base POC ou paramètre manquant)
-    // Règle générale : Si aucune option, masquer le dropdown
     if (optionsList.length === 0) {
         const formGroup = select.closest('.form-group');
         if (formGroup) {
@@ -442,23 +438,18 @@ function populateDropdown(selectId, optionsList, defaultValue) {
             formGroup.classList.add('hidden');
             formGroup.style.display = 'none';
         }
-        return; // Ne pas continuer si vide
+        return;
     }
 
-    // Si options présentes, s'assurer que le form-group est visible
     const formGroup = select.closest('.form-group');
     if (formGroup) {
         formGroup.classList.remove('hidden');
         formGroup.style.display = '';
     }
 
-    // Si pas de defaultValue et qu'on a des options, utiliser la première
     const effectiveDefault = defaultValue || (optionsList.length > 0 ? optionsList[0].value : null);
-
-    // Vider le select existant
     select.innerHTML = '';
 
-    // Ajouter les options
     optionsList.forEach(option => {
         const optionElement = document.createElement('option');
         optionElement.value = option.value;
@@ -468,8 +459,6 @@ function populateDropdown(selectId, optionsList, defaultValue) {
         }
         select.appendChild(optionElement);
     });
-
-    console.log(`✓ ${selectId}: ${select.options.length} options ajoutées (sélectionné: ${effectiveDefault})`);
 }
 
 /**
@@ -855,7 +844,6 @@ async function checkConfigFieldsAvailability() {
  * Appelé lors de l'initialisation et lors du changement de base de données
  */
 async function populateAllDropdowns() {
-    console.log('🔄 Peuplement des dropdowns depuis le XML...');
 
     try {
         const xmlDoc = await getDatabaseXML();
@@ -890,7 +878,6 @@ async function populateAllDropdowns() {
         populateDropdown('ultra-suede-ribbon', interiorOptions.ultraSuedeRibbon, config.ultraSuedeRibbon);
         populateDropdown('stitching', interiorOptions.stitching, config.stitching);
 
-        console.log('✅ Tous les dropdowns peuplés depuis le XML');
     } catch (error) {
         console.error('❌ Erreur peuplement dropdowns:', error);
         throw error;
@@ -998,13 +985,10 @@ async function loadDatabases() {
         return;
     }
 
-    console.log('   > Sélecteur trouvé:', selectDatabase);
 
     try {
         // Appeler l'API pour récupérer les bases
-        console.log('   > Appel fetchDatabases()...');
         const databases = await fetchDatabases();
-        console.log('   > fetchDatabases() terminé, données reçues:', databases);
 
         // Vider le select et ajouter les options
         selectDatabase.innerHTML = '';
@@ -1023,13 +1007,11 @@ async function loadDatabases() {
             if (index === databases.length - 1) {
                 option.selected = true;
                 setDatabaseId(db.id);
-                console.log(`✅ Base par défaut (dernière): ${db.name} (${db.id})`);
             }
 
             selectDatabase.appendChild(option);
         });
 
-        console.log(`✅ ${databases.length} base(s) chargée(s) dans le sélecteur`);
 
     } catch (error) {
         console.error('❌ Erreur chargement des bases:', error);
@@ -1047,7 +1029,6 @@ async function loadDatabases() {
  * Récupère les couleurs depuis le XML et peuple les 5 dropdowns
  */
 async function initColorZones() {
-    console.log('🎨 Initialisation des zones de couleurs...');
 
     try {
         // Récupérer les zones depuis le XML
@@ -1073,7 +1054,6 @@ async function initColorZones() {
             // V0.6+     : "Tehuano_6_B-0_..." → "Tehuano"
             const schemeName = currentScheme.split('_')[0];
             await syncZonesWithPaintScheme(schemeName);
-            console.log('✅ Zones synchronisées avec le schéma par défaut');
         } else {
             // Fallback: Initialiser avec les premières couleurs si pas de schéma
             if (zones.zoneA.length > 0) updateConfig('zoneA', zones.zoneA[0].name);
@@ -1083,7 +1063,6 @@ async function initColorZones() {
             if (zonePlusColors.length > 0) updateConfig('zoneAPlus', zonePlusColors[0].name);
         }
 
-        console.log('✅ Zones de couleurs initialisées');
 
     } catch (error) {
         console.error('❌ Erreur initialisation zones de couleurs:', error);
@@ -1102,7 +1081,6 @@ function populateColorZone(selectId, colors) {
         return;
     }
 
-    console.log(`   > Peuplement ${selectId} : ${colors.length} couleurs`);
 
     // Vider le select
     select.innerHTML = '';
@@ -1118,7 +1096,6 @@ function populateColorZone(selectId, colors) {
         select.appendChild(option);
     });
 
-    console.log(`   ✅ ${selectId} peuplé avec ${select.options.length} options`);
 
     // Sélectionner la première couleur par défaut
     if (colors.length > 0) {
@@ -1135,7 +1112,6 @@ function populateColorZone(selectId, colors) {
  * @param {string} schemeName - Nom du schéma (ex: "Zephir")
  */
 async function syncZonesWithPaintScheme(schemeName) {
-    console.log(`🔄 Synchronisation zones avec schéma: ${schemeName}`);
 
     try {
         // 1. Télécharger le XML
@@ -1170,7 +1146,6 @@ async function syncZonesWithPaintScheme(schemeName) {
             }
         }
 
-        console.log('✅ Zones synchronisées avec succès');
 
     } catch (error) {
         console.error('❌ Erreur synchronisation zones:', error);
@@ -1182,7 +1157,6 @@ async function syncZonesWithPaintScheme(schemeName) {
  * Remplit tous les dropdowns avec les valeurs de config
  */
 async function initUI() {
-    console.log('Initialisation de l\'interface...');
 
     // US-019: Charger les bases de données en premier
     await loadDatabases();
@@ -1696,7 +1670,10 @@ function attachEventListeners() {
 
                 console.log('✅ Prestige config appliquée:', prestigeConfig);
 
-                // 5. Déclencher nouveau rendu
+                // 5. Réinitialiser le hash pour forcer la regénération de la vue Configuration
+                lastConfigHash = null;
+
+                // 6. Déclencher nouveau rendu
                 triggerRender();
 
             } catch (error) {
@@ -1910,6 +1887,10 @@ function attachEventListeners() {
 
             // Masquer tous les contrôles (pas de personnalisation en vue Configuration)
             toggleViewControls('configuration');
+
+            // US-049: Forcer la regénération pour avoir les vignettes à jour
+            lastConfigHash = null;
+            setImages([]); // Vider les images du state pour forcer la regénération
 
             // Déclencher le rendu
             triggerRender();

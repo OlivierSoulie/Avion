@@ -57,15 +57,13 @@ export function parseColorsFromConfig(fullConfigStr) {
                     colorMap[zoneKey] = hexCandidates[0];
                 }
 
-                console.log(`  Zone ${zoneKey}: ${colorMap[zoneKey]}`);
             } catch (error) {
-                console.warn(`  Erreur parsing couleur pour: ${part}`, error);
+                console.warn(`[WARN] Parsing couleur: ${part}`, error.message);
                 continue;
             }
         }
     }
 
-    console.log('✅ Couleurs parsées:', colorMap);
     return colorMap;
 }
 
@@ -74,31 +72,29 @@ export function parseColorsFromConfig(fullConfigStr) {
  *
  * @description Détermine les couleurs à appliquer aux lettres d'immatriculation
  *              en fonction du style sélectionné et du schéma de peinture.
- *              IMPORTANT : L'API Lumiscaphe inverse les layers !
  *
  * @logic
  *   - Mapping par couple : A/F → paire[0], B/G → paire[1], C/H → paire[2], D/I → paire[3], E/J → paire[4]
- *   - Chaque paire "X-Y" : X = première zone, Y = deuxième zone
- *   - Layer 0 reçoit la couleur de la DEUXIÈME zone (inversion API)
- *   - Layer 1 reçoit la couleur de la PREMIÈRE zone (inversion API)
- *   - Si Y = "0" : pas de Layer 0 à envoyer
- *   - Si X = "0" : hasLayer1 = false
+ *   - Chaque paire "X-Y" : X = première zone (LETTRE), Y = deuxième zone (CONTOUR/OMBRE)
+ *   - Layer 0 reçoit la couleur de la zone X (1ère valeur) via diffuseColor
+ *   - Layer 1 reçoit la couleur de la zone Y (2ème valeur) via diffuseColor
+ *   - Si Y = "0" : Layer 1 utilise la couleur de X (fallback)
+ *   - Si X = "0" : hasLayer1 = false (cas normalement impossible)
  *
  * @param {string} styleLetter - La lettre du style (A-J)
  * @param {string} paintSchemeConfigPart - La partie config "Exterior_PaintScheme.Zephir_B-0_B-D_..."
  * @param {Object<string, string>} colorMap - Map des zones vers couleurs hex (de parseColorsFromConfig)
  * @returns {Object} Objet contenant :
- *   - {string|null} primaryColor - Couleur hex pour Layer 0 (ou null si zone = "0")
- *   - {string|null} secondaryColor - Couleur hex pour Layer 1 (ou null si zone = "0")
+ *   - {string|null} primaryColor - Couleur hex pour Layer 0 (zone X)
+ *   - {string|null} secondaryColor - Couleur hex pour Layer 1 (zone Y ou fallback X)
  *   - {boolean} hasLayer1 - true si Layer 1 doit être envoyé
  *
  * @example
  *   // Pour style "A" avec config "Zephir_A-D_B-0_..."
  *   // Paire[0] = "A-D"
- *   // Retourne: { primaryColor: colorMap["D"], secondaryColor: colorMap["A"], hasLayer1: true }
+ *   // Retourne: { primaryColor: colorMap["A"], secondaryColor: colorMap["D"], hasLayer1: true }
  */
 export function resolveLetterColors(styleLetter, paintSchemeConfigPart, colorMap) {
-    console.log(`🔍 Résolution couleurs pour style ${styleLetter}...`);
 
     try {
         // Parser la config pour extraire les paires de zones
@@ -112,15 +108,12 @@ export function resolveLetterColors(styleLetter, paintSchemeConfigPart, colorMap
         // V0.6+ : Si le 2ème segment est un nombre (index), le sauter aussi
         if (segments.length > 1 && /^\d+$/.test(segments[1])) {
             startIdx = 2;
-            console.log(`  Format V0.6 détecté, index ${segments[1]} ignoré`);
         }
 
         const configPairs = segments.slice(startIdx); // ["A-0", "A-D", ...]
 
-        console.log('  Paires de config:', configPairs);
 
         if (configPairs.length < 5) {
-            console.warn('  Config pairs insuffisantes, utilisation couleurs par défaut');
             return { primaryColor: "#000000", secondaryColor: "#FFFFFF", hasLayer1: true };
         }
 
@@ -132,10 +125,8 @@ export function resolveLetterColors(styleLetter, paintSchemeConfigPart, colorMap
             styleIdx = styleLetter.charCodeAt(0) - 'F'.charCodeAt(0); // F=0, G=1, H=2, I=3, J=4
         }
 
-        console.log(`  Style ${styleLetter} -> index ${styleIdx}`);
 
         if (styleIdx < 0 || styleIdx >= 5) {
-            console.warn('  Index de style invalide, utilisation index 0');
             styleIdx = 0;
         }
 
@@ -143,11 +134,17 @@ export function resolveLetterColors(styleLetter, paintSchemeConfigPart, colorMap
         const targetPair = configPairs[styleIdx]; // Ex: "A-0" ou "A-D"
         const [z0, z1] = targetPair.split('-');
 
-        console.log(`  Zones cibles: ${z0}, ${z1}`);
 
-        // LOGIQUE SIMPLE : Layer 0 = première zone, Layer 1 = deuxième zone
-        // Pour "A-D" : Layer 0 = Zone A, Layer 1 = Zone D
-        // Pour "A-0" : Layer 0 = Zone A, Layer 1 = Zone A (fallback car 0 = pas de 2ème couleur)
+        // Mapping zones → layers pour materialMultiLayers
+        // Chaque paire "X-Y" définit 2 zones de couleur (diffuseColor)
+        //
+        // Pour paire "A-D" :
+        //   - Layer 0 : diffuseColor = couleur zone A (1ère valeur) → Appliqué à la LETTRE
+        //   - Layer 1 : diffuseColor = couleur zone D (2ème valeur) → Appliqué au CONTOUR/OMBRE
+        //
+        // Pour paire "A-0" (pas de 2ème zone) :
+        //   - Layer 0 : diffuseColor = couleur zone A
+        //   - Layer 1 : diffuseColor = couleur zone A (fallback car pas de 2ème couleur)
         let primaryColor = colorMap[z0] || null;  // Layer 0 = première zone (z0)
         let secondaryColor = colorMap[z1] || null;  // Layer 1 = deuxième zone (z1)
 
@@ -162,7 +159,6 @@ export function resolveLetterColors(styleLetter, paintSchemeConfigPart, colorMap
             secondaryColor = null;
         }
 
-        console.log(`  Couleurs résolues: Layer0=${primaryColor} (zone ${z0}), Layer1=${secondaryColor} (zone ${z1}), hasLayer1=${hasLayer1}`);
         return { primaryColor, secondaryColor, hasLayer1 };
 
     } catch (error) {
@@ -190,7 +186,6 @@ export function resolveLetterColors(styleLetter, paintSchemeConfigPart, colorMap
  *   // ]
  */
 export function generateMaterials(immatString, styleLetter) {
-    console.log('🎨 Génération des matériaux...');
 
     const materialsList = [];
     const isSlanted = STYLES_SLANTED.includes(styleLetter);
@@ -231,7 +226,6 @@ export function generateMaterials(immatString, styleLetter) {
         }
     }
 
-    console.log(`✅ ${materialsList.length} matériaux générés (slanted: ${isSlanted})`);
     return materialsList;
 }
 
@@ -254,7 +248,6 @@ export function generateMaterials(immatString, styleLetter) {
  *   // Layer 1 utilisera primaryColor en fallback
  */
 export function generateMaterialMultiLayers(immatString, styleLetter, primaryColor, secondaryColor, hasLayer1) {
-    console.log('🎨 Génération des material multi-layers...');
 
     const multiLayersList = [];
     const processedChars = new Set();
@@ -325,7 +318,6 @@ export function generateMaterialMultiLayers(immatString, styleLetter, primaryCol
         }
     }
 
-    console.log(`✅ ${multiLayersList.length} multi-layers générés pour ${processedChars.size} caractères uniques (slanted: ${isSlanted}, hasLayer1: ${hasLayer1})`);
     return multiLayersList;
 }
 
@@ -345,7 +337,6 @@ export function generateMaterialMultiLayers(immatString, styleLetter, primaryCol
  *   - {Object} colors - Couleurs résolues (pour debug)
  */
 export function generateMaterialsAndColors(immatString, styleLetter, fullConfigStr, paintSchemeConfigPart) {
-    console.log('🎨 === Génération matériaux et couleurs ===');
 
     // 1. Parser les couleurs depuis la config
     const colorMap = parseColorsFromConfig(fullConfigStr);
@@ -359,7 +350,6 @@ export function generateMaterialsAndColors(immatString, styleLetter, fullConfigS
     // 4. Générer les multi-layers
     const materialMultiLayers = generateMaterialMultiLayers(immatString, styleLetter, primaryColor, secondaryColor, hasLayer1);
 
-    console.log('✅ Génération matériaux et couleurs terminée');
 
     return {
         materials,

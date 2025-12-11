@@ -267,33 +267,46 @@ async function buildPayloadBase(config, mode) {
     const xmlDoc = await getDatabaseXML();
 
     // 2. Construire la config string complète (depuis XML)
-    const fullConfigStr = buildConfigString(xmlDoc, config);
+    // US-049 : Si config.configurationString est fourni, l'utiliser directement (pour Prestige)
+    const fullConfigStr = config.configurationString
+        ? config.configurationString
+        : buildConfigString(xmlDoc, config);
     console.log('Config string:', fullConfigStr);
 
     // 3. Extraire la partie PaintScheme depuis la config string (pour les couleurs)
-    const paintSchemePart = extractPaintSchemePart(fullConfigStr) || `Exterior_PaintScheme.${config.paintScheme}`;
-    console.log('Paint scheme part:', paintSchemePart);
-
-    // 4. Générer les matériaux et couleurs
-    const { materials, materialMultiLayers } = generateMaterialsAndColors(
-        config.immat,
-        config.registrationStyle || config.style,
-        fullConfigStr,
-        paintSchemePart
-    );
-
-    // 5. Construire surfaces (vide pour singleCamera, rempli pour normal)
+    // US-049 : Skip si skipExtras activé (vignettes Prestige)
+    let materials = [];
+    let materialMultiLayers = [];
     let surfaces = [];
-    if (mode === 'normal') {
-        // Extraire le nom court du paintScheme pour les anchors
-        // V0.2-V0.5 : "Zephir_B-0_..." → "Zephir"
-        // V0.6+     : "Zephir_1_B-0_..." → "Zephir"
-        const paintSchemeName = config.paintScheme.split('_')[0];
 
-        // Extraire les anchors pour le positionnement (depuis XML)
-        const anchors = extractAnchors(xmlDoc, paintSchemeName);
-        // Générer les surfaces (positions des lettres)
-        surfaces = generateSurfaces(config.immat, anchors);
+    if (!config.skipExtras) {
+        const paintSchemePart = extractPaintSchemePart(fullConfigStr) || `Exterior_PaintScheme.${config.paintScheme}`;
+        console.log('Paint scheme part:', paintSchemePart);
+
+        // 4. Générer les matériaux et couleurs
+        const generated = generateMaterialsAndColors(
+            config.immat,
+            config.registrationStyle || config.style,
+            fullConfigStr,
+            paintSchemePart
+        );
+        materials = generated.materials;
+        materialMultiLayers = generated.materialMultiLayers;
+
+        // 5. Construire surfaces (vide pour singleCamera, rempli pour normal)
+        if (mode === 'normal') {
+            // Extraire le nom court du paintScheme pour les anchors
+            // V0.2-V0.5 : "Zephir_B-0_..." → "Zephir"
+            // V0.6+     : "Zephir_1_B-0_..." → "Zephir"
+            const paintSchemeName = config.paintScheme.split('_')[0];
+
+            // Extraire les anchors pour le positionnement (depuis XML)
+            const anchors = extractAnchors(xmlDoc, paintSchemeName);
+            // Générer les surfaces (positions des lettres)
+            surfaces = generateSurfaces(config.immat, anchors);
+        }
+    } else {
+        console.log('⚡ skipExtras activé : materials/materialMultiLayers/surfaces non générés');
     }
 
     // 6. Construire le mode (cameraGroup vs camera)
@@ -318,6 +331,7 @@ async function buildPayloadBase(config, mode) {
     const payload = {
         scene: [{
             database: getDatabaseId(),
+            product: config.productId || null,  // US-049 [T049-3] : Support productId optionnel
             configuration: fullConfigStr,
             materials: materials,
             materialMultiLayers: materialMultiLayers,
@@ -336,6 +350,22 @@ async function buildPayloadBase(config, mode) {
             }
         }
     };
+
+    // US-049 [T049-3] : Nettoyer product si null (ne pas envoyer dans le payload)
+    if (!payload.scene[0].product) {
+        delete payload.scene[0].product;
+        console.log('   > Produit : Par défaut (pas de product dans le payload)');
+    } else {
+        console.log(`   > Produit : ${payload.scene[0].product}`);
+    }
+
+    // US-049 : Nettoyer materials/materialMultiLayers/surfaces si skipExtras activé
+    if (config.skipExtras) {
+        delete payload.scene[0].materials;
+        delete payload.scene[0].materialMultiLayers;
+        delete payload.scene[0].surfaces;
+        console.log('   > skipExtras : materials/materialMultiLayers/surfaces supprimés');
+    }
 
     console.log('✅ Payload construit:', JSON.stringify(payload, null, 2));
     return payload;
