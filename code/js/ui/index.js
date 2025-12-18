@@ -48,6 +48,9 @@ import {
 // Menu burger mobile
 import { initMobileMenu } from './mobile-menu.js';
 
+// Vue PDF
+import { renderPDFView } from './pdf-view.js';
+
 // ======================================
 // Re-exports publics
 // ======================================
@@ -84,6 +87,9 @@ export {
 
 // Menu burger mobile
 export { initMobileMenu };
+
+// Vue PDF
+export { renderPDFView };
 
 // ======================================
 // Export par défaut pour compatibilité
@@ -123,5 +129,8 @@ export default {
     downloadSelectedImages,
 
     // Mobile menu
-    initMobileMenu
+    initMobileMenu,
+
+    // PDF view
+    renderPDFView
 };
