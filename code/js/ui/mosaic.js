@@ -22,6 +22,7 @@ import { downloadImage } from './download.js';
 export function renderMosaic(imageData, viewType = 'exterior') {
     const mosaicGrid = document.getElementById('mosaicGrid');
     const overviewMosaic = document.getElementById('overviewMosaic');
+    const viewportDisplay = document.getElementById('viewportDisplay');
 
     if (!mosaicGrid) {
         console.error('Élément mosaïque manquant dans le DOM');
@@ -40,7 +41,20 @@ export function renderMosaic(imageData, viewType = 'exterior') {
     // Masquer la mosaïque Overview si elle existe
     if (overviewMosaic) {
         overviewMosaic.classList.add('hidden');
+        overviewMosaic.style.display = 'none';
     }
+
+    // Masquer la vue PDF si elle existe
+    if (viewportDisplay) {
+        const pdfWrapper = viewportDisplay.querySelector('.pdf-view-wrapper');
+        if (pdfWrapper) {
+            pdfWrapper.style.display = 'none';
+        }
+    }
+
+    // Afficher mosaicGrid
+    mosaicGrid.classList.remove('hidden');
+    mosaicGrid.style.display = '';
 
     // Vider la mosaïque
     mosaicGrid.innerHTML = '';
@@ -132,6 +146,7 @@ export function renderMosaic(imageData, viewType = 'exterior') {
 export async function renderConfigMosaic(imagesData) {
     const mosaicGrid = document.getElementById('mosaicGrid');
     const overviewMosaic = document.getElementById('overviewMosaic');
+    const viewportDisplay = document.getElementById('viewportDisplay');
 
     if (!mosaicGrid) {
         console.error('Élément mosaïque manquant dans le DOM');
@@ -150,7 +165,20 @@ export async function renderConfigMosaic(imagesData) {
     // Masquer la mosaïque Overview si elle existe
     if (overviewMosaic) {
         overviewMosaic.classList.add('hidden');
+        overviewMosaic.style.display = 'none';
     }
+
+    // Masquer la vue PDF si elle existe
+    if (viewportDisplay) {
+        const pdfWrapper = viewportDisplay.querySelector('.pdf-view-wrapper');
+        if (pdfWrapper) {
+            pdfWrapper.style.display = 'none';
+        }
+    }
+
+    // Afficher mosaicGrid
+    mosaicGrid.classList.remove('hidden');
+    mosaicGrid.style.display = '';
 
     // Vider la mosaïque
     mosaicGrid.innerHTML = '';
@@ -269,6 +297,8 @@ export function renderOverviewMosaic(imageA, imagesSecondary, airplaneType) {
     const secondaryWrapper = document.getElementById('overviewSecondaryWrapper');
     const imageAElement = document.getElementById('overviewImageA');
     const watermark = document.getElementById('airplaneTypeWatermark');
+    const mosaicGrid = document.getElementById('mosaicGrid');
+    const viewportDisplay = document.getElementById('viewportDisplay');
 
     if (!overviewMosaic || !mainWrapper || !secondaryWrapper || !imageAElement || !watermark) {
         console.error('Éléments Overview manquants dans le DOM');
@@ -278,6 +308,24 @@ export function renderOverviewMosaic(imageA, imagesSecondary, airplaneType) {
     // Masquer placeholder et erreur
     hidePlaceholder();
     hideError();
+
+    // Masquer la mosaïque standard si elle existe
+    if (mosaicGrid) {
+        mosaicGrid.classList.add('hidden');
+        mosaicGrid.style.display = 'none';
+    }
+
+    // Masquer la vue PDF si elle existe
+    if (viewportDisplay) {
+        const pdfWrapper = viewportDisplay.querySelector('.pdf-view-wrapper');
+        if (pdfWrapper) {
+            pdfWrapper.style.display = 'none';
+        }
+    }
+
+    // Afficher la mosaïque Overview
+    overviewMosaic.classList.remove('hidden');
+    overviewMosaic.style.display = '';
 
     // 1. Afficher image A (principale)
     imageAElement.src = imageA.url;
@@ -394,13 +442,7 @@ export function renderOverviewMosaic(imageA, imagesSecondary, airplaneType) {
         }
     });
 
-    // 4. Masquer mosaïque standard et afficher mosaïque Overview
-    const mosaicGrid = document.getElementById('mosaicGrid');
-    if (mosaicGrid) {
-        mosaicGrid.classList.add('hidden');
-    }
-
-    overviewMosaic.classList.remove('hidden');
+    // 4. La mosaïque Overview est déjà affichée en haut de la fonction
 }
 
 // ======================================

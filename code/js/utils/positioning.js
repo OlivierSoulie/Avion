@@ -13,11 +13,14 @@ import { CHAR_WIDTHS, SPACING } from '../config.js';
 // ======================================
 
 /**
- * Extrait les anchors (points de départ et directions) depuis le XML parsé
- * Porte la logique Python lignes 120-157 de generate_full_render.py
+ * Extrait les anchors (points de départ) depuis le XML parsé
+ * Logique unifiée pour toutes versions (V0.2-V0.5 et V0.6+)
  *
- * Recherche les bookmarks du type "{SCHEME}_REG_REGL" et "{SCHEME}_REG_REGR"
- * et extrait les coordonnées X de départ et les directions
+ * Recherche les bookmarks du type "{SCHEME}_REGL" et "{SCHEME}_REGR"
+ * Extrait TOUJOURS :
+ * - Position X = première valeur après SCHEME_REGL/REGR (parts[2])
+ * - Y = dernière valeur du bookmark
+ * - Direction = TOUJOURS 1.0 (écriture gauche → droite)
  *
  * @param {XMLDocument} xmlRoot - Le document XML parsé
  * @param {string} scheme - Le schéma de peinture (ex: "Sirocco")
@@ -40,11 +43,10 @@ export function extractAnchors(xmlRoot, scheme) {
     for (const item of candidates) {
         const name = (item.getAttribute('name') || item.getAttribute('label') || '').toUpperCase();
 
-        // Formats supportés :
-        // V0.2-V0.5 : "{SCHEME}_REGL_{X1}_{X2}_{X3}_{X4}_{X5}_{X6}_{Y}" (9 parties)
-        //             Ex: "SIROCCO_REGL_0.34_0.35_0.36_0.37_0.38_0.39_0.0"
-        // V0.6+     : "{SCHEME}_REGL_{X1}_{Y}" (4 parties)
-        //             Ex: "TEHUANO_REGL_0.34_0.0"
+        // Format bookmark (toutes versions) :
+        // V0.2-V0.5 : "{SCHEME}_REGL_{X1}_{X2}_{X3}_{X4}_{X5}_{X6}_{Y}" → on utilise X1 et Y
+        // V0.6+     : "{SCHEME}_REGL_{X}_{Y}" → on utilise X et Y
+        // LOGIQUE : Toujours parts[2] pour X, parts[length-1] pour Y
         const targetLeft = `${scheme.toUpperCase()}_REGL`;
         const targetRight = `${scheme.toUpperCase()}_REGR`;
 
@@ -52,41 +54,16 @@ export function extractAnchors(xmlRoot, scheme) {
             const parts = name.split('_');
             const isLeft = name.startsWith(targetLeft);
 
-            // Besoin de 4 parties minimum (V0.6) ou 9 parties (V0.2-V0.5)
+            // Besoin de 4 parties minimum : [SCHEME, REGL/REGR, X, Y]
             if (parts.length >= 4) {
                 try {
-                    let startX, y, direction;
-
-                    if (parts.length >= 9) {
-                        // V0.2-V0.5 : Format long (6 positions)
-                        // parts = [SCHEME, REGL/REGR, X1, X2, X3, X4, X5, X6, Y] = 9 parties
-                        const coords = [
-                            parseFloat(parts[2]),
-                            parseFloat(parts[3]),
-                            parseFloat(parts[4]),
-                            parseFloat(parts[5]),
-                            parseFloat(parts[6]),
-                            parseFloat(parts[7])
-                        ];
-                        y = parseFloat(parts[8]);
-                        startX = coords[0];
-
-                        // Détection de la direction : si coords[1] < coords[0], direction négative
-                        if (coords.length > 1 && coords[1] < coords[0]) {
-                            direction = -1.0;
-                        } else {
-                            direction = 1.0;
-                        }
-                    } else {
-                        // V0.6+ : Format court (1 seule position)
-                        // parts = [SCHEME, REGL/REGR, X1, Y]
-                        startX = parseFloat(parts[2]);
-                        y = parseFloat(parts[3]);
-
-                        // Direction TOUJOURS positive en V0.6+ car le signe est déjà dans startX
-                        // Ex: REGL_0.34_0.0 → startX=+0.34, REGR_-0.34_0.0 → startX=-0.34
-                        direction = 1.0;
-                    }
+                    // LOGIQUE UNIFIÉE V0.2-V0.5 ET V0.6+ :
+                    // - Position X = TOUJOURS parts[2] (première position)
+                    // - Y = TOUJOURS dernière valeur
+                    // - Direction = TOUJOURS 1.0 (écriture gauche → droite)
+                    const startX = parseFloat(parts[2]);
+                    const y = parseFloat(parts[parts.length - 1]);
+                    const direction = 1.0;
 
                     // Construire les données du côté
                     const sideData = {
@@ -109,11 +86,11 @@ export function extractAnchors(xmlRoot, scheme) {
         }
     }
 
-    // Si aucun anchor trouvé, utiliser valeurs par défaut (lignes 154-157 du Python)
+    // Si aucun anchor trouvé, utiliser valeurs par défaut
     if (!params.Left) {
         console.warn(`   ⚠️ Aucun anchor trouvé dans le XML, utilisation valeurs par défaut`);
         params.Left = { Start: 0.34, Direction: 1.0 };
-        params.Right = { Start: -0.34, Direction: -1.0 };
+        params.Right = { Start: -0.34, Direction: 1.0 };  // Direction TOUJOURS 1.0 (gauche → droite)
         params.Y = 0.0;
     }
 
