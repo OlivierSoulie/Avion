@@ -16,6 +16,7 @@ import {
     renderMosaic,
     renderConfigMosaic,
     renderOverviewMosaic, // US-044
+    renderPDFView, // Vue PDF avec hotspots
     initFullscreen,
     showLoader,
     hideLoader,
@@ -34,7 +35,7 @@ import {
     downloadSelectedImages,
     initMobileMenu // Menu burger mobile
 } from './ui/index.js';
-import { fetchRenderImages, fetchConfigurationImages, fetchOverviewImages, fetchDatabases, setDatabaseId, getDatabaseId, getDefaultConfig, getInteriorPrestigeConfig as parsePrestigeConfig, getDatabaseXML, getExteriorColorZones, parsePaintSchemeBookmark, getInteriorOptionsFromXML, getExteriorOptionsFromXML, getCameraListFromGroup, validateConfigForDatabase } from './api/index.js';
+import { fetchRenderImages, fetchConfigurationImages, fetchOverviewImages, generatePDFView, fetchDatabases, setDatabaseId, getDatabaseId, getDefaultConfig, getInteriorPrestigeConfig as parsePrestigeConfig, getDatabaseXML, getExteriorColorZones, parsePaintSchemeBookmark, getInteriorOptionsFromXML, getExteriorOptionsFromXML, getCameraListFromGroup, validateConfigForDatabase, getPDFCameraId } from './api/index.js';
 import { analyzeDatabaseStructure, exportStructureAsJSON } from './api/database-analyzer.js';
 import { log } from './logger.js';
 
@@ -1183,6 +1184,69 @@ function triggerRender() {
 }
 
 /**
+ * Masque le viewer PDF s'il existe
+ */
+function hidePDFViewer() {
+    const pdfViewWrapper = document.querySelector('.pdf-view-wrapper');
+    if (pdfViewWrapper) {
+        pdfViewWrapper.remove();
+    }
+}
+
+/**
+ * Génère et affiche la vue PDF avec hotspots
+ * @returns {Promise<Object>} {imageUrl, hotspots}
+ * @throws {Error} Si le chargement ou la génération échoue
+ */
+async function loadAndDisplayPDFView() {
+    // Récupérer le paint scheme actuel depuis la config
+    const config = getConfig();
+    const fullPaintScheme = config.paintScheme || 'Tehuano'; // Fallback sur Tehuano si non défini
+
+    // Extraire le nom court du paintScheme (ex: "Tehuano_6_A-0_A-D_..." → "Tehuano")
+    const paintScheme = fullPaintScheme.split('_')[0];
+
+    console.log('🎨 Paint scheme complet:', fullPaintScheme);
+    console.log('🎨 Paint scheme court (pour hotspots):', paintScheme);
+
+    // Charger le fichier JSON consolidé avec tous les paint schemes
+    const response = await fetch('data/pdf-hotspots.json');
+    if (!response.ok) {
+        throw new Error('Impossible de charger pdf-hotspots.json');
+    }
+
+    const pdfData = await response.json();
+    console.log('📋 Paint schemes disponibles dans JSON:', Object.keys(pdfData));
+
+    // Récupérer les hotspots pour le paint scheme actuel
+    let paintSchemeData = pdfData[paintScheme];
+    if (!paintSchemeData) {
+        console.warn(`⚠️ Paint scheme "${paintScheme}" non trouvé dans pdf-hotspots.json, utilisation de Tehuano par défaut`);
+        paintSchemeData = pdfData['Tehuano']; // Fallback
+    } else {
+        console.log('✅ Hotspots chargés pour:', paintScheme);
+    }
+
+    // Récupérer dynamiquement l'ID de la 2ème caméra du groupe Exterieur_DecorStudio depuis le XML
+    const cameraId = await getPDFCameraId();
+
+    // Construire l'objet de config pour generatePDFView
+    const pdfConfig = {
+        camera: cameraId,
+        hotspots: paintSchemeData.hotspots
+    };
+
+    // Générer la vue PDF avec la config actuelle
+    const { imageUrl, hotspots } = await generatePDFView(pdfConfig);
+
+    // Afficher la vue PDF
+    const container = document.getElementById('viewportDisplay');
+    renderPDFView(container, imageUrl, hotspots);
+
+    return { imageUrl, hotspots };
+}
+
+/**
  * Charge un nouveau rendu via l'API
  * Gère loader, erreurs et mise à jour du carrousel
  */
@@ -1215,9 +1279,21 @@ async function loadRender() {
         setError(null);
 
         // 3. Appeler l'API avec la config validée
-        const viewType = getViewType(); // Récupérer la vue courante (exterior/interior/configuration)
+        const viewType = getViewType(); // Récupérer la vue courante (exterior/interior/configuration/pdf)
 
         let images;
+
+        // Vue PDF : Regénérer la vue avec les nouvelles couleurs
+        if (viewType === 'pdf') {
+            await loadAndDisplayPDFView();
+
+            hideLoader();
+            enableControls();
+            setLoading(false);
+
+            showSuccessToast('Vue PDF mise à jour avec succès !');
+            return; // Sortir de la fonction
+        }
 
         // US-042: Pour la vue Configuration, utiliser fetchConfigurationImages() qui fait 2 appels API
         if (viewType === 'configuration') {
@@ -1348,6 +1424,17 @@ function toggleViewControls(viewType) {
         // Masquer le panneau d'actions (vide)
         if (actionsPanel) actionsPanel.style.display = 'none';
 
+    } else if (viewType === 'pdf') {
+        // Vue PDF avec hotspots - afficher les contrôles extérieurs pour modifier les couleurs
+        controlsExterior.style.display = 'block';
+        controlsInterior.style.display = 'none';
+
+        // Masquer toutes les actions (pas besoin de décor, portes, etc.)
+        if (actionsExterior) actionsExterior.style.display = 'none';
+        if (actionsInterior) actionsInterior.style.display = 'none';
+
+        // Masquer le panneau d'actions
+        if (actionsPanel) actionsPanel.style.display = 'none';
     }
 }
 
@@ -1757,14 +1844,20 @@ function attachEventListeners() {
     const btnViewExterior = document.getElementById('btnViewExterior');
     const btnViewInterior = document.getElementById('btnViewInterior');
     const btnViewConfiguration = document.getElementById('btnViewConfiguration');
+    const btnViewOverview = document.getElementById('btnViewOverview');
+    const btnViewPDF = document.getElementById('btnViewPDF');
 
     if (btnViewExterior && btnViewInterior) {
         btnViewExterior.addEventListener('click', () => {
+            // Masquer le viewer PDF si actif
+            hidePDFViewer();
+
             // Mettre à jour l'UI
             btnViewExterior.classList.add('active');
             btnViewInterior.classList.remove('active');
             if (btnViewConfiguration) btnViewConfiguration.classList.remove('active');
             if (btnViewOverview) btnViewOverview.classList.remove('active');
+            if (btnViewPDF) btnViewPDF.classList.remove('active');
 
             // Mettre à jour le state
             updateConfig('viewType', 'exterior');
@@ -1777,11 +1870,15 @@ function attachEventListeners() {
         });
 
         btnViewInterior.addEventListener('click', () => {
+            // Masquer le viewer PDF si actif
+            hidePDFViewer();
+
             // Mettre à jour l'UI
             btnViewInterior.classList.add('active');
             btnViewExterior.classList.remove('active');
             if (btnViewConfiguration) btnViewConfiguration.classList.remove('active');
             if (btnViewOverview) btnViewOverview.classList.remove('active');
+            if (btnViewPDF) btnViewPDF.classList.remove('active');
 
             // Mettre à jour le state
             updateConfig('viewType', 'interior');
@@ -1797,11 +1894,15 @@ function attachEventListeners() {
     // US-042: Bouton vue Configuration
     if (btnViewConfiguration) {
         btnViewConfiguration.addEventListener('click', () => {
+            // Masquer le viewer PDF si actif
+            hidePDFViewer();
+
             // Mettre à jour l'UI
             btnViewConfiguration.classList.add('active');
             if (btnViewExterior) btnViewExterior.classList.remove('active');
             if (btnViewInterior) btnViewInterior.classList.remove('active');
             if (btnViewOverview) btnViewOverview.classList.remove('active');
+            if (btnViewPDF) btnViewPDF.classList.remove('active');
 
             // Mettre à jour le state
             updateConfig('viewType', 'configuration');
@@ -1819,15 +1920,18 @@ function attachEventListeners() {
     }
 
     // US-044: Bouton vue Overview
-    const btnViewOverview = document.getElementById('btnViewOverview');
     if (btnViewOverview) {
         btnViewOverview.addEventListener('click', async () => {
             try {
+                // Masquer le viewer PDF si actif
+                hidePDFViewer();
+
                 // Mettre à jour l'UI
                 btnViewOverview.classList.add('active');
                 if (btnViewExterior) btnViewExterior.classList.remove('active');
                 if (btnViewInterior) btnViewInterior.classList.remove('active');
                 if (btnViewConfiguration) btnViewConfiguration.classList.remove('active');
+                if (btnViewPDF) btnViewPDF.classList.remove('active');
 
 
                 // Masquer tous les contrôles (pas de personnalisation en vue Overview)
@@ -1869,6 +1973,53 @@ function attachEventListeners() {
                 // Afficher erreur
                 showPlaceholder('Erreur lors de la génération de la vue Overview');
                 showError('Erreur génération vue Overview: ' + error.message);
+            }
+        });
+    }
+
+    // Vue PDF avec hotspots
+    if (btnViewPDF) {
+        btnViewPDF.addEventListener('click', async () => {
+            try {
+                // Mettre à jour l'UI
+                btnViewPDF.classList.add('active');
+                if (btnViewExterior) btnViewExterior.classList.remove('active');
+                if (btnViewInterior) btnViewInterior.classList.remove('active');
+                if (btnViewConfiguration) btnViewConfiguration.classList.remove('active');
+                if (btnViewOverview) btnViewOverview.classList.remove('active');
+
+                // Mettre à jour le state
+                updateConfig('viewType', 'pdf');
+
+                // Afficher les contrôles extérieurs (couleurs)
+                toggleViewControls('pdf');
+
+                // Afficher le loader
+                showLoader('Génération vue PDF avec hotspots...');
+                disableControls();
+                setLoading(true);
+
+                // Générer et afficher la vue PDF
+                await loadAndDisplayPDFView();
+
+                // Masquer loader
+                hideLoader();
+                enableControls();
+                setLoading(false);
+
+                // Afficher message de succès
+                showSuccessToast('Vue PDF générée avec succès !');
+
+            } catch (error) {
+                console.error('❌ Erreur génération vue PDF:', error);
+
+                // Masquer loader
+                hideLoader();
+                enableControls();
+                setLoading(false);
+
+                // Afficher placeholder seulement (pas de popup)
+                showPlaceholder('Erreur lors de la génération de la vue PDF. Voir console pour détails.');
             }
         });
     }

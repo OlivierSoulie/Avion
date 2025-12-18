@@ -1167,3 +1167,51 @@ export function parsePrestigeBookmarkOrdered(xmlDoc, prestigeName) {
 
     return materials;
 }
+
+// ======================================
+// PDF View : Récupération caméra dynamique
+// ======================================
+
+/**
+ * Récupère l'ID de la 2ème caméra du groupe "Exterieur_DecorStudio" pour la vue PDF
+ * Récupère la caméra nommée "402" (index 1)
+ * @returns {Promise<string>} ID de la 2ème caméra du groupe Exterieur_DecorStudio
+ * @throws {Error} Si le groupe n'existe pas ou n'a pas au moins 2 caméras
+ */
+export async function getPDFCameraId() {
+    try {
+        const xmlDoc = await getDatabaseXML();
+        const groups = xmlDoc.querySelectorAll('Group');
+
+        // Rechercher le groupe "Exterieur_DecorStudio"
+        let studioGroup = null;
+        for (let group of groups) {
+            const groupName = group.getAttribute('name');
+            if (groupName === 'Exterieur_DecorStudio') {
+                studioGroup = group;
+                break;
+            }
+        }
+
+        if (!studioGroup) {
+            throw new Error('Groupe caméra "Exterieur_DecorStudio" introuvable dans le XML');
+        }
+
+        const groupId = studioGroup.getAttribute('id');
+
+        // Récupérer toutes les caméras du groupe
+        const cameras = await getCameraListFromGroup(groupId);
+
+        if (cameras.length < 2) {
+            throw new Error(`Le groupe "Exterieur_DecorStudio" doit contenir au moins 2 caméras (trouvé: ${cameras.length})`);
+        }
+
+        // Retourner la 2ème caméra (index 1) qui correspond à la caméra "402"
+        const secondCamera = cameras[1];
+        return secondCamera.id;
+
+    } catch (error) {
+        console.error('❌ Erreur récupération caméra PDF:', error);
+        throw error;
+    }
+}

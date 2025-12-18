@@ -24,7 +24,8 @@ export {
     parseColorString,
     parsePaintSchemeBookmark,
     getExteriorColorZones,
-    validateConfigForDatabase // US-040
+    validateConfigForDatabase, // US-040
+    getPDFCameraId // PDF View : récupération caméra dynamique
 } from './xml-parser.js';
 
 // ======================================
@@ -60,3 +61,18 @@ export {
 export {
     fetchConfigurationImages
 } from './configuration.js';
+
+// ======================================
+// Re-export Hotspot
+// ======================================
+export {
+    callHotspotAPI,
+    buildHotspotPayload
+} from './hotspot.js';
+
+// ======================================
+// Re-export PDF Generation
+// ======================================
+export {
+    generatePDFView
+} from './pdf-generation.js';

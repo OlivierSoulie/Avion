@@ -31,9 +31,10 @@ export function openFullscreen(imageIndex) {
     const counter = document.getElementById('fullscreenCounter');
     const metadata = document.getElementById('fullscreenMetadata');
 
-    // US-044 : Récupérer les images de la mosaïque active (standard OU overview)
+    // US-044 : Récupérer les images de la mosaïque active (standard OU overview OU PDF)
     const mosaicGrid = document.getElementById('mosaicGrid');
     const overviewMosaic = document.getElementById('overviewMosaic');
+    const pdfViewWrapper = document.querySelector('.pdf-view-wrapper');
 
     let images = [];
 
@@ -44,6 +45,10 @@ export function openFullscreen(imageIndex) {
     // Sinon chercher dans overviewMosaic (vue Overview)
     else if (overviewMosaic && !overviewMosaic.classList.contains('hidden')) {
         images = overviewMosaic.querySelectorAll('img.overview-main-image, img.overview-secondary-image');
+    }
+    // Sinon chercher dans pdfViewWrapper (vue PDF)
+    else if (pdfViewWrapper) {
+        images = pdfViewWrapper.querySelectorAll('img');
     }
 
     if (images.length === 0) return;
@@ -60,6 +65,11 @@ export function openFullscreen(imageIndex) {
     currentFilenames = Array.from(images).map((img, idx) => {
         // Déterminer le type de vue à partir du parent
         let viewType = 'image';
+
+        // Détecter vue PDF
+        if (pdfViewWrapper && pdfViewWrapper.style.display !== 'none') {
+            return 'vue_pdf_hotspots.png';
+        }
 
         // Détecter vue Overview
         if (img.classList.contains('overview-main-image') || img.classList.contains('overview-secondary-image')) {
