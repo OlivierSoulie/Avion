@@ -88,6 +88,7 @@ export function renderPDFView(container, imageUrl, hotspots) {
 
     // Créer l'image
     const img = document.createElement('img');
+    img.crossOrigin = 'anonymous'; // Permet l'export canvas depuis autre domaine
     img.src = imageUrl;
     img.alt = 'Vue PDF avec hotspots';
     img.style.display = 'block';
@@ -129,13 +130,26 @@ export function renderPDFView(container, imageUrl, hotspots) {
     downloadBtn.style.top = '10px';
     downloadBtn.style.right = '10px';
     downloadBtn.style.zIndex = '100'; // Au-dessus du SVG
+    downloadBtn.style.opacity = '0'; // Masqué par défaut
+    downloadBtn.style.transition = 'opacity 0.2s';
+
+    // Afficher le bouton au survol du wrapper
+    wrapper.addEventListener('mouseenter', () => {
+        downloadBtn.style.opacity = '1';
+    });
+    wrapper.addEventListener('mouseleave', () => {
+        downloadBtn.style.opacity = '0';
+    });
 
     // Event listener sur bouton download (stopPropagation pour éviter l'ouverture fullscreen)
     downloadBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
         const filename = 'vue_pdf_hotspots.png';
         try {
-            await downloadImage(imageUrl, filename);
+            // Générer l'image composite avec SVG bakés
+            const compositeUrl = await generateCompositeImage(img, hotspots);
+            await downloadImage(compositeUrl, filename);
+            URL.revokeObjectURL(compositeUrl); // Nettoyer l'URL blob
             showSuccessToast('Image téléchargée avec succès !');
         } catch (error) {
             console.error('Erreur téléchargement:', error);
@@ -250,10 +264,30 @@ function createSVGOverlay(width, height, hotspots, scaleX, scaleY) {
 
     const visibleCount = visibleHotspots.length;
 
-    // Traiter chaque hotspot dans l'ordre trié
+    // Séparer en deux groupes : haut et bas
+    const topHotspots = [];
+    const bottomHotspots = [];
+
     visibleHotspots.forEach((hotspot, sortedIndex) => {
-        // Déterminer si ce hotspot va en haut ou en bas selon son rang dans le tri
         const isTopHalf = sortedIndex < visibleCount / 2;
+        if (isTopHalf) {
+            topHotspots.push(hotspot);
+        } else {
+            bottomHotspots.push(hotspot);
+        }
+    });
+
+    // Trier chaque groupe par X (gauche vers droite) pour éviter croisements
+    topHotspots.sort((a, b) => a.pos2D.x - b.pos2D.x);
+    bottomHotspots.sort((a, b) => a.pos2D.x - b.pos2D.x);
+
+    // Attribuer les slots en ordre horizontal
+    const allHotspotsSorted = [...topHotspots, ...bottomHotspots];
+
+    // Traiter chaque hotspot
+    allHotspotsSorted.forEach((hotspot) => {
+        // Déterminer si ce hotspot est dans le groupe haut ou bas
+        const isTopHalf = topHotspots.includes(hotspot);
 
         // Choisir l'emplacement fixe
         const labelSlot = chooseBestSlot(hotspot.pos2D, slots, usedSlots, isTopHalf);
@@ -370,24 +404,28 @@ function createLabel(position, data, styles) {
         textAnchor = 'start';
     }
 
-    // Texte nom zone (en gras)
+    // Position Y alignée sur le haut du carré
+    const textYTop = position.y - halfSize;
+
+    // Texte nom zone (en gras) - aligné en haut du carré
     const nameText = document.createElementNS(svgNS, 'text');
     nameText.setAttribute('x', textX);
-    nameText.setAttribute('y', position.y);
+    nameText.setAttribute('y', textYTop);
     nameText.setAttribute('font-size', styles.labelFontSize);
     nameText.setAttribute('font-weight', 'bold');
     nameText.setAttribute('fill', '#000000');
     nameText.setAttribute('text-anchor', textAnchor);
-    nameText.setAttribute('dominant-baseline', 'middle');
+    nameText.setAttribute('dominant-baseline', 'hanging');
     nameText.textContent = data.name;
 
-    // Texte nom couleur (depuis config actuelle)
+    // Texte nom couleur (depuis config actuelle) - en dessous du titre
     const colorText = document.createElementNS(svgNS, 'text');
     colorText.setAttribute('x', textX);
-    colorText.setAttribute('y', position.y + styles.labelFontSize + 8);
+    colorText.setAttribute('y', textYTop + styles.labelFontSize + 4);
     colorText.setAttribute('font-size', styles.labelColorFontSize);
     colorText.setAttribute('fill', '#000000');
     colorText.setAttribute('text-anchor', textAnchor);
+    colorText.setAttribute('dominant-baseline', 'hanging');
     colorText.textContent = data.colorName || 'Unknown';
 
     group.appendChild(outerSquare);
@@ -535,9 +573,31 @@ async function generateCompositeImage(img, hotspots) {
 
         const visibleCount = visibleHotspots.length;
 
-        // Dessiner chaque hotspot
+        // Séparer en deux groupes : haut et bas
+        const topHotspots = [];
+        const bottomHotspots = [];
+
         visibleHotspots.forEach((hotspot, sortedIndex) => {
             const isTopHalf = sortedIndex < visibleCount / 2;
+            if (isTopHalf) {
+                topHotspots.push(hotspot);
+            } else {
+                bottomHotspots.push(hotspot);
+            }
+        });
+
+        // Trier chaque groupe par X (gauche vers droite) pour éviter croisements
+        topHotspots.sort((a, b) => a.pos2D.x - b.pos2D.x);
+        bottomHotspots.sort((a, b) => a.pos2D.x - b.pos2D.x);
+
+        // Attribuer les slots en ordre horizontal
+        const allHotspotsSorted = [...topHotspots, ...bottomHotspots];
+
+        // Dessiner chaque hotspot
+        allHotspotsSorted.forEach((hotspot) => {
+            // Déterminer si ce hotspot est dans le groupe haut ou bas
+            const isTopHalf = topHotspots.includes(hotspot);
+
             const labelSlot = chooseBestSlot(hotspot.pos2D, slots, usedSlots, isTopHalf);
             usedSlots.push(labelSlot.id);
 
@@ -628,24 +688,23 @@ function drawLabelOnCanvas(ctx, position, data, styles) {
         // Slot à droite : texte à gauche du carré
         textX = position.x - halfSize - styles.labelTextOffset;
         textAlign = 'right';
-    } else if (position.anchor === 'middle') {
-        // Slot au centre : texte centré sous le carré
-        textX = position.x;
-        textAlign = 'center';
     } else {
-        // Slots à gauche : texte à droite du carré
+        // Slots à gauche et centre : texte à droite du carré
         textX = position.x + halfSize + styles.labelTextOffset;
         textAlign = 'left';
     }
 
-    // Texte nom zone (en gras)
+    // Position Y alignée sur le haut du carré
+    const textYTop = position.y - halfSize;
+
+    // Texte nom zone (en gras) - aligné en haut du carré
     ctx.font = `bold ${styles.labelFontSize}px Arial`;
     ctx.fillStyle = '#000000';
     ctx.textAlign = textAlign;
-    ctx.textBaseline = 'middle';
-    ctx.fillText(data.name, textX, position.y);
+    ctx.textBaseline = 'top';
+    ctx.fillText(data.name, textX, textYTop);
 
-    // Texte nom couleur
+    // Texte nom couleur - en dessous du titre
     ctx.font = `${styles.labelColorFontSize}px Arial`;
-    ctx.fillText(data.colorName || 'Unknown', textX, position.y + styles.labelFontSize + 8);
+    ctx.fillText(data.colorName || 'Unknown', textX, textYTop + styles.labelFontSize + 4);
 }

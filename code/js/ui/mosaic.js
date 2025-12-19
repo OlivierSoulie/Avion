@@ -10,6 +10,72 @@ import { openFullscreen } from './modal.js';
 import { downloadImage } from './download.js';
 
 // ======================================
+// US-044 : Baker le watermark sur l'image Overview
+// ======================================
+
+/**
+ * Baker le watermark (nom de l'avion) sur l'image
+ * @param {HTMLImageElement} img - Image source
+ * @param {string} watermarkText - Texte du watermark (ex: "TBM 960")
+ * @returns {Promise<string>} URL blob de l'image composite
+ */
+async function bakeWatermarkOnImage(img, watermarkText) {
+    return new Promise((resolve, reject) => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Attendre que l'image soit chargée si nécessaire
+        const drawWatermark = () => {
+            // Utiliser les dimensions naturelles de l'image
+            const width = img.naturalWidth;
+            const height = img.naturalHeight;
+
+            canvas.width = width;
+            canvas.height = height;
+
+            // Calculer la taille de police proportionnelle (120px pour ~1200px de largeur)
+            const fontSize = Math.max(width * 0.1, 60); // Min 60px, proportionnel à 10% de la largeur
+
+            // 1. DESSINER LE WATERMARK EN PREMIER (arrière-plan)
+            ctx.font = `bold ${fontSize}px Arial`;
+            ctx.fillStyle = '#E00500'; // Rouge Daher
+            ctx.globalAlpha = 0.8; // Opacité
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // Position: centré horizontalement, à 25% du haut (moitié de la moitié supérieure)
+            const x = width / 2;
+            const y = height * 0.25;
+
+            ctx.fillText(watermarkText, x, y);
+
+            // 2. DESSINER L'IMAGE PAR-DESSUS (premier plan)
+            ctx.globalAlpha = 1.0; // Rétablir l'opacité complète pour l'image
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Convertir en blob
+            canvas.toBlob((blob) => {
+                if (blob) {
+                    const url = URL.createObjectURL(blob);
+                    resolve(url);
+                } else {
+                    reject(new Error('Échec génération image avec watermark'));
+                }
+            }, 'image/png');
+        };
+
+        // Si l'image est déjà chargée, dessiner immédiatement
+        if (img.complete && img.naturalWidth > 0) {
+            drawWatermark();
+        } else {
+            // Sinon attendre le chargement
+            img.onload = drawWatermark;
+            img.onerror = () => reject(new Error('Échec chargement image'));
+        }
+    });
+}
+
+// ======================================
 // US-029 : Mosaïque d'images Extérieur/Intérieur
 // ======================================
 
@@ -328,14 +394,33 @@ export function renderOverviewMosaic(imageA, imagesSecondary, airplaneType) {
     overviewMosaic.style.display = '';
 
     // 1. Afficher image A (principale)
-    imageAElement.src = imageA.url;
-    imageAElement.dataset.groupName = imageA.groupName || '';
-    imageAElement.dataset.cameraName = imageA.cameraName || '';
-    imageAElement.dataset.cameraId = imageA.cameraId || '';
+    // Cloner l'élément pour supprimer tous les anciens event listeners (éviter fuites mémoire)
+    const newImageAElement = imageAElement.cloneNode(false);
+    imageAElement.parentNode.replaceChild(newImageAElement, imageAElement);
 
-    // Event listener pour ouvrir en plein écran
-    imageAElement.addEventListener('click', () => {
+    // Mettre à jour la référence (l'ancien élément est remplacé)
+    const imageA_element = newImageAElement;
+
+    imageA_element.crossOrigin = 'anonymous'; // Permet l'export canvas depuis autre domaine
+    imageA_element.src = imageA.url;
+    imageA_element.dataset.groupName = imageA.groupName || '';
+    imageA_element.dataset.cameraName = imageA.cameraName || '';
+    imageA_element.dataset.cameraId = imageA.cameraId || '';
+
+    // Event listener pour ouvrir en plein écran (nouveau listener sur élément cloné)
+    imageA_element.addEventListener('click', async () => {
+        // Baker le watermark sur l'image avant d'ouvrir en plein écran
+        const compositeUrl = await bakeWatermarkOnImage(imageA_element, watermark.textContent);
+        const originalSrc = imageA_element.src;
+        imageA_element.src = compositeUrl;
+
         openFullscreen(0); // Index 0 pour image A
+
+        // Restaurer l'image originale après un court délai
+        setTimeout(() => {
+            imageA_element.src = originalSrc;
+            URL.revokeObjectURL(compositeUrl);
+        }, 100);
     });
 
     // Ajouter bouton download pour image A (après l'image, avant la fin du wrapper)
@@ -347,13 +432,21 @@ export function renderOverviewMosaic(imageA, imagesSecondary, airplaneType) {
         downloadBtnA.setAttribute('aria-label', 'Télécharger cette image');
         downloadBtnA.setAttribute('title', 'Télécharger cette image');
         mainWrapper.appendChild(downloadBtnA);
+    } else {
+        // Cloner le bouton pour supprimer les anciens listeners (bonne pratique)
+        const newDownloadBtnA = downloadBtnA.cloneNode(true);
+        downloadBtnA.parentNode.replaceChild(newDownloadBtnA, downloadBtnA);
+        downloadBtnA = newDownloadBtnA;
     }
 
     downloadBtnA.addEventListener('click', async (e) => {
         e.stopPropagation();
         const filename = 'vue_overview_principale.png';
         try {
-            await downloadImage(imageA.url, filename);
+            // Baker le watermark sur l'image avant de télécharger
+            const compositeUrl = await bakeWatermarkOnImage(imageA_element, watermark.textContent);
+            await downloadImage(compositeUrl, filename);
+            URL.revokeObjectURL(compositeUrl);
             showSuccessToast(`Image téléchargée : ${filename}`);
         } catch (error) {
             showError(`Erreur lors du téléchargement de ${filename}`);
@@ -367,17 +460,22 @@ export function renderOverviewMosaic(imageA, imagesSecondary, airplaneType) {
         checkboxA.type = 'checkbox';
         checkboxA.classList.add('image-checkbox');
         checkboxA.dataset.index = '0';
-        checkboxA.dataset.url = imageA.url;
-        checkboxA.dataset.filename = 'vue_overview_principale.png';
-        checkboxA.addEventListener('click', (e) => {
-            e.stopPropagation(); // Empêcher ouverture fullscreen
-        });
         mainWrapper.appendChild(checkboxA);
     } else {
-        // Mettre à jour les data attributes si checkbox existe déjà
-        checkboxA.dataset.url = imageA.url;
-        checkboxA.dataset.filename = 'vue_overview_principale.png';
+        // Cloner la checkbox pour supprimer les anciens listeners (bonne pratique)
+        const newCheckboxA = checkboxA.cloneNode(true);
+        checkboxA.parentNode.replaceChild(newCheckboxA, checkboxA);
+        checkboxA = newCheckboxA;
     }
+
+    // Mettre à jour les data attributes
+    checkboxA.dataset.url = imageA.url;
+    checkboxA.dataset.filename = 'vue_overview_principale.png';
+
+    // Ajouter le listener sur l'élément propre
+    checkboxA.addEventListener('click', (e) => {
+        e.stopPropagation(); // Empêcher ouverture fullscreen
+    });
 
     // 2. Mettre à jour le filigrane avec le type d'avion
     watermark.textContent = airplaneType;

@@ -2928,4 +2928,42 @@ Afin de garantir que la modale de configuration affiche des informations correct
 
 ---
 
+### [US-050] Ajuster largeurs lettres I/1/- à 10cm
+
+**Priorité** : Moyenne
+**Story Points** : 1 SP
+**Sprint** : Sprint #17
+**Status** : ✅ Done (15/12/2025)
+
+**User Story :**
+En tant qu'utilisateur configurant une immatriculation,
+Je veux que les lettres étroites (I, 1, -) aient une largeur cohérente de 10cm,
+Afin d'obtenir un rendu visuel correct et proportionné.
+
+**Critères d'acceptation :**
+- ✅ Lettre 'I' : largeur modifiée de 0.05 (5cm) → 0.10 (10cm)
+- ✅ Chiffre '1' : largeur modifiée de 0.20 (DEFAULT) → 0.10 (10cm)
+- ✅ Tiret '-' : largeur modifié de 0.20 (DEFAULT) → 0.10 (10cm)
+- ⚠️ Tests visuels avec immatriculations contenant I, 1, et - (ex: "I-160", "N1-0TB") - À valider par l'utilisateur
+- ✅ Positionnement calculé correctement avec les nouvelles largeurs
+
+**Contexte technique** :
+- Fichier à modifier : `code/js/config.js`
+- Objet concerné : `CHAR_WIDTHS` (lignes 56-61)
+- Valeurs actuelles :
+  - 'I' : 0.05
+  - '1' : utilise DEFAULT (0.20)
+  - '-' : utilise DEFAULT (0.20)
+- Nouvelles valeurs :
+  - 'I' : 0.10
+  - '1' : 0.10
+  - '-' : 0.10
+
+**Estimation** : 1 Story Point (~15 min modification + 15 min tests)
+
+**Fichier modifié** :
+- `code/js/config.js` : CHAR_WIDTHS (ajout de '1' et '-', modification de 'I')
+
+---
+
 **Total Sprint #15** : 8 Story Points (US-047: 3 SP + US-048: 5 SP)

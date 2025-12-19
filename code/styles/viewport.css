@@ -522,9 +522,9 @@
 /* Filigrane type d'avion (TBM 960/980) */
 .airplane-type-watermark {
     position: absolute;
-    top: 10%; /* Positionné en haut du cadre pour ne pas être caché par l'avion */
+    top: 25%; /* Moitié de la moitié supérieure (derrière l'avion) */
     left: 50%;
-    transform: translateX(-50%); /* Centré horizontalement seulement */
+    transform: translate(-50%, -50%); /* Centré horizontalement et verticalement */
     font-size: 120px; /* Réduit pour tenir "TBM 980" sur une ligne */
     font-weight: bold;
     color: #E00500; /* Rouge Daher */

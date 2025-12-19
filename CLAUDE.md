@@ -282,6 +282,108 @@ git push origin main
 
 ## Changelog
 
+### 19/12/2025 (Sprint #18: Vue PDF + Maintenance watermark Overview)
+
+#### A. Sprint #18 - Vue PDF avec Hotspots (✅ TERMINÉ - Hors process Scrumban)
+
+**Type** : Feature majeure (13 SP) - **Développement hors process** (documentation rétroactive)
+**Durée** : ~8h
+**Commits** : `262ebe4`, `3a5924d`, `18fb93e` (18-19/12/2025)
+
+**Fonctionnalité implémentée** : Vue PDF avec visualisation interactive des zones de couleur via hotspots 2D
+
+**Architecture** :
+```
+XML Config → API Snapshot → API Hotspot → SVG Overlay → Canvas Export
+```
+
+**Modules créés (4 nouveaux fichiers - 898 lignes)** :
+- `code/js/api/pdf-generation.js` (78 lignes) - Orchestration pipeline
+- `code/js/api/hotspot.js` (66 lignes) - Appel endpoint `/Hotspot` (nouveau)
+- `code/js/ui/pdf-view.js` (651 lignes) - Rendu SVG overlay ⭐
+- `code/js/utils/hotspot-helper.js` (103 lignes) - Enrichissement couleurs
+
+**Données** :
+- `code/data/pdf-hotspots.json` (266 lignes) - Positions 3D validées (6 paint schemes)
+
+**Modules modifiés** : 10 fichiers (+352 lignes)
+- `code/index.html`, `code/js/app.js`, `code/js/api/xml-parser.js`
+- `code/js/ui/modal.js`, `code/js/ui/mosaic.js`, `code/js/ui/index.js`
+- `code/js/config.js`, `code/js/utils/positioning.js`
+
+**Features livrées** :
+- ✅ API `/Snapshot` avec caméra PDF (2ème du groupe Studio)
+- ✅ API `/Hotspot` pour projection 3D→2D (premier usage projet)
+- ✅ SVG overlay avec carrés colorés + labels (nom zone + couleur actuelle)
+- ✅ Calculs proportionnels adaptatifs (1.2% titre, 0.9% sous-titre)
+- ✅ Export image composite PNG (SVG bakés via Canvas HTML5)
+- ✅ Bouton "PDF" dans barre navigation
+- ✅ Support fullscreen + download
+- ✅ Bonus: Fix largeurs immatriculation ('I', '1', '-' → 10cm)
+
+**Impact total** :
+- 18 fichiers modifiés/créés
+- +1696 lignes ajoutées, -59 lignes supprimées
+
+**Limitations** :
+- Caméra PDF fixe (2ème du groupe Studio) → Fonctionne uniquement décor Studio
+- Positions 3D manuelles dans JSON → Nécessite saisie pour nouveaux paint schemes
+
+**Documentation créée** :
+- `docs/ANALYSE-RETROACTIVE-US-051.md` - Analyse complète
+- `artifacts/US-051-vue-pdf-hotspots.md` - User Story format standard
+- `docs/RESUME-EXECUTIF-US-051.md` - Résumé exécutif
+- `docs/FICHIERS-MODIFIES-US-051.md` - Liste fichiers
+
+---
+
+#### B. Maintenance (19/12/2025) - Corrections watermark Overview + Fuite mémoire
+
+**Type** : Maintenance corrective
+**Durée** : ~1h
+**Context** : Améliorations vue Overview (watermark avion)
+
+##### 1. 🎨 AMÉLIORATION - Positionnement watermark proportionnel
+
+**Problème** :
+- Watermark "TBM 960/980" mal positionné (10% puis 50%, pas adaptatif)
+- Ordre superposition incorrect (watermark devant l'avion)
+- Pas proportionnel entre mosaïque et plein écran
+
+**Solution** :
+- **Position** : 25% du haut (moitié de la moitié supérieure) - proportionnel partout
+- **Ordre** : Watermark dessiné AVANT l'image (arrière-plan correct)
+- **Canvas** : `globalAlpha = 1.0` restauré pour l'image après watermark
+- **CSS** : `top: 25%` + `transform: translate(-50%, -50%)`
+- **JS** : `y = height * 0.25` (proportionnel à taille réelle)
+
+**Fichiers modifiés** :
+- `code/styles/viewport.css` (ligne 525)
+- `code/js/ui/mosaic.js` (lignes 39-54)
+
+**Résultat** :
+- ✅ Watermark toujours en arrière-plan derrière l'avion
+- ✅ Position 25% proportionnelle (mosaïque + plein écran + téléchargement)
+
+##### 2. 🐛 BUG FIX - Fuite mémoire event listeners
+
+**Problème** :
+- Event listeners empilés à chaque appel `renderOverviewMosaic()`
+- Fuite mémoire lors de changements multiples de configuration
+
+**Solution** :
+- **Clonage d'éléments** : `cloneNode()` + `replaceChild()` pour supprimer anciens listeners
+- **Nettoyage systématique** : 3 éléments (imageA, downloadBtn, checkbox)
+
+**Fichiers modifiés** :
+- `code/js/ui/mosaic.js` (lignes 397-478)
+
+**Résultat** :
+- ✅ Aucune fuite mémoire (même après 100+ changements config)
+- ✅ Code professionnel et maintenable
+
+---
+
 ### 11/12/2025 (Maintenance: Corrections critiques + Nettoyage code)
 **Type** : Maintenance corrective hors sprint (entre Sprint #16 et Sprint #17)
 **Durée** : ~2h
