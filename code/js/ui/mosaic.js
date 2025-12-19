@@ -250,6 +250,7 @@ export async function renderConfigMosaic(imagesData) {
     mosaicGrid.classList.add('configuration');
 
     // Créer les vignettes avec détection de ratio
+    let imageIndex = 0; // Compteur d'images réelles (sans les dividers)
     for (let i = 0; i < imagesData.length; i++) {
         const imageData = imagesData[i];
 
@@ -285,7 +286,7 @@ export async function renderConfigMosaic(imagesData) {
 
         const img = document.createElement('img');
         img.src = url;
-        img.alt = `Configuration ${i + 1} (${finalRatioType})`;
+        img.alt = `Configuration ${imageIndex + 1} (${finalRatioType})`;
         img.loading = 'lazy';
 
         // Ajouter les métadonnées dans data-attributes
@@ -293,9 +294,10 @@ export async function renderConfigMosaic(imagesData) {
         if (cameraName) img.dataset.cameraName = cameraName;
         if (cameraId) img.dataset.cameraId = cameraId;
 
-        // Clic sur image → ouvre en plein écran
+        // Clic sur image → ouvre en plein écran (utiliser imageIndex, pas i)
+        const currentImageIndex = imageIndex; // Capture de la valeur pour la closure
         img.addEventListener('click', () => {
-            openFullscreen(i);
+            openFullscreen(currentImageIndex);
         });
 
         // Bouton download
@@ -308,7 +310,7 @@ export async function renderConfigMosaic(imagesData) {
         // Event listener sur bouton download
         downloadBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
-            const filename = `configuration_${i + 1}_${ratioType.replace(':', 'x')}.png`;
+            const filename = `configuration_${imageIndex + 1}_${ratioType.replace(':', 'x')}.png`;
             try {
                 await downloadImage(url, filename);
                 showSuccessToast(`Vignette téléchargée : ${filename}`);
@@ -321,9 +323,9 @@ export async function renderConfigMosaic(imagesData) {
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.classList.add('image-checkbox');
-        checkbox.dataset.index = i;
+        checkbox.dataset.index = imageIndex;
         checkbox.dataset.url = url;
-        checkbox.dataset.filename = `configuration_${i + 1}_${ratioType.replace(':', 'x')}.png`;
+        checkbox.dataset.filename = `configuration_${imageIndex + 1}_${ratioType.replace(':', 'x')}.png`;
 
         // Empêcher l'ouverture fullscreen lors du clic sur checkbox
         checkbox.addEventListener('click', (e) => {
@@ -336,6 +338,9 @@ export async function renderConfigMosaic(imagesData) {
         wrapper.appendChild(checkbox);
 
         mosaicGrid.appendChild(wrapper);
+
+        // Incrémenter le compteur d'images réelles
+        imageIndex++;
     }
 
     // Afficher la mosaïque

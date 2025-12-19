@@ -228,7 +228,64 @@ function renderDatabaseStructure(structure) {
     const parametersContainer = document.getElementById('configParameters');
     parametersContainer.innerHTML = '';
 
+    // Regroupement spécial pour les Exterior_Colors_Zone
+    const colorZonesABCD = ['Exterior_Colors_ZoneA', 'Exterior_Colors_ZoneB', 'Exterior_Colors_ZoneC', 'Exterior_Colors_ZoneD'];
+    const processedParams = new Set();
+
     Object.entries(structure.parameters).forEach(([paramName, paramData]) => {
+        // Si c'est une zone A/B/C/D et qu'on ne l'a pas encore traitée
+        if (colorZonesABCD.includes(paramName) && !processedParams.has('Colors_ABCD_Group')) {
+            // Créer une seule div pour toutes les zones A/B/C/D
+            const paramDiv = document.createElement('div');
+            paramDiv.className = 'config-parameter-item';
+
+            // Collecter toutes les options de toutes les zones A/B/C/D
+            const allOptions = [];
+            let totalCount = 0;
+            colorZonesABCD.forEach(zoneName => {
+                if (structure.parameters[zoneName]) {
+                    totalCount += structure.parameters[zoneName].optionCount;
+                    structure.parameters[zoneName].options.forEach(opt => {
+                        // Éviter les doublons (les couleurs sont les mêmes dans toutes les zones)
+                        if (!allOptions.find(o => o.label === opt.label)) {
+                            allOptions.push(opt);
+                        }
+                    });
+                }
+            });
+
+            let optionsHTML = '';
+            allOptions.forEach(opt => {
+                optionsHTML += `<div class="config-option-item" title="${opt.value}">${opt.label}</div>`;
+            });
+
+            // Utiliser le pattern et la description du premier paramètre trouvé
+            const firstZoneData = structure.parameters[colorZonesABCD.find(z => structure.parameters[z])];
+            let descriptionHTML = '';
+            if (firstZoneData.patternDescription) {
+                descriptionHTML = `<div class="config-parameter-description">ℹ️ ${firstZoneData.patternDescription}</div>`;
+            }
+
+            paramDiv.innerHTML = `
+                <div class="config-parameter-header">
+                    <span class="config-parameter-name">Exterior_Colors_ZoneA<br>Exterior_Colors_ZoneB<br>Exterior_Colors_ZoneC<br>Exterior_Colors_ZoneD</span>
+                    <span class="config-parameter-count">${allOptions.length} option(s)</span>
+                </div>
+                <div class="config-parameter-pattern">Pattern: ${firstZoneData.pattern || 'N/A'}</div>
+                ${descriptionHTML}
+                <div class="config-parameter-options">${optionsHTML}</div>
+            `;
+            parametersContainer.appendChild(paramDiv);
+            processedParams.add('Colors_ABCD_Group');
+            return; // Skip les autres zones A/B/C/D
+        }
+
+        // Si c'est une zone A/B/C/D mais déjà traitée en groupe, skip
+        if (colorZonesABCD.includes(paramName)) {
+            return;
+        }
+
+        // Traiter normalement tous les autres paramètres (y compris ZoneA+)
         const paramDiv = document.createElement('div');
         paramDiv.className = 'config-parameter-item';
 
@@ -270,18 +327,51 @@ function renderDatabaseStructure(structure) {
         prestigesContainer.innerHTML = '<p style="color: var(--color-text-secondary);">Aucune option Prestige</p>';
     }
 
-    // Configuration Bookmarks
+    // Configuration Bookmarks (patterns comme les parameters)
     const bookmarksContainer = document.getElementById('configBookmarks');
     bookmarksContainer.innerHTML = '';
 
-    if (structure.configurationBookmarks && structure.configurationBookmarks.length > 0) {
-        structure.configurationBookmarks.forEach(bookmark => {
-            const bookmarkDiv = document.createElement('div');
-            bookmarkDiv.className = 'config-bookmark-item';
-            bookmarkDiv.textContent = bookmark.label;
-            // Tooltip avec la valeur complète du bookmark
-            bookmarkDiv.title = `${bookmark.label}\n\n${bookmark.value}`;
-            bookmarksContainer.appendChild(bookmarkDiv);
+    if (structure.bookmarkPatterns && structure.bookmarkPatterns.length > 0) {
+        structure.bookmarkPatterns.forEach(patternData => {
+            const patternDiv = document.createElement('div');
+            patternDiv.className = 'config-parameter-item';
+
+            // Exemples HTML
+            let examplesHTML = '';
+            patternData.examples.forEach(example => {
+                examplesHTML += `<div class="config-option-item" title="${example}">${example}</div>`;
+            });
+
+            // Description du pattern
+            let descriptionHTML = '';
+            if (patternData.description) {
+                descriptionHTML = `<div class="config-parameter-description">ℹ️ ${patternData.description}</div>`;
+            }
+
+            // Titre basé sur le pattern
+            let titleName = patternData.pattern;
+            // Pour Interior_PrestigeSelection_{PrestigeName}, extraire juste "Interior_PrestigeSelection"
+            if (titleName.includes('Interior_PrestigeSelection_')) {
+                titleName = 'Interior_PrestigeSelection';
+            }
+            // Pour Exterior_{PaintSchemeName}, extraire juste "Exterior"
+            if (titleName.includes('Exterior_{PaintSchemeName}')) {
+                titleName = 'Exterior';
+            }
+            // Pour les patterns RegL/RegR multi-lignes, afficher en lignes séparées
+            const titleNameFormatted = titleName.replace(/\n/g, '<br>');
+            const patternFormatted = patternData.pattern.replace(/\n/g, '<br>');
+
+            patternDiv.innerHTML = `
+                <div class="config-parameter-header">
+                    <span class="config-parameter-name">${titleNameFormatted}</span>
+                    <span class="config-parameter-count">${patternData.examples.length} bookmark(s)</span>
+                </div>
+                <div class="config-parameter-pattern">Pattern: ${patternFormatted}</div>
+                ${descriptionHTML}
+                <div class="config-parameter-options" style="display: flex; flex-direction: column; gap: 0.5rem;">${examplesHTML}</div>
+            `;
+            bookmarksContainer.appendChild(patternDiv);
         });
     } else {
         bookmarksContainer.innerHTML = '<p style="color: var(--color-text-secondary);">Aucun bookmark</p>';

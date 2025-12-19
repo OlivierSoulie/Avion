@@ -446,6 +446,216 @@ XML Config → API Snapshot → API Hotspot → SVG Overlay → Canvas Export
 
 ---
 
+#### D. Améliorations UI + Documentation XML (19/12/2025)
+
+**Type** : Améliorations interface + Documentation système
+**Durée** : ~3h
+**Context** : Améliorations ergonomie + Documentation complète patterns XML
+
+##### 1. 🎨 AMÉLIORATION UI - Navigation fullscreen pour image unique
+
+**Problème** :
+- Flèches de navigation affichées même quand une seule image (cas vue PDF)
+- Ergonomie confuse : flèches inutiles visibles
+
+**Solution** :
+- Détection du nombre d'images dans `openFullscreen()`
+- Masquage automatique des boutons prev/next si `currentImages.length === 1`
+
+**Fichiers modifiés** :
+- `code/js/ui/modal.js` (lignes 80-85)
+
+**Résultat** :
+- ✅ Navigation fullscreen propre pour images uniques
+- ✅ Meilleure expérience utilisateur
+
+##### 2. 🐛 BUG FIX - Index offset vue Configuration
+
+**Problème** :
+- Clic sur image Configuration ouvrait la mauvaise image en fullscreen
+- Décalage d'index causé par les dividers (titres de sections)
+
+**Cause** :
+- Compteur `imageIndex` incrémenté pour TOUS les éléments (images + dividers)
+- Les dividers ne sont pas des images mais comptaient dans l'index
+
+**Solution** :
+- Pattern closure pour capturer le bon index avant incrémentation
+- Incrémentation uniquement APRÈS création de chaque image réelle
+- `const currentImageIndex = imageIndex;` avant le listener
+
+**Fichiers modifiés** :
+- `code/js/ui/mosaic.js` (`renderConfigMosaic()` lignes 200-250)
+
+**Résultat** :
+- ✅ Fullscreen affiche la bonne image Configuration
+- ✅ Alignement parfait entre mosaïque et modal
+
+##### 3. 🎨 AMÉLIORATION - Support Spinner indexé (V0.9+)
+
+**Problème** :
+- Nouvelle base V0.9+ utilise format `{NomSpinner}_{index}` (ex: `PolishedAluminium_1`)
+- Dropdown affichait le format brut avec index
+- Besoin de tri par index au lieu de tri alphabétique
+
+**Solution** :
+- Détection automatique du format indexé via pattern matching
+- Extraction nom propre (sans index) pour affichage dropdown
+- Tri par index numérique croissant au lieu de tri alphabétique
+- Backward compatible avec anciennes versions sans index
+
+**Fichiers modifiés** :
+- `code/js/api/xml-parser.js` (`extractParameterOptions()` lignes 450-510)
+
+**Résultat** :
+- ✅ Dropdown affiche noms propres sans index (`PolishedAluminium` au lieu de `PolishedAluminium_1`)
+- ✅ Ordre logique par index (1, 2, 3...) au lieu d'alphabétique
+- ✅ Rétrocompatible avec V0.2-V0.8
+
+##### 4. 📊 AMÉLIORATION - Notation version avec "+" (standardisation)
+
+**Problème** :
+- Confusion sur les versions : certains patterns marqués "V0.2-V0.9" alors que toujours valides en V1.0+
+- Documentation imprécise sur la persistance des patterns
+
+**Solution** :
+- Notation "V0.X+" pour indiquer "introduit en V0.X et toujours valide dans versions supérieures"
+- Uniformisation de TOUS les patterns dans `database-analyzer.js`
+
+**Exemples** :
+- `V0.2+` : Introduit en V0.2, toujours valide
+- `V0.6+` : Introduit en V0.6, toujours valide
+- `V0.9+` : Introduit en V0.9, toujours valide
+
+**Fichiers modifiés** :
+- `code/js/api/database-analyzer.js` (toutes les descriptions de patterns)
+
+**Résultat** :
+- ✅ Documentation claire de l'évolution des patterns
+- ✅ Compréhension immédiate de la compatibilité versions
+
+##### 5. 🎨 AMÉLIORATION UI - Renommage bouton Documentation
+
+**Problème** :
+- Bouton "⚙️ Configuration" prêtait à confusion (pas de configuration, mais documentation XML)
+
+**Solution** :
+- Renommage "⚙️ Configuration" → "📚 Documentation"
+- Mise à jour aria-label correspondant
+
+**Fichiers modifiés** :
+- `code/index.html` (ligne 45)
+
+**Résultat** :
+- ✅ Terminologie claire et cohérente
+- ✅ Utilisateur comprend immédiatement le rôle du bouton
+
+##### 6. 🎨 AMÉLIORATION UI - Suppression scrollbars internes
+
+**Problème** :
+- Double scrollbars dans modal Documentation (scrollbar du body + scrollbar de chaque section)
+- Interface encombrée et peu ergonomique
+
+**Solution** :
+- Passage de `grid` à `flex-direction: column` pour Parameters et Bookmarks
+- Suppression des hauteurs max et overflow internes
+- Scroll global uniquement (au niveau du body modal)
+
+**Fichiers modifiés** :
+- `code/styles/config-schema.css` (lignes 372-376, 465-469)
+
+**Résultat** :
+- ✅ Interface épurée avec scrollbar unique
+- ✅ Sections s'étendent naturellement selon contenu
+
+##### 7. 📚 FEATURE MAJEURE - Documentation patterns Bookmarks
+
+**Problème** :
+- Section Bookmarks affichait liste brute sans explication
+- Pas de documentation des patterns de nommage
+- Difficile de comprendre la structure des bookmarks
+
+**Solution** :
+- Implémentation système de détection de patterns identique aux Parameters
+- Regroupement par pattern avec description détaillée
+- Support multi-ligne pour patterns combinés (ex: RegL + RegR)
+
+**Patterns documentés** (6 catégories) :
+1. **Interior_PrestigeSelection_{PrestigeName}** (V0.2+)
+   - Bookmarks de sélection niveau finition Prestige
+   - Contient configuration par défaut de TOUS les paramètres intérieurs
+   - Exemple : `Interior_PrestigeSelection_Oslo`
+
+2. **Exterior_{PaintSchemeName}** (V0.2+)
+   - Bookmarks de sélection schéma de peinture
+   - Contient configuration par défaut de TOUS les paramètres extérieurs
+   - Exemple : `Exterior_Alize`, `Exterior_Meltem`, `Exterior_Sirocco`, etc.
+
+3. **{PaintSchemeName}_RegL_{X}_{Y} / {PaintSchemeName}_RegR_{X}_{Y}** (V0.6+)
+   - Points de départ pour positionnement immatriculation
+   - RegL = Tag surface "Registration Left", RegR = Tag surface "Registration Right"
+   - X/Y = Positions 3D en mètres
+   - Exemple : `Alize_RegL_-0.647_0.004`, `Alize_RegR_0.647_0.004`
+
+4. **{PaintSchemeName}_RegL_{X1}_{X2}_{X3}_{X4}_{X5}_{X6}_{Y}** (V0.2-V0.5)
+   - Ancienne version du pattern RegL/RegR (6 positions X au lieu d'une)
+   - Deprecated en V0.6+ mais conservé pour compatibilité bases anciennes
+
+5. **Tehuano_export** (V0.2+)
+   - Bookmark spécial pour garantir configuration par défaut
+   - Utilisé en fin de travail Lumiscaphe
+
+6. **Divers** (patterns non standardisés)
+   - Bookmarks de configuration ou positionnement sans pattern spécifique
+   - Exemples : bookmarks techniques internes Lumiscaphe
+
+**Fichiers modifiés** :
+- `code/js/api/database-analyzer.js` (lignes 1100-1300) - Détection patterns bookmarks
+- `code/js/app.js` (lignes 1850-2100) - Affichage patterns bookmarks avec multi-ligne
+- `code/styles/config-schema.css` (ligne 467) - Flex column pour bookmarks
+
+**Résultat** :
+- ✅ Documentation complète et structurée des bookmarks
+- ✅ Compréhension immédiate de la structure XML
+- ✅ Support affichage multi-ligne pour patterns combinés
+
+##### 8. 📊 AMÉLIORATION - Regroupement zones couleur
+
+**Problème** :
+- Zones A/B/C/D affichées séparément alors que structure identique
+- Redondance de documentation (même description répétée 4 fois)
+
+**Solution** :
+- Regroupement Zones A/B/C/D dans un seul cadre avec titre multi-ligne
+- Zone A+ dans un cadre séparé (structure identique mais usage différent)
+- Consolidation des exemples (toutes les couleurs disponibles dans un seul dropdown)
+
+**Format d'affichage** :
+```
+Exterior_Colors_ZoneA
+Exterior_Colors_ZoneB
+Exterior_Colors_ZoneC
+Exterior_Colors_ZoneD
+
+Pattern: Exterior_Colors_ZoneA | B | C | D.{colorName}-{code}-{hexLAB}-{hexLumiscaphe}-{tagVoilure}-{metadata...}
+```
+
+**Fichiers modifiés** :
+- `code/js/api/database-analyzer.js` (lignes 550-600) - Patterns regroupés
+- `code/js/app.js` (lignes 1650-1750) - Affichage regroupé avec titres multi-ligne
+
+**Résultat** :
+- ✅ Documentation épurée et sans redondance
+- ✅ Compréhension immédiate de la structure commune
+- ✅ Affichage compact et professionnel
+
+**Résumé section D** :
+- 10 fichiers modifiés
+- 8 améliorations/features majeures
+- Ergonomie + Documentation = Expérience utilisateur optimale
+
+---
+
 ### 11/12/2025 (Maintenance: Corrections critiques + Nettoyage code)
 **Type** : Maintenance corrective hors sprint (entre Sprint #16 et Sprint #17)
 **Durée** : ~2h

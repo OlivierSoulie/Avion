@@ -144,12 +144,19 @@ function updateFullscreenImage() {
     const image = document.getElementById('fullscreenImage');
     const counter = document.getElementById('fullscreenCounter');
     const metadata = document.getElementById('fullscreenMetadata');
+    const btnPrev = document.getElementById('fullscreenPrev');
+    const btnNext = document.getElementById('fullscreenNext');
 
     if (!image || !counter || !metadata) return;
 
     // Mettre à jour l'image et le compteur
     image.src = currentImages[currentIndex];
     counter.textContent = `${currentIndex + 1} / ${currentImages.length}`;
+
+    // Masquer les boutons de navigation si une seule image
+    const isSingleImage = currentImages.length === 1;
+    if (btnPrev) btnPrev.style.display = isSingleImage ? 'none' : '';
+    if (btnNext) btnNext.style.display = isSingleImage ? 'none' : '';
 
     // Mettre à jour les métadonnées
     const meta = currentMetadata[currentIndex];

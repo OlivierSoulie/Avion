@@ -539,8 +539,56 @@ export function getExteriorOptionsFromXML(xmlDoc) {
         return { label, value: label };
     });
 
-    // Spinner
-    options.spinner = extractParameterOptions(xmlDoc, 'Exterior_Spinner', false);
+    // Spinner - FORMAT : {NomSpinner}_{index} (index commence à 1 pour tri)
+    // Exemple : "PolishedAluminium_1", "MatteBlack_2"
+    const spinnerRaw = extractParameterOptions(xmlDoc, 'Exterior_Spinner', false);
+
+    // Fonction pour extraire le nom (sans index) : "PolishedAluminium_1" → "PolishedAluminium"
+    const formatSpinnerLabel = (rawLabel) => {
+        const parts = rawLabel.split('_');
+        // Si dernier segment est un chiffre pur, c'est l'index → le retirer
+        if (parts.length >= 2 && /^\d+$/.test(parts[parts.length - 1])) {
+            return parts.slice(0, -1).join('_'); // Tout sauf le dernier segment
+        }
+        // Pas d'index → retourner tel quel
+        return rawLabel;
+    };
+
+    // Fonction pour extraire l'index : "PolishedAluminium_1" → 1, "PolishedAluminium" → null
+    const extractSpinnerIndex = (rawLabel) => {
+        const parts = rawLabel.split('_');
+        // Si dernier segment est un chiffre pur, c'est l'index
+        if (parts.length >= 2 && /^\d+$/.test(parts[parts.length - 1])) {
+            return parseInt(parts[parts.length - 1], 10);
+        }
+        return null; // Pas d'index
+    };
+
+    // Mapper avec extraction de l'index
+    const spinnerWithIndex = spinnerRaw.map(opt => ({
+        label: formatSpinnerLabel(opt.label), // Label court pour affichage : "PolishedAluminium"
+        value: opt.value,                     // Valeur COMPLÈTE pour l'API : "PolishedAluminium-1"
+        index: extractSpinnerIndex(opt.label), // Index si présent, sinon null
+        rawLabel: opt.label                   // Label brut pour debug
+    }));
+
+    // Trier : par index si présent, sinon ordre d'apparition (garder l'ordre du XML)
+    const hasSpinnerIndex = spinnerWithIndex.some(opt => opt.index !== null);
+    if (hasSpinnerIndex) {
+        // Tri par index croissant (1, 2, 3, ...)
+        spinnerWithIndex.sort((a, b) => {
+            const indexA = a.index ?? Infinity; // Si pas d'index, mettre à la fin
+            const indexB = b.index ?? Infinity;
+            return indexA - indexB;
+        });
+    }
+    // Sinon : garder l'ordre d'apparition du XML (pas de tri alphabétique)
+
+    // Garder seulement label/value pour l'API finale
+    options.spinner = spinnerWithIndex.map(opt => ({
+        label: opt.label,
+        value: opt.value
+    }));
 
     // Decor - extraire tel quel depuis le XML (data-driven)
     // ⚠️ IMPORTANT : Supporte UNIQUEMENT les bases Production (V0.2+) avec paramètre "Decor"
