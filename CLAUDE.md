@@ -384,6 +384,68 @@ XML Config → API Snapshot → API Hotspot → SVG Overlay → Canvas Export
 
 ---
 
+#### C. Corrections bugs critiques (19/12/2025) - Fullscreen + Immatriculation PDF
+
+**Type** : Bug fixes critiques
+**Durée** : ~1h
+**Context** : Corrections de bugs bloquants identifiés par l'utilisateur
+
+##### 1. 🐛 BUG FIX CRITIQUE - Collision fullscreen entre vues PDF et Overview
+
+**Problème** :
+- Quand on passait de PDF à Overview (ou inverse), le fullscreen affichait la mauvaise image
+- Symptôme : Cliquer sur l'image Overview affichait l'image PDF en fullscreen (et vice-versa)
+
+**Cause** :
+- Deux mécanismes de masquage différents utilisés de manière incohérente :
+  - Classe CSS `hidden` (utilisée pour `mosaicGrid` et `overviewMosaic`)
+  - Style inline `style.display = 'none'` (utilisé pour `pdfViewWrapper`)
+- La détection de visibilité dans `modal.js` ne vérifiait pas les deux mécanismes
+- Résultat : `pdfViewWrapper` masqué avec `display: none` était détecté comme visible car pas de classe `hidden`
+
+**Solution** :
+- **Unification complète** sur classe CSS `hidden` uniquement (suppression de tous les `style.display`)
+- Simplification de la détection : vérification uniquement de `!classList.contains('hidden')`
+
+**Fichiers modifiés** :
+- `code/js/ui/pdf-view.js` (lignes 67-69) : Utilisation de `classList.add('hidden')`
+- `code/js/ui/mosaic.js` (3 fonctions) :
+  - `renderMosaic()` : Suppression `style.display`, ajout `classList` pour `pdfWrapper`
+  - `renderConfigMosaic()` : Suppression `style.display`, ajout `classList` pour `pdfWrapper`
+  - `renderOverviewMosaic()` : Suppression `style.display`, ajout `classList` pour `pdfWrapper`
+- `code/js/ui/modal.js` (lignes 42-52 et 70) : Simplification détection visibilité (classe uniquement)
+
+**Résultat** :
+- ✅ Fullscreen affiche maintenant toujours la bonne image selon la vue active
+- ✅ Code plus maintenable avec un seul mécanisme de masquage
+- ✅ Respect des bonnes pratiques CSS (séparation des responsabilités)
+
+##### 2. 🐛 BUG FIX CRITIQUE - Immatriculation non positionnée dans vue PDF
+
+**Problème** :
+- Les lettres d'immatriculation n'apparaissaient pas correctement positionnées dans la vue PDF
+- Symptôme : Lettres absentes ou mal placées sur l'avion dans l'onglet PDF
+
+**Cause** :
+- Les `surfaces` (positions des lettres d'immatriculation) étaient générées uniquement pour le mode `'normal'`
+- La vue PDF utilise le mode `'singleCamera'` via `buildPayloadForSingleCamera()`
+- Condition ligne 327 : `if (mode === 'normal')` excluait le mode `'singleCamera'`
+- Résultat : Payload PDF envoyé à l'API sans tableau `surfaces` → lettres non positionnées
+
+**Solution** :
+- Génération des surfaces pour **TOUS** les modes (suppression de la condition `if (mode === 'normal')`)
+- Les surfaces sont maintenant incluses systématiquement dans le payload, quel que soit le mode
+
+**Fichiers modifiés** :
+- `code/js/api/payload-builder.js` (lignes 326-336) : Suppression condition mode, génération systématique
+
+**Résultat** :
+- ✅ Vue PDF affiche maintenant l'immatriculation correctement positionnée sur l'avion
+- ✅ Cohérence entre toutes les vues (Extérieur, Intérieur, Overview, PDF)
+- ✅ Payload PDF complet avec toutes les données nécessaires
+
+---
+
 ### 11/12/2025 (Maintenance: Corrections critiques + Nettoyage code)
 **Type** : Maintenance corrective hors sprint (entre Sprint #16 et Sprint #17)
 **Durée** : ~2h

@@ -64,9 +64,9 @@ export function renderPDFView(container, imageUrl, hotspots) {
     const overviewMosaic = document.getElementById('overviewMosaic');
     const placeholder = container.querySelector('.viewport-placeholder');
 
-    if (mosaicGrid) mosaicGrid.style.display = 'none';
-    if (overviewMosaic) overviewMosaic.style.display = 'none';
-    if (placeholder) placeholder.style.display = 'none';
+    if (mosaicGrid) mosaicGrid.classList.add('hidden');
+    if (overviewMosaic) overviewMosaic.classList.add('hidden');
+    if (placeholder) placeholder.classList.add('hidden');
 
     // Supprimer l'ancien wrapper PDF s'il existe
     const oldWrapper = container.querySelector('.pdf-view-wrapper');

@@ -47,7 +47,7 @@ export function openFullscreen(imageIndex) {
         images = overviewMosaic.querySelectorAll('img.overview-main-image, img.overview-secondary-image');
     }
     // Sinon chercher dans pdfViewWrapper (vue PDF)
-    else if (pdfViewWrapper) {
+    else if (pdfViewWrapper && !pdfViewWrapper.classList.contains('hidden')) {
         images = pdfViewWrapper.querySelectorAll('img');
     }
 
@@ -67,7 +67,7 @@ export function openFullscreen(imageIndex) {
         let viewType = 'image';
 
         // Détecter vue PDF
-        if (pdfViewWrapper && pdfViewWrapper.style.display !== 'none') {
+        if (pdfViewWrapper && !pdfViewWrapper.classList.contains('hidden')) {
             return 'vue_pdf_hotspots.png';
         }
 

@@ -107,20 +107,18 @@ export function renderMosaic(imageData, viewType = 'exterior') {
     // Masquer la mosaïque Overview si elle existe
     if (overviewMosaic) {
         overviewMosaic.classList.add('hidden');
-        overviewMosaic.style.display = 'none';
     }
 
     // Masquer la vue PDF si elle existe
     if (viewportDisplay) {
         const pdfWrapper = viewportDisplay.querySelector('.pdf-view-wrapper');
         if (pdfWrapper) {
-            pdfWrapper.style.display = 'none';
+            pdfWrapper.classList.add('hidden');
         }
     }
 
     // Afficher mosaicGrid
     mosaicGrid.classList.remove('hidden');
-    mosaicGrid.style.display = '';
 
     // Vider la mosaïque
     mosaicGrid.innerHTML = '';
@@ -231,20 +229,18 @@ export async function renderConfigMosaic(imagesData) {
     // Masquer la mosaïque Overview si elle existe
     if (overviewMosaic) {
         overviewMosaic.classList.add('hidden');
-        overviewMosaic.style.display = 'none';
     }
 
     // Masquer la vue PDF si elle existe
     if (viewportDisplay) {
         const pdfWrapper = viewportDisplay.querySelector('.pdf-view-wrapper');
         if (pdfWrapper) {
-            pdfWrapper.style.display = 'none';
+            pdfWrapper.classList.add('hidden');
         }
     }
 
     // Afficher mosaicGrid
     mosaicGrid.classList.remove('hidden');
-    mosaicGrid.style.display = '';
 
     // Vider la mosaïque
     mosaicGrid.innerHTML = '';
@@ -378,20 +374,18 @@ export function renderOverviewMosaic(imageA, imagesSecondary, airplaneType) {
     // Masquer la mosaïque standard si elle existe
     if (mosaicGrid) {
         mosaicGrid.classList.add('hidden');
-        mosaicGrid.style.display = 'none';
     }
 
     // Masquer la vue PDF si elle existe
     if (viewportDisplay) {
         const pdfWrapper = viewportDisplay.querySelector('.pdf-view-wrapper');
         if (pdfWrapper) {
-            pdfWrapper.style.display = 'none';
+            pdfWrapper.classList.add('hidden');
         }
     }
 
     // Afficher la mosaïque Overview
     overviewMosaic.classList.remove('hidden');
-    overviewMosaic.style.display = '';
 
     // 1. Afficher image A (principale)
     // Cloner l'élément pour supprimer tous les anciens event listeners (éviter fuites mémoire)

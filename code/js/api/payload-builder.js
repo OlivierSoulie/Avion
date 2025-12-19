@@ -323,18 +323,17 @@ async function buildPayloadBase(config, mode) {
         materials = generated.materials;
         materialMultiLayers = generated.materialMultiLayers;
 
-        // 5. Construire surfaces (vide pour singleCamera, rempli pour normal)
-        if (mode === 'normal') {
-            // Extraire le nom court du paintScheme pour les anchors
-            // V0.2-V0.5 : "Zephir_B-0_..." → "Zephir"
-            // V0.6+     : "Zephir_1_B-0_..." → "Zephir"
-            const paintSchemeName = config.paintScheme.split('_')[0];
+        // 5. Construire surfaces (positions des lettres d'immatriculation)
+        // IMPORTANT : Nécessaire pour TOUS les modes (normal ET singleCamera)
+        // Extraire le nom court du paintScheme pour les anchors
+        // V0.2-V0.5 : "Zephir_B-0_..." → "Zephir"
+        // V0.6+     : "Zephir_1_B-0_..." → "Zephir"
+        const paintSchemeName = config.paintScheme.split('_')[0];
 
-            // Extraire les anchors pour le positionnement (depuis XML)
-            const anchors = extractAnchors(xmlDoc, paintSchemeName);
-            // Générer les surfaces (positions des lettres)
-            surfaces = generateSurfaces(config.immat, anchors);
-        }
+        // Extraire les anchors pour le positionnement (depuis XML)
+        const anchors = extractAnchors(xmlDoc, paintSchemeName);
+        // Générer les surfaces (positions des lettres)
+        surfaces = generateSurfaces(config.immat, anchors);
     } else {
     }
 
