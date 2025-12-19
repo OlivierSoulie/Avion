@@ -2,7 +2,7 @@
 
 **Projet** : 005-Configurateur_Daher
 **Sprint actuel** : Aucun (Sprint #18 terminé ✅)
-**Derniere mise a jour** : 19/12/2025 - Sprint #18 terminé - US-051 validée (hors process)
+**Derniere mise a jour** : 19/12/2025 - Corrections bugs critiques (fullscreen + immatriculation PDF) - Commit 1d31ff0
 **Équipe** : 6 agents (PO + ARCH + COORDINATOR + 1 DEV-Généraliste + 1 QA-Fonctionnel + 1 DOC)
 
 ---
