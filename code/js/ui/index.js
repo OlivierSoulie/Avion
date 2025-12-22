@@ -49,7 +49,7 @@ import {
 import { initMobileMenu } from './mobile-menu.js';
 
 // Vue PDF
-import { renderPDFView } from './pdf-view.js';
+import { renderPDFView, renderPDFMosaic } from './pdf-view.js';
 
 // ======================================
 // Re-exports publics
@@ -89,7 +89,7 @@ export {
 export { initMobileMenu };
 
 // Vue PDF
-export { renderPDFView };
+export { renderPDFView, renderPDFMosaic };
 
 // ======================================
 // Export par défaut pour compatibilité

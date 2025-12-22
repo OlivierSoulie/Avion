@@ -282,6 +282,210 @@ git push origin main
 
 ## Changelog
 
+### 22/12/2025 (Hotfixes: Mosaïque PDF 3 caméras + Système labels coins)
+
+**Type** : Corrections et améliorations hors sprint
+**Durée** : ~4h
+**Context** : Améliorations ergonomie et corrections vue PDF mosaïque
+
+#### 1. BUG FIX CRITIQUE - Positionnement hotspots vues carrées (1:1)
+
+**Problème** :
+- Hotspots mal positionnés dans les 2 vues carrées (dessus/dessous) de la mosaïque PDF
+- Les coordonnées 3D→2D projetées ne correspondaient pas à l'affichage réel
+
+**Cause** :
+- API recevait 1920x1080 pour toutes les caméras
+- Les vues carrées nécessitent 1080x1080 pour projection correcte
+
+**Solution** :
+- Adaptation dimensions selon index caméra dans `generatePDFMosaic()`
+- Caméra 0 (profil) : 16:9 → 1920x1080
+- Caméras 1 et 2 (dessus/dessous) : 1:1 → 1080x1080
+- Dimensions passées à `/Snapshot` ET `/Hotspot`
+
+**Fichiers modifiés** :
+- `code/js/api/pdf-generation.js` (lignes 113-157)
+
+**Résultat** :
+- ✅ Hotspots correctement positionnés sur toutes les vues
+
+---
+
+#### 2. BUG FIX - Duplication images lors changement onglet
+
+**Problème** :
+- Clic répété sur onglet PDF dupliquait les images
+
+**Cause** :
+- Suppression uniquement de `.pdf-view-wrapper`, pas de `.pdf-mosaic-wrapper`
+
+**Solution** :
+- Ajout suppression `.pdf-mosaic-wrapper` avant recréation
+
+**Fichiers modifiés** :
+- `code/js/ui/pdf-view.js` (lignes 752-755)
+
+**Résultat** :
+- ✅ Pas de duplication images
+
+---
+
+#### 3. AMÉLIORATION UI - Tailles et proportions mosaïque
+
+**Modifications** :
+- Vue profil (16:9) : 32vh
+- Vues carrées (1:1) : 38vh container, maxWidth 67.6vh
+- Largeur totale mosaïque : largeur 2 vues carrées = largeur vue profil
+
+**Fichiers modifiés** :
+- `code/styles/viewport.css` (dimensions mosaïque PDF)
+
+**Résultat** :
+- ✅ Proportions harmonieuses sans ascenseurs
+- ✅ Alignement largeur parfait
+
+---
+
+#### 4. FEATURE MAJEURE - Système labels 6 zones coins (vues 1:1)
+
+**Problème** :
+- Système slots horizontal inadapté aux vues dessus/dessous
+- Labels couvraient l'avion central
+
+**Solution** :
+- **6 zones coins** : topLeft, topRight, middleLeft, middleRight, bottomLeft, bottomRight
+- **Distribution intelligente** :
+  - Séparation gauche/droite selon position X hotspot
+  - Tri par Y (haut vers bas)
+  - Répartition tiers égaux par côté (1/3 top, 1/3 middle, 1/3 bottom)
+- **Zone middle** : 55% hauteur (alignement ailes avion)
+
+**Fichiers modifiés** :
+- `code/js/ui/pdf-view.js` (lignes 263-327)
+
+**Résultat** :
+- ✅ Labels toujours dans zones sans avion
+- ✅ Distribution équilibrée automatique
+
+---
+
+#### 5. AMÉLIORATION UI - Layout labels (texte sous carré)
+
+**Évolution** : Plusieurs itérations pour layout optimal
+
+**Layout final** :
+- **Ordre** : BORD → CARRÉ → TEXTE (vertical)
+- Carré au bord (selon zone : gauche ou droite)
+- Texte centré horizontalement sous le carré
+- Ligne vers centre du carré depuis hotspot
+
+**Paramètres** :
+- Largeur texte : 55px (fixe)
+- Espacement carré-texte : 4px
+- Offset bord : 0.25x textOffset
+
+**Fichiers modifiés** :
+- `code/js/ui/pdf-view.js` (`createCornerLabel` lignes 540-656)
+
+**Résultat** :
+- ✅ Layout épuré et lisible
+- ✅ Texte toujours dans l'image
+
+---
+
+#### 6. BUG FIX - Débordement zones bottom
+
+**Problème** :
+- Labels zones bottom dépassaient hors image
+- Texte/carrés non visibles
+
+**Cause** :
+- Position baseY au coin, mais empilage vers le bas
+- Dernier élément sortait de l'image
+
+**Solution** :
+- Calcul `baseY = cornerPos.y - totalHeight` pour zones bottom
+- Empilement vers le haut au lieu du bas
+- Hauteur totale = carré + texte + espacement
+
+**Fichiers modifiés** :
+- `code/js/ui/pdf-view.js` (`createCornerLabel` lignes 558-569)
+
+**Résultat** :
+- ✅ Tous labels visibles dans l'image
+
+---
+
+#### 7. AMÉLIORATION - Justification texte adaptative
+
+**Implémentation** :
+- Zones left : texte justifié gauche (`textAnchor='start'`)
+- Zones right : texte justifié droite (`textAnchor='end'`)
+- Zones bottom : texte centré sous carré (`textAnchor='middle'`)
+
+**Fichiers modifiés** :
+- `code/js/ui/pdf-view.js` (SVG + Canvas)
+
+**Résultat** :
+- ✅ Lisibilité optimale selon position
+
+---
+
+#### 8. FEATURE CRITIQUE - Navigation fullscreen avec SVG bakés
+
+**Problème** :
+- Fullscreen : seule image cliquée avait overlay SVG
+- Navigation (flèches) : autres images sans hotspots
+
+**Cause** :
+- Génération composite uniquement pour image cliquée
+
+**Solution** :
+- **Génération parallèle** : 3 composites via `Promise.all`
+- **Stockage hotspots** : `wrapper.dataset.hotspots` (JSON)
+- **Remplacement temporaire** : 3 images sources
+- **Cleanup intelligent** : `MutationObserver` détecte fermeture modal
+- **Révocation blobs** : libération mémoire automatique
+
+**Fichiers modifiés** :
+- `code/js/ui/pdf-view.js` (`createPDFViewElement` lignes 1310-1372)
+
+**Résultat** :
+- ✅ Navigation fullscreen complète avec hotspots sur les 3 vues
+- ✅ Pas de fuite mémoire (cleanup blobs)
+
+---
+
+#### 9. AMÉLIORATION - Détection PDF mosaic dans modal
+
+**Ajout** :
+- Support `.pdf-mosaic-wrapper` dans détection mosaïque active
+- Génération filenames pour download (`vue_pdf_profil_hotspots.png`, etc.)
+
+**Fichiers modifiés** :
+- `code/js/ui/modal.js` (lignes 38, 54-57, 75-83)
+
+**Résultat** :
+- ✅ Fullscreen + download fonctionnent pour mosaïque PDF
+
+---
+
+**Impact total** :
+- 5 fichiers modifiés
+- ~600 lignes ajoutées/modifiées
+- 9 corrections/améliorations majeures
+
+**Fonctionnalités finales** :
+- ✅ Mosaïque PDF 3 caméras (1x 16:9 + 2x 1:1)
+- ✅ Hotspots précis sur toutes vues
+- ✅ Labels 6 zones intelligentes (vues 1:1)
+- ✅ Layout texte sous carré
+- ✅ Navigation fullscreen complète
+- ✅ Code production (pas de console.log)
+
+---
+
 ### 19/12/2025 (Sprint #18: Vue PDF + Maintenance watermark Overview)
 
 #### A. Sprint #18 - Vue PDF avec Hotspots (✅ TERMINÉ - Hors process Scrumban)

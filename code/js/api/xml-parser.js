@@ -1263,3 +1263,54 @@ export async function getPDFCameraId() {
         throw error;
     }
 }
+
+/**
+ * Récupère les 3 dernières caméras du groupe "Overview" pour la mosaïque PDF
+ * @returns {Promise<Array<Object>>} Array de 3 objets {id, name} des caméras 4, 5, 6
+ * @throws {Error} Si le groupe n'existe pas ou n'a pas au moins 7 caméras
+ */
+export async function getPDFCameras() {
+    try {
+        const xmlDoc = await getDatabaseXML();
+        const groups = xmlDoc.querySelectorAll('Group');
+
+        // Rechercher le groupe "Overview"
+        let overviewGroup = null;
+        for (let group of groups) {
+            const groupName = group.getAttribute('name');
+            if (groupName === 'Overview') {
+                overviewGroup = group;
+                break;
+            }
+        }
+
+        if (!overviewGroup) {
+            throw new Error('Groupe caméra "Overview" introuvable dans le XML');
+        }
+
+        const groupId = overviewGroup.getAttribute('id');
+
+        // Récupérer toutes les caméras du groupe
+        const cameras = await getCameraListFromGroup(groupId);
+
+        if (cameras.length < 7) {
+            throw new Error(`Le groupe "Overview" doit contenir au moins 7 caméras pour la mosaïque PDF (trouvé: ${cameras.length})`);
+        }
+
+        // Retourner les 3 dernières caméras (indices 4, 5, 6)
+        // Caméra 4 (index 4) : Principale 16:9
+        // Caméra 5 (index 5) : Secondaire 1:1 gauche
+        // Caméra 6 (index 6) : Secondaire 1:1 droite
+        const pdfCameras = [
+            cameras[4],  // 5ème caméra
+            cameras[5],  // 6ème caméra
+            cameras[6]   // 7ème caméra
+        ];
+
+        return pdfCameras;
+
+    } catch (error) {
+        console.error('❌ Erreur récupération caméras PDF mosaïque:', error);
+        throw error;
+    }
+}

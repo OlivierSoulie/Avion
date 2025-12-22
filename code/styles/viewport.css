@@ -513,7 +513,7 @@
     width: 100%;
     flex-shrink: 0; /* Empêche la compression */
     aspect-ratio: 16 / 9;
-    max-height: 50vh; /* Augmenté car les vignettes sont plus petites */
+    max-height: 36vh; /* Fortement réduit pour éliminer ascenseur (était 50vh) */
     overflow: hidden;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-xl);
@@ -525,7 +525,7 @@
     top: 25%; /* Moitié de la moitié supérieure (derrière l'avion) */
     left: 50%;
     transform: translate(-50%, -50%); /* Centré horizontalement et verticalement */
-    font-size: 120px; /* Réduit pour tenir "TBM 980" sur une ligne */
+    font-size: 90px; /* Réduit proportionnellement car image principale plus petite (était 120px) */
     font-weight: bold;
     color: #E00500; /* Rouge Daher */
     opacity: 0.8;
@@ -557,29 +557,33 @@
     grid-template-columns: repeat(3, 1fr);
     gap: 0.5rem;
     flex-shrink: 1; /* Permet de réduire si nécessaire */
+    max-height: 26vh; /* Fortement réduit : total 36vh + 26vh = 62vh (était 32vh) */
+    align-items: center; /* Centre verticalement si besoin */
 }
 
 /* Wrapper pour chaque image secondaire + bouton download */
 .overview-secondary-item {
     position: relative;
     width: 100%;
+    overflow: hidden; /* Évite le débordement au survol */
+    border-radius: var(--radius-md); /* Appliqué au container pour cohérence */
 }
 
 /* Images secondaires (B, C, D) */
 .overview-secondary-image {
     width: 100%;
     height: auto;
-    max-height: 120px; /* Limite la hauteur pour donner plus d'espace à l'image principale */
+    max-height: 24vh; /* Fortement réduit pour s'adapter (était 30vh) */
     object-fit: cover;
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-md);
     cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
-    aspect-ratio: 16 / 9;
+    aspect-ratio: 1 / 1; /* Format carré (anciennement 16 / 9) */
 }
 
 .overview-secondary-image:hover {
-    transform: scale(1.05);
+    transform: scale(1.02); /* Réduit pour éviter ascenseur horizontal (anciennement 1.05) */
     box-shadow: var(--shadow-xl);
 }
 
@@ -594,7 +598,7 @@
 /* Tablette (768px - 1024px) */
 @media (max-width: 1024px) {
     .airplane-type-watermark {
-        font-size: 100px;
+        font-size: 75px; /* Réduit proportionnellement (était 100px) */
     }
 
     .overview-secondary-images {
@@ -611,28 +615,33 @@
     }
 
     .overview-main-image-wrapper {
-        max-height: 40vh; /* Limite l'image principale à 40% en mobile */
+        max-height: 35vh; /* Réduit pour cohérence (était 40vh) */
     }
 
     .airplane-type-watermark {
-        font-size: 80px; /* Adapté pour mobile */
+        font-size: 60px; /* Réduit proportionnellement (était 80px) */
     }
 
     .overview-secondary-images {
         grid-template-columns: 1fr; /* Empilé verticalement sur mobile */
         gap: 0.5rem;
+        max-height: none; /* Pas de limite en mobile (empilé verticalement) */
+    }
+
+    .overview-secondary-image {
+        max-height: 25vh; /* Réduit pour cohérence (était 30vh) */
     }
 }
 
 /* Très petit écran (< 480px) */
 @media (max-width: 480px) {
     .overview-main-image-wrapper {
-        max-height: 35vh; /* Encore plus petit sur très petit écran */
+        max-height: 30vh; /* Réduit pour cohérence (était 35vh) */
         border-radius: var(--radius-md);
     }
 
     .airplane-type-watermark {
-        font-size: 60px;
+        font-size: 45px; /* Réduit proportionnellement (était 60px) */
     }
 
     .overview-secondary-image {

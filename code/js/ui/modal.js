@@ -35,6 +35,7 @@ export function openFullscreen(imageIndex) {
     const mosaicGrid = document.getElementById('mosaicGrid');
     const overviewMosaic = document.getElementById('overviewMosaic');
     const pdfViewWrapper = document.querySelector('.pdf-view-wrapper');
+    const pdfMosaicWrapper = document.querySelector('.pdf-mosaic-wrapper');
 
     let images = [];
 
@@ -46,9 +47,13 @@ export function openFullscreen(imageIndex) {
     else if (overviewMosaic && !overviewMosaic.classList.contains('hidden')) {
         images = overviewMosaic.querySelectorAll('img.overview-main-image, img.overview-secondary-image');
     }
-    // Sinon chercher dans pdfViewWrapper (vue PDF)
+    // Sinon chercher dans pdfViewWrapper (vue PDF simple)
     else if (pdfViewWrapper && !pdfViewWrapper.classList.contains('hidden')) {
         images = pdfViewWrapper.querySelectorAll('img');
+    }
+    // Sinon chercher dans pdfMosaicWrapper (vue PDF mosaïque)
+    else if (pdfMosaicWrapper && !pdfMosaicWrapper.classList.contains('hidden')) {
+        images = pdfMosaicWrapper.querySelectorAll('img');
     }
 
     if (images.length === 0) return;
@@ -66,8 +71,14 @@ export function openFullscreen(imageIndex) {
         // Déterminer le type de vue à partir du parent
         let viewType = 'image';
 
-        // Détecter vue PDF
-        if (pdfViewWrapper && !pdfViewWrapper.classList.contains('hidden')) {
+        // Détecter vue PDF (simple ou mosaïque)
+        if ((pdfViewWrapper && !pdfViewWrapper.classList.contains('hidden')) ||
+            (pdfMosaicWrapper && !pdfMosaicWrapper.classList.contains('hidden'))) {
+            // Pour la mosaïque PDF, différencier les 3 vues
+            if (pdfMosaicWrapper) {
+                const viewNames = ['vue_pdf_profil_hotspots.png', 'vue_pdf_dessus_hotspots.png', 'vue_pdf_dessous_hotspots.png'];
+                return viewNames[idx] || 'vue_pdf_hotspots.png';
+            }
             return 'vue_pdf_hotspots.png';
         }
 

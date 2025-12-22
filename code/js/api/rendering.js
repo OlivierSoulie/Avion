@@ -150,7 +150,8 @@ export async function fetchOverviewImages(config) {
         const imageAValidated = await downloadImages(imageAData);
 
         // 3. Appels API pour caméras B, C, D (JPEG)
-        const secondaryCameras = cameras.slice(1); // Prendre caméras 1, 2, 3 (B, C, D)
+        // Limiter à 4 caméras au total (uniformité entre versions)
+        const secondaryCameras = cameras.slice(1, 4); // Prendre uniquement caméras 1, 2, 3 (B, C, D)
         const secondaryPromises = secondaryCameras.map(async (camera) => {
             const payload = await buildOverviewPayload(camera.id, false, config);
             const imageData = await callLumiscapheAPI(payload);

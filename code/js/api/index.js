@@ -25,7 +25,8 @@ export {
     parsePaintSchemeBookmark,
     getExteriorColorZones,
     validateConfigForDatabase, // US-040
-    getPDFCameraId // PDF View : récupération caméra dynamique
+    getPDFCameraId, // PDF View : récupération caméra dynamique (ancienne version)
+    getPDFCameras // PDF View : récupération 3 caméras pour mosaïque
 } from './xml-parser.js';
 
 // ======================================
@@ -74,5 +75,6 @@ export {
 // Re-export PDF Generation
 // ======================================
 export {
-    generatePDFView
+    generatePDFView,      // Vue PDF originale (1 caméra Studio)
+    generatePDFMosaic     // Vue PDF mosaïque (3 caméras Overview)
 } from './pdf-generation.js';

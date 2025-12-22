@@ -2,7 +2,7 @@
 
 **Projet** : 005-Configurateur_Daher
 **Sprint actuel** : Aucun (Sprint #18 terminé ✅)
-**Derniere mise a jour** : 19/12/2025 - Corrections bugs critiques (fullscreen + immatriculation PDF) - Commit 1d31ff0
+**Derniere mise a jour** : 22/12/2025 - Hotfixes: 9 corrections/améliorations mosaïque PDF (système labels 6 zones coins + navigation fullscreen)
 **Équipe** : 6 agents (PO + ARCH + COORDINATOR + 1 DEV-Généraliste + 1 QA-Fonctionnel + 1 DOC)
 
 ---
@@ -13,6 +13,199 @@
 - **In Progress** : En cours de développement (limite WIP: 2 tâches max)
 - **Testing** : En cours de test par QA
 - **Done** : Terminé et validé
+
+---
+
+## 🔧 Hotfixes Post-Sprint #18 (22/12/2025)
+
+### ✅ Done
+
+- **[HOTFIX-014]** Navigation fullscreen avec SVG bakés pour les 3 vues PDF mosaïque
+  - **Problème** : Fullscreen affichait overlay SVG uniquement sur image cliquée, navigation (flèches) montrait images sans hotspots
+  - **Cause** : Génération composite uniquement pour image cliquée
+  - **Solutions** :
+    - Génération parallèle des 3 composites via `Promise.all` au clic
+    - Stockage hotspots dans `wrapper.dataset.hotspots` (JSON)
+    - Remplacement temporaire des 3 sources images
+    - Cleanup intelligent avec `MutationObserver` (détecte fermeture modal)
+    - Révocation blobs pour libération mémoire
+  - **Impact** : Navigation fullscreen complète avec hotspots sur toutes les vues, pas de fuite mémoire
+  - **Fichiers modifiés** : `code/js/ui/pdf-view.js` (lignes 1310-1372)
+  - **Agent** : DEV-Généraliste
+  - **Durée** : 45 min
+  - **Coordonné par** : COORDINATOR
+  - **Date** : 22/12/2025
+
+- **[HOTFIX-013]** Débordement labels zones bottom (vues 1:1)
+  - **Problème** : Labels zones bottomLeft/bottomRight dépassaient hors image
+  - **Cause** : Position baseY au coin mais empilage vers le bas
+  - **Solution** : Calcul `baseY = cornerPos.y - totalHeight` pour zones bottom, empilage vers le haut
+  - **Impact** : Tous labels visibles dans l'image
+  - **Fichiers modifiés** : `code/js/ui/pdf-view.js` (`createCornerLabel` lignes 558-569)
+  - **Agent** : DEV-Généraliste
+  - **Durée** : 20 min
+  - **Coordonné par** : COORDINATOR
+  - **Date** : 22/12/2025
+
+- **[HOTFIX-012]** Layout labels : texte sous carré (au lieu de côté)
+  - **Problème** : Texte à côté du carré créait débordements et confusion visuelle
+  - **Solution** :
+    - Ordre vertical : BORD → CARRÉ → TEXTE
+    - Carré au bord (gauche ou droite selon zone)
+    - Texte centré horizontalement sous le carré
+    - Ligne vers centre du carré depuis hotspot
+  - **Paramètres** : Largeur texte 55px (fixe), espacement 4px, offset bord 0.25x
+  - **Impact** : Layout épuré, texte toujours visible
+  - **Fichiers modifiés** : `code/js/ui/pdf-view.js` (`createCornerLabel` lignes 540-656)
+  - **Agent** : DEV-Généraliste
+  - **Durée** : 1h (multiples itérations)
+  - **Coordonné par** : COORDINATOR
+  - **Date** : 22/12/2025
+
+- **[HOTFIX-011]** Justification texte adaptative selon zone
+  - **Solution** :
+    - Zones left : texte justifié gauche (`textAnchor='start'`)
+    - Zones right : texte justifié droite (`textAnchor='end'`)
+    - Zones bottom : texte centré (`textAnchor='middle'`)
+  - **Impact** : Lisibilité optimale selon position
+  - **Fichiers modifiés** : `code/js/ui/pdf-view.js` (SVG + Canvas)
+  - **Agent** : DEV-Généraliste
+  - **Durée** : 15 min
+  - **Coordonné par** : COORDINATOR
+  - **Date** : 22/12/2025
+
+- **[HOTFIX-010]** Système labels 6 zones coins pour vues 1:1
+  - **Problème** : Système slots horizontal inadapté, labels couvraient l'avion
+  - **Solution** :
+    - 6 zones coins : topLeft, topRight, middleLeft, middleRight, bottomLeft, bottomRight
+    - Distribution intelligente : séparation gauche/droite (X), tri Y, répartition tiers égaux
+    - Zone middle à 55% hauteur (alignement ailes)
+  - **Impact** : Labels toujours hors avion, distribution équilibrée automatique
+  - **Fichiers modifiés** : `code/js/ui/pdf-view.js` (lignes 263-327)
+  - **Agent** : DEV-Généraliste
+  - **Durée** : 30 min
+  - **Coordonné par** : COORDINATOR
+  - **Date** : 22/12/2025
+
+- **[HOTFIX-009]** Tailles et proportions mosaïque PDF
+  - **Objectif** : Harmoniser tailles et alignement largeur
+  - **Solution** :
+    - Vue profil (16:9) : 32vh
+    - Vues carrées (1:1) : 38vh container, maxWidth 67.6vh
+    - Largeur 2 vues carrées = largeur vue profil
+  - **Impact** : Proportions harmonieuses, pas d'ascenseurs
+  - **Fichiers modifiés** : `code/styles/viewport.css`
+  - **Agent** : DEV-Généraliste
+  - **Durée** : 10 min
+  - **Coordonné par** : COORDINATOR
+  - **Date** : 22/12/2025
+
+- **[HOTFIX-008]** Détection PDF mosaic dans modal fullscreen
+  - **Solution** : Support `.pdf-mosaic-wrapper` dans détection mosaïque active + filenames download
+  - **Impact** : Fullscreen + download fonctionnent pour mosaïque PDF
+  - **Fichiers modifiés** : `code/js/ui/modal.js` (lignes 38, 54-57, 75-83)
+  - **Agent** : DEV-Généraliste
+  - **Durée** : 5 min
+  - **Coordonné par** : COORDINATOR
+  - **Date** : 22/12/2025
+
+- **[HOTFIX-007]** Duplication images lors changement onglet PDF
+  - **Problème** : Clic répété sur onglet PDF dupliquait les images
+  - **Cause** : Suppression uniquement `.pdf-view-wrapper`, pas `.pdf-mosaic-wrapper`
+  - **Solution** : Ajout suppression `.pdf-mosaic-wrapper` avant recréation
+  - **Impact** : Pas de duplication
+  - **Fichiers modifiés** : `code/js/ui/pdf-view.js` (lignes 752-755)
+  - **Agent** : DEV-Généraliste
+  - **Durée** : 5 min
+  - **Coordonné par** : COORDINATOR
+  - **Date** : 22/12/2025
+
+- **[HOTFIX-006]** Positionnement hotspots vues carrées 1:1
+  - **Problème** : Hotspots mal positionnés dans vues dessus/dessous (carrées) de mosaïque PDF
+  - **Cause** : API recevait 1920x1080 pour toutes caméras, vues carrées nécessitent 1080x1080
+  - **Solution** :
+    - Adaptation dimensions selon index caméra dans `generatePDFMosaic()`
+    - Caméra 0 (profil) : 16:9 → 1920x1080
+    - Caméras 1 et 2 (dessus/dessous) : 1:1 → 1080x1080
+    - Dimensions passées à `/Snapshot` ET `/Hotspot`
+  - **Impact** : Hotspots correctement positionnés sur toutes vues
+  - **Fichiers modifiés** : `code/js/api/pdf-generation.js` (lignes 113-157)
+  - **Agent** : DEV-Généraliste
+  - **Durée** : 15 min
+  - **Coordonné par** : COORDINATOR
+  - **Date** : 22/12/2025
+
+- **[HOTFIX-005]** Filtrage hotspots selon visibility dans vue PDF
+  - **Problème** : Les hotspots avec `visibility = false`, "Hidden" ou "Occluded" étaient affichés
+  - **Objectif** : N'afficher QUE les hotspots visibles (visibility = true, "Visible" ou "visible")
+  - **Solutions** :
+    - Amélioration du filtre dans `createSVGOverlay()` (ligne 240-242)
+    - Amélioration du filtre dans `generateCompositeImage()` (ligne 556-558)
+    - Filtre robuste : affiche uniquement `true`, `"Visible"` ou `"visible"`
+    - Ignore : `false`, `"Hidden"`, `"Occluded"` et toutes autres valeurs
+  - **Impact** : Les hotspots cachés (derrière l'avion, non visibles, etc.) ne sont plus affichés
+  - **Fichiers modifiés** : `code/js/ui/pdf-view.js` (2 endroits)
+  - **Agent** : DEV-Généraliste
+  - **Durée** : 5 min
+  - **Coordonné par** : COORDINATOR
+  - **Date** : 22/12/2025
+
+- **[HOTFIX-001]** Limitation caméras Overview à 4 (uniformité versions V0.9.1)
+  - **Problème** : Version 0.9.1 a 7 caméras dans groupe Overview, mais on veut conserver 4 pour uniformité
+  - **Solution** : Modifié `cameras.slice(1)` → `cameras.slice(1, 4)` dans `api/rendering.js` ligne 154
+  - **Impact** : Toutes les versions affichent maintenant exactement 4 caméras Overview
+  - **Agent** : DEV-Généraliste
+  - **Durée** : 5 min
+  - **Coordonné par** : COORDINATOR
+  - **Date** : 22/12/2025
+
+- **[HOTFIX-002]** Doublement hauteur caméras secondaires Overview (B, C, D)
+  - **Objectif** : Améliorer la visibilité des 3 caméras secondaires dans l'onglet Overview
+  - **Solution** : Modifié `max-height: 120px` → `max-height: 240px` dans `styles/viewport.css` ligne 572
+  - **Impact** : Les 3 images secondaires (B, C, D) ont maintenant une hauteur 2× plus grande pour meilleure visibilité
+  - **Agent** : DEV-Généraliste
+  - **Durée** : 3 min
+  - **Coordonné par** : COORDINATOR
+  - **Date** : 22/12/2025
+
+- **[HOTFIX-003]** Format carré pour images secondaires Overview + Prévention débordement survol
+  - **Objectif** : Transformer les 3 images secondaires en format carré et éviter l'ascenseur horizontal au survol
+  - **Solutions** :
+    - Modifié `aspect-ratio: 16 / 9` → `aspect-ratio: 1 / 1` (format carré)
+    - Ajouté `overflow: hidden` sur `.overview-secondary-item` pour contenir le débordement
+    - Réduit effet survol `scale(1.05)` → `scale(1.02)` pour minimiser débordement
+    - Appliqué dans `styles/viewport.css` lignes 563-583
+    - Synchronisé dans `styles/medium-screen.css` ligne 221 (responsive)
+  - **Impact** : Images secondaires carrées (1:1), espacement préservé, pas d'ascenseur horizontal au survol
+  - **Agent** : DEV-Généraliste
+  - **Durée** : 5 min
+  - **Coordonné par** : COORDINATOR
+  - **Date** : 22/12/2025
+
+- **[HOTFIX-004]** Réduction hauteur totale Overview pour éliminer ascenseur vertical (itération finale)
+  - **Problème** : Hauteur totale mosaïque trop grande (88vh+) créait ascenseur vertical en grand écran
+  - **Objectif** : Réduire d'au moins 100px la hauteur totale pour éliminer complètement l'ascenseur
+  - **Solutions** (réduction agressive) :
+    - **Image principale** : `50vh` → `36vh` (réduction de **14vh** soit ~150px sur écran 1080p)
+    - **Container secondaire** : `38vh` → `26vh` (réduction de **12vh**)
+    - **Images carrées** : `36vh` → `24vh` (réduction de **12vh**)
+    - **Watermark** : `120px` → `90px` (réduction proportionnelle de 25%)
+    - **Total mosaïque** : `88vh+` → `62vh+` (réduction de **~26vh** soit ~280px sur écran 1080p)
+  - **Media queries responsive adaptées** :
+    - Desktop (défaut) : Image 36vh + Container 26vh (images 24vh)
+    - Écrans 1025-1366px : Image 38vh + Container 28vh (images 26vh)
+    - Tablet 769-1024px : Image 36vh + Container 26vh (images 24vh)
+    - Mobile < 768px : Image 35vh + Container none (images 25vh, empilé)
+    - Très petit < 480px : Image 30vh + images 25vh
+    - Watermark : 90px / 75px / 60px / 45px (proportionnel)
+  - **Fichiers modifiés** :
+    - `styles/viewport.css` : lignes 516, 528, 560, 576, 601, 618, 622, 632, 639, 644
+    - `styles/medium-screen.css` : lignes 211, 218, 224, 230, 235, 239
+  - **Impact** : Hauteur totale réduite de ~280px, pas d'ascenseur vertical même sur grands écrans, responsive cohérent
+  - **Agent** : DEV-Généraliste
+  - **Durée** : 15 min (incluant toutes itérations + ajustements watermark + responsive)
+  - **Coordonné par** : COORDINATOR
+  - **Date** : 22/12/2025
 
 ---
 

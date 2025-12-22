@@ -208,27 +208,34 @@
 @media (min-width: 769px) and (max-width: 1024px) {
     /* Image principale Overview - limite la hauteur */
     .overview-main-image-wrapper {
-        max-height: 50vh;
+        max-height: 36vh; /* Fortement réduit pour éliminer ascenseur */
     }
 
     /* Images secondaires - grille adaptée */
     .overview-secondary-images {
         grid-template-columns: repeat(3, 1fr);
         gap: 0.5rem;
+        max-height: 26vh; /* Fortement réduit pour éliminer ascenseur */
     }
 
     .overview-secondary-image {
-        aspect-ratio: 16 / 9;
+        aspect-ratio: 1 / 1; /* Format carré pour cohérence */
         object-fit: cover;
+        max-height: 24vh; /* Fortement réduit pour s'adapter */
     }
 }
 
 @media (min-width: 1025px) and (max-width: 1366px) {
     .overview-main-image-wrapper {
-        max-height: 55vh;
+        max-height: 38vh; /* Réduit pour éliminer ascenseur (était 55vh) */
     }
 
     .overview-secondary-images {
         gap: 0.75rem;
+        max-height: 28vh; /* Réduit pour éliminer ascenseur */
+    }
+
+    .overview-secondary-image {
+        max-height: 26vh; /* Réduit pour s'adapter au container */
     }
 }

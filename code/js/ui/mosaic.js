@@ -109,11 +109,15 @@ export function renderMosaic(imageData, viewType = 'exterior') {
         overviewMosaic.classList.add('hidden');
     }
 
-    // Masquer la vue PDF si elle existe
+    // Masquer les vues PDF si elles existent
     if (viewportDisplay) {
         const pdfWrapper = viewportDisplay.querySelector('.pdf-view-wrapper');
         if (pdfWrapper) {
             pdfWrapper.classList.add('hidden');
+        }
+        const pdfMosaicWrapper = viewportDisplay.querySelector('.pdf-mosaic-wrapper');
+        if (pdfMosaicWrapper) {
+            pdfMosaicWrapper.classList.add('hidden');
         }
     }
 
@@ -231,11 +235,15 @@ export async function renderConfigMosaic(imagesData) {
         overviewMosaic.classList.add('hidden');
     }
 
-    // Masquer la vue PDF si elle existe
+    // Masquer les vues PDF si elles existent
     if (viewportDisplay) {
         const pdfWrapper = viewportDisplay.querySelector('.pdf-view-wrapper');
         if (pdfWrapper) {
             pdfWrapper.classList.add('hidden');
+        }
+        const pdfMosaicWrapper = viewportDisplay.querySelector('.pdf-mosaic-wrapper');
+        if (pdfMosaicWrapper) {
+            pdfMosaicWrapper.classList.add('hidden');
         }
     }
 
@@ -381,11 +389,15 @@ export function renderOverviewMosaic(imageA, imagesSecondary, airplaneType) {
         mosaicGrid.classList.add('hidden');
     }
 
-    // Masquer la vue PDF si elle existe
+    // Masquer les vues PDF si elles existent
     if (viewportDisplay) {
         const pdfWrapper = viewportDisplay.querySelector('.pdf-view-wrapper');
         if (pdfWrapper) {
             pdfWrapper.classList.add('hidden');
+        }
+        const pdfMosaicWrapper = viewportDisplay.querySelector('.pdf-mosaic-wrapper');
+        if (pdfMosaicWrapper) {
+            pdfMosaicWrapper.classList.add('hidden');
         }
     }
 

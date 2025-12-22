@@ -33,9 +33,10 @@ import {
     enterSelectionMode,
     exitSelectionMode,
     downloadSelectedImages,
-    initMobileMenu // Menu burger mobile
+    initMobileMenu, // Menu burger mobile
+    renderPDFMosaic
 } from './ui/index.js';
-import { fetchRenderImages, fetchConfigurationImages, fetchOverviewImages, generatePDFView, fetchDatabases, setDatabaseId, getDatabaseId, getDefaultConfig, getInteriorPrestigeConfig as parsePrestigeConfig, getDatabaseXML, getExteriorColorZones, parsePaintSchemeBookmark, getInteriorOptionsFromXML, getExteriorOptionsFromXML, getCameraListFromGroup, validateConfigForDatabase, getPDFCameraId } from './api/index.js';
+import { fetchRenderImages, fetchConfigurationImages, fetchOverviewImages, generatePDFView, generatePDFMosaic, fetchDatabases, setDatabaseId, getDatabaseId, getDefaultConfig, getInteriorPrestigeConfig as parsePrestigeConfig, getDatabaseXML, getExteriorColorZones, parsePaintSchemeBookmark, getInteriorOptionsFromXML, getExteriorOptionsFromXML, getCameraListFromGroup, validateConfigForDatabase, getPDFCameraId, getPDFCameras } from './api/index.js';
 import { analyzeDatabaseStructure, exportStructureAsJSON } from './api/database-analyzer.js';
 import { log } from './logger.js';
 
@@ -1317,23 +1318,14 @@ async function loadAndDisplayPDFView() {
         console.log('✅ Hotspots chargés pour:', paintScheme);
     }
 
-    // Récupérer dynamiquement l'ID de la 2ème caméra du groupe Exterieur_DecorStudio depuis le XML
-    const cameraId = await getPDFCameraId();
+    // Générer la mosaïque PDF avec 3 caméras (caméras 4, 5, 6 du groupe Overview)
+    const viewsData = await generatePDFMosaic(paintSchemeData.hotspots);
 
-    // Construire l'objet de config pour generatePDFView
-    const pdfConfig = {
-        camera: cameraId,
-        hotspots: paintSchemeData.hotspots
-    };
-
-    // Générer la vue PDF avec la config actuelle
-    const { imageUrl, hotspots } = await generatePDFView(pdfConfig);
-
-    // Afficher la vue PDF
+    // Afficher la mosaïque PDF
     const container = document.getElementById('viewportDisplay');
-    renderPDFView(container, imageUrl, hotspots);
+    renderPDFMosaic(container, viewsData);
 
-    return { imageUrl, hotspots };
+    return viewsData;
 }
 
 /**
