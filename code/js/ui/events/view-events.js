@@ -9,6 +9,7 @@ import { updateConfig, getConfig, setImages, setLoading } from '../../state.js';
 import { fetchOverviewImages } from '../../api/rendering.js';
 import { renderOverviewMosaic } from '../mosaic.js';
 import { loadAndDisplayPDFView } from '../pdf-view.js';
+import { toggleViewControls } from '../../utils/validators.js';
 import {
     showLoader,
     hideLoader,
@@ -18,35 +19,6 @@ import {
     disableControls,
     enableControls
 } from '../loader.js';
-
-/**
- * US-028: Affiche/masque les contrôles selon le type de vue
- * @param {string} viewType - Type de vue ('exterior', 'interior', 'configuration', 'overview', 'pdf')
- */
-function toggleViewControls(viewType) {
-    const exteriorControls = document.querySelector('.config-exterior');
-    const interiorControls = document.querySelector('.config-interior');
-    const immatControls = document.querySelector('.config-immatriculation');
-
-    if (!exteriorControls || !interiorControls || !immatControls) return;
-
-    if (viewType === 'exterior' || viewType === 'pdf') {
-        // Vue Extérieur ou PDF : Afficher contrôles extérieurs (couleurs) + immatriculation
-        exteriorControls.classList.remove('hidden');
-        interiorControls.classList.add('hidden');
-        immatControls.classList.remove('hidden');
-    } else if (viewType === 'interior') {
-        // Vue Intérieur : Afficher contrôles intérieurs + masquer extérieur + immatriculation
-        exteriorControls.classList.add('hidden');
-        interiorControls.classList.remove('hidden');
-        immatControls.classList.add('hidden');
-    } else if (viewType === 'configuration' || viewType === 'overview') {
-        // Vues Configuration/Overview : Masquer tous les contrôles (pas de personnalisation)
-        exteriorControls.classList.add('hidden');
-        interiorControls.classList.add('hidden');
-        immatControls.classList.add('hidden');
-    }
-}
 
 /**
  * US-043: Masque le viewer PDF

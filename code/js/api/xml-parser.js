@@ -79,7 +79,7 @@ export async function findCameraGroupId(decorName, viewType = "exterior") {
                 return group.getAttribute('id');
             }
         }
-        throw new Error(`Groupe caméra "Interieur" introuvable`);
+        throw new Error('Groupe caméra "Interieur" introuvable dans le XML');
     }
 
     if (viewType === "configuration") {

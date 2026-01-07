@@ -143,8 +143,6 @@ function buildInteriorConfigString(config) {
         `Interior_UpperSidePanel.${config.upperSidePanel}`
     ].join('/');
 
-    // DEBUG: Afficher ce qui est envoyé à l'API pour vérification
-
     return interiorConfig;
 }
 
