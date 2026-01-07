@@ -276,12 +276,13 @@ export function buildConfigString(xmlDoc, config) {
 
     const paintConfig = extractPaintConfig(xmlDoc, config);
     const interiorConfig = buildInteriorConfigString(config);
-    const { prefix: decorPrefix, suffix: decorSuffix } = buildDecorConfig(xmlDoc, config.decor);
+    const decorResult = buildDecorConfig(xmlDoc, config.decor);
+    const { prefix: decorPrefix, suffix: decorSuffix, positionValue: decorPositionValue } = decorResult;
 
     // US-022: Position dépend de la vue (exterior/interior)
     const positionValue = (config.viewType === "interior")
         ? "Interieur"           // Vue intérieure → Position fixe
-        : config.decor;         // Vue extérieure → Position selon décor
+        : decorPositionValue;   // Vue extérieure → Position selon décor (nom de base uniquement)
 
     const configParts = [
         `Version.${config.version}`,
