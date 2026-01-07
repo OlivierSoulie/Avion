@@ -276,25 +276,47 @@ function detectValuePattern(paramName, options) {
 
     // Patterns spéciaux connus avec descriptions (PRODUCTION uniquement)
     if (paramName === 'Decor') {
-        // Il y a seulement 2 patterns possibles pour Decor Production:
+        // Il y a 3 patterns possibles pour Decor Production:
         // 1. V0.2 : {decorName}_{cameraName}_Tx_Ty_Tz_Rx_Ry_Rz (coordonnées numériques)
-        // 2. V0.3/V0.4/V0.5 : {decorName}_{Flight|Ground} (position)
+        // 2. V0.3-V0.9.1 : {decorName}_{Flight|Ground} (position sans index)
+        // 3. V0.9.2+ : {decorName}_{Flight|Ground}_{Index} (position avec index pour tri)
 
-        const firstValue = samples[0].value;
+        const firstLabel = samples[0].label;
 
-        // Détecter si format Flight/Ground ou coordonnées numériques
-        const hasFlightGround = samples.some(opt => opt.value.endsWith('_Flight') || opt.value.endsWith('_Ground'));
+        // Détecter si format Flight/Ground ou coordonnées numériques (vérifier label ET value)
+        const hasFlightGround = samples.some(opt =>
+            opt.label.includes('_Flight') || opt.label.includes('_Ground') ||
+            opt.value.includes('_Flight') || opt.value.includes('_Ground')
+        );
 
         if (hasFlightGround) {
-            // Format V0.3+ : {decorName}_{Flight|Ground}
-            return {
-                pattern: `Decor.{decorName}_{Flight|Ground}`,
-                description: 'V0.3+ : decorName = Nom de l\'environnement 3D (skybox, fond, éclairage). Flight/Ground = Position de l\'avion dans l\'image pour filtrage (Ground = au sol, Flight = en vol). Mode groupe de caméras `Exterieur_Decor{DecorName}`. ⚠️ Toujours utilisé avec le paramètre Position.{DecorName} (voir paramètre Position).'
-            };
+            // Détecter si format V0.9.2+ avec index après Flight/Ground
+            // Pattern V0.9.2+ : "Studio_Ground_6", "Fjord_Flight_2"
+            // Pattern V0.3-V0.9.1 : "Studio_Ground", "Fjord_Flight"
+            const hasIndex = samples.some(opt => {
+                const parts = opt.label.split('_');
+                // Si on a 3 parties ET que la dernière partie est un nombre pur, c'est V0.9.2+
+                // Exemple: Fjord_Flight_2 → ['Fjord', 'Flight', '2']
+                return parts.length === 3 && /^\d+$/.test(parts[2]);
+            });
+
+            if (hasIndex) {
+                // Format V0.9.2+ : {decorName}_{Flight|Ground}_{Index}
+                return {
+                    pattern: `Decor.{decorName}_{Flight|Ground}_{Index}`,
+                    description: 'V0.9.2+ : decorName = Nom de l\'environnement 3D (Studio, Tarmac, Fjord, Etc..), Flight/Ground = Position de l\'avion (Ground = au sol, Flight = en vol), Index = Position de tri dans le dropdown (1, 2, 3...). Le dropdown affiche uniquement {decorName} (sans suffixes). Tri numérique par index croissant. Mode groupe de caméras `Exterieur_Decor{DecorName}`. ⚠️ Toujours utilisé avec le paramètre Position.{DecorName} (voir paramètre Position). Exemples: Studio_Ground_6, Fjord_Flight_2, Tarmac_Ground_5.'
+                };
+            } else {
+                // Format V0.3-V0.9.1 : {decorName}_{Flight|Ground} (sans index)
+                return {
+                    pattern: `Decor.{decorName}_{Flight|Ground}`,
+                    description: 'V0.3-V0.9.1 : decorName = Nom de l\'environnement 3D (Studio, Tarmac, Fjord, Etc..). Flight/Ground = Position de l\'avion dans l\'image pour filtrage (Ground = au sol, Flight = en vol). Tri alphabétique. Mode groupe de caméras `Exterieur_Decor{DecorName}`. ⚠️ Toujours utilisé avec le paramètre Position.{DecorName} (voir paramètre Position). Exemples: Studio_Ground, Fjord_Flight.'
+                };
+            }
         } else {
             // Format V0.2 : coordonnées numériques
             // Vérifier si on a bien 6 parties numériques à la fin (Tx, Ty, Tz, Rx, Ry, Rz)
-            const parts = firstValue.split('_');
+            const parts = firstLabel.split('_');
             const hasNumericCoords = parts.length >= 7 && parts.slice(-6).every(p => /^-?\d+$/.test(p));
 
             if (hasNumericCoords) {

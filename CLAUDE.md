@@ -288,6 +288,76 @@ git push origin main
 
 ## Changelog
 
+### 07/01/2026 (Sprint #19: Support décor V0.9.2 + Centrage optique + Bug fixes)
+
+**Type** : Maintenance et évolutions majeures
+**Durée** : ~4h
+**Commits** : `2602ada`, `5d7cadf`
+
+#### Fonctionnalités implémentées
+
+**1. Support format décor V0.9.2 avec index**
+- **Format XML** : `{DecorName}_{Ground|Flight}_{Index}` (ex: "Studio_Ground_6", "Fjord_Flight_2")
+- **Dropdown** : Affiche uniquement le nom propre ("Studio", "Fjord", etc.)
+- **Tri** : Par index croissant (1, 2, 3, 4, 5, 6) au lieu d'alphabétique
+- **API** : Reçoit le nom complet avec index
+- **Rétrocompatibilité** : V0.2, V0.3-V0.9.1 continuent de fonctionner
+
+**Fichiers modifiés** :
+- `code/js/api/xml-parser.js` : Extraction nom propre + index, tri, intelligent matching
+- `code/js/api/payload-builder.js` : Extraction nom de base pour paramètres XML
+- `code/js/api/rendering.js` : Fix détection format V0.2 vs V0.9.2+
+- `code/js/utils/validators.js` : Intelligent matching par label en fallback
+- `code/js/app.js` : Synchronisation dropdown après validation
+
+**2. Vue PDF forcée en décor Studio**
+- Indépendant de la sélection dropdown utilisateur
+- Validation automatique selon version de base (ex: "Studio" → "Studio_Ground_6" en V0.9.2)
+
+**Fichiers modifiés** :
+- `code/js/api/pdf-generation.js` : Force `decor: 'Studio'` avant validation dans `generatePDFView()` et `generatePDFMosaic()`
+
+**3. Centrage optique immatriculation**
+- **Grandes lettres (W, M)** : Décalage +5cm vers droite
+- **Petites lettres (I, 1)** : Décalage -5cm vers gauche
+- Décalage appliqué uniquement à la référence de départ (toutes les lettres suivantes ajustées automatiquement)
+
+**Fichiers modifiés** :
+- `code/js/utils/positioning.js` : Ajout fonction `getOpticalOffset()`, calcul `adjustedStartX`
+
+**4. Refactoring architectural : Event listeners**
+- Séparation complète des event listeners dans modules dédiés
+- `app.js` réduit de 2300+ lignes (suppression orchestration events)
+- 13 nouveaux fichiers créés : `code/js/ui/events/`, `validators.js`, `color-manager.js`, etc.
+
+#### Bug fixes
+
+**BUG CRITIQUE : Position avion V0.9.2**
+- **Problème** : Position.XXX recevait nom complet avec suffixes (ex: "Position.Studio_Ground_6")
+- **Cause** : Utilisation de `config.decor` au lieu de `decorPositionValue` (nom de base)
+- **Solution** : Utilisation de `decorPositionValue` depuis `buildDecorConfig()`
+- **Résultat** : Avion correctement positionné pour tous les décors
+
+**Fichier modifié** :
+- `code/js/api/payload-builder.js` (lignes 277-285)
+
+#### Statistiques
+
+| Métrique | Valeur |
+|----------|--------|
+| **Commits** | 2 |
+| **Fichiers modifiés** | 53 |
+| **Lignes ajoutées** | +7016 |
+| **Lignes supprimées** | -2778 |
+| **Features majeures** | 3 |
+| **Bugs critiques** | 1 |
+| **Nouveaux modules** | 13 |
+| **Rétrocompatibilité** | 100% |
+
+**Documentation complète** : `sprints/sprint-19/RATIFICATION-SESSION-2026-01-07.md`
+
+---
+
 ### 22/12/2025 (Hotfixes: Mosaïque PDF 3 caméras + Système labels coins)
 
 **Type** : Corrections et améliorations hors sprint
