@@ -56,9 +56,9 @@ export const DECORS_CONFIG = {
 export const CHAR_WIDTHS = {
     'W': 0.30,
     'M': 0.30,
-    'I': 0.10,  // US-050: Modifié de 0.05 à 0.10 (10cm au lieu de 5cm)
-    '1': 0.10,  // US-050: Ajouté - Chiffre 1 étroit (10cm)
-    '-': 0.10,  // US-050: Ajouté - Tiret étroit (10cm)
+    'I': 0.05,  // US-053: Lettre I étroite (5cm)
+    '1': 0.09,  // US-053: Chiffre 1 étroit (9cm)
+    '-': 0.15,  // US-053: Tiret (15cm)
     'DEFAULT': 0.20
 };
 

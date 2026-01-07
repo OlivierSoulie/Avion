@@ -93,7 +93,18 @@ export async function findCameraGroupId(decorName, viewType = "exterior") {
     }
 
     let decorBaseName = decorName;
+    // Extraire le nom de base du décor selon le format
+    // V0.2 : {decorName}_{cameraName}_Tx_Ty_Tz_Rx_Ry_Rz → extraire decorName
+    // V0.3-V0.9.1 : {decorName}_{Ground|Flight} → extraire decorName
+    // V0.9.2+ : {decorName}_{Ground|Flight}_{index} → extraire decorName
     if (/^[A-Za-z]+_[\d\-_]+$/.test(decorName)) {
+        // V0.2 : Format avec coordonnées numériques
+        decorBaseName = decorName.split('_')[0];
+    } else if (/^[A-Za-z]+_(Ground|Flight)_\d+$/.test(decorName)) {
+        // V0.9.2+ : Format avec Ground/Flight et index
+        decorBaseName = decorName.split('_')[0];
+    } else if (/^[A-Za-z]+_(Ground|Flight)$/.test(decorName)) {
+        // V0.3-V0.9.1 : Format avec Ground/Flight SANS index
         decorBaseName = decorName.split('_')[0];
     }
 
@@ -468,7 +479,15 @@ export function getExteriorOptionsFromXML(xmlDoc) {
         // ⚠️ Plus de support pour "POC Decor." - bases Production uniquement
         let name = rawLabel;
 
-        // Pattern V0.3+ : {decorName}_{Flight|Ground}
+        // Pattern V0.9.2+ : {decorName}_{Flight|Ground}_{index}
+        // Identifier par : se termine par _Flight_X ou _Ground_X où X est un chiffre
+        const v092Match = name.match(/^([A-Za-z]+)_(Flight|Ground)_\d+$/);
+        if (v092Match) {
+            // "Fjord_Flight_2" → "Fjord" (nom seul, sans Flight/Ground ni index)
+            return v092Match[1];
+        }
+
+        // Pattern V0.3-V0.9.1 : {decorName}_{Flight|Ground}
         // Identifier par : se termine par _Flight ou _Ground (pas de chiffres après)
         const v03Match = name.match(/^([A-Za-z]+)_(Flight|Ground)$/);
         if (v03Match) {
@@ -487,6 +506,16 @@ export function getExteriorOptionsFromXML(xmlDoc) {
 
         // V0.1 ou autre : retourner tel quel
         return name;
+    };
+
+    // Fonction pour extraire l'index du décor : "Fjord_Flight_2" → 2, "Studio_Ground" → null
+    const extractDecorIndex = (rawLabel) => {
+        // Pattern V0.9.2+ : {decorName}_{Flight|Ground}_{index}
+        const match = rawLabel.match(/^[A-Za-z]+_(Flight|Ground)_(\d+)$/);
+        if (match) {
+            return parseInt(match[2], 10);
+        }
+        return null; // Pas d'index
     };
 
     const options = {
@@ -590,7 +619,8 @@ export function getExteriorOptionsFromXML(xmlDoc) {
         value: opt.value
     }));
 
-    // Decor - extraire tel quel depuis le XML (data-driven)
+    // Decor - FORMAT V0.9.2+ : {DecorName}_{Flight|Ground}_{index}
+    // Exemples : "Fjord_Flight_2", "Tarmac_Ground_5", "Studio_Ground_6"
     // ⚠️ IMPORTANT : Supporte UNIQUEMENT les bases Production (V0.2+) avec paramètre "Decor"
     // Les bases POC (V0.1) avec "POC Decor" ne sont PAS supportées
     const decorRaw = extractParameterOptions(xmlDoc, 'Decor', false);
@@ -599,17 +629,30 @@ export function getExteriorOptionsFromXML(xmlDoc) {
         console.warn('⚠️ Paramètre Decor non trouvé - Base POC (V0.1) non supportée');
         options.decor = []; // Retourner vide pour les bases POC
     } else {
-        const decorSet = new Set(); // Pour éviter les doublons exacts
+        // Mapper avec extraction de l'index (V0.9.2+)
+        const decorWithIndex = decorRaw.map(opt => ({
+            label: extractDecorName(opt.label),    // Label court pour affichage dropdown : "Fjord"
+            value: opt.value,                       // Valeur COMPLÈTE du XML pour l'API : "Fjord_Flight_2"
+            index: extractDecorIndex(opt.label),    // null si pas d'index (V0.2-V0.9.1)
+            rawLabel: opt.label                     // Label brut pour debug
+        }));
 
-        decorRaw.forEach(opt => {
-            const decorName = extractDecorName(opt.label);
-            decorSet.add(decorName);
-        });
+        // Trier : par index si présent (V0.9.2+), sinon ordre d'apparition (garder l'ordre du XML)
+        const hasDecorIndex = decorWithIndex.some(opt => opt.index !== null);
+        if (hasDecorIndex) {
+            // V0.9.2+ : Tri par index croissant (1, 2, 3, ...)
+            decorWithIndex.sort((a, b) => {
+                const indexA = a.index ?? Infinity; // Si pas d'index, mettre à la fin
+                const indexB = b.index ?? Infinity;
+                return indexA - indexB;
+            });
+        }
+        // Sinon : garder l'ordre d'apparition du XML (pas de tri alphabétique)
 
-        // Convertir en tableau d'options {label, value}
-        options.decor = Array.from(decorSet).map(name => ({
-            label: name,  // Nom du décor tel qu'extrait du XML
-            value: name   // Valeur identique pour le moment
+        // Garder seulement label/value pour l'API finale
+        options.decor = decorWithIndex.map(opt => ({
+            label: opt.label,
+            value: opt.value
         }));
     }
 
@@ -1076,8 +1119,15 @@ export async function validateConfigForDatabase(config) {
             const currentValue = config[configKey];
 
             if (currentValue && !options.find(o => o.value === currentValue)) {
-                validatedConfig[configKey] = options[0].value;
-                corrections.push(`${xmlLabel}: "${currentValue}" invalide → "${options[0].value}"`);
+                // Match intelligent : chercher d'abord un match sur label (ex: "Studio" → "Studio_Ground_6")
+                const matchByLabel = options.find(o => o.label === currentValue);
+                if (matchByLabel) {
+                    validatedConfig[configKey] = matchByLabel.value;
+                    corrections.push(`${xmlLabel}: "${currentValue}" → "${matchByLabel.value}" (match par label)`);
+                } else {
+                    validatedConfig[configKey] = options[0].value;
+                    corrections.push(`${xmlLabel}: "${currentValue}" invalide → "${options[0].value}"`);
+                }
             }
         }
     }
@@ -1107,18 +1157,21 @@ export async function validateConfigForDatabase(config) {
             const currentValue = config[configKey];
 
             if (currentValue && !options.find(o => o.value === currentValue)) {
-                validatedConfig[configKey] = options[0].value;
-                corrections.push(`${xmlLabel}: "${currentValue}" invalide → "${options[0].value}"`);
+                // Match intelligent : chercher d'abord un match sur label (ex: "Studio" → "Studio_Ground_6")
+                const matchByLabel = options.find(o => o.label === currentValue);
+                if (matchByLabel) {
+                    validatedConfig[configKey] = matchByLabel.value;
+                    corrections.push(`${xmlLabel}: "${currentValue}" → "${matchByLabel.value}" (match par label)`);
+                } else {
+                    validatedConfig[configKey] = options[0].value;
+                    corrections.push(`${xmlLabel}: "${currentValue}" invalide → "${options[0].value}"`);
+                }
             }
         }
     }
 
-    // Logger les corrections
-    if (corrections.length > 0) {
-        console.warn(`⚠️ Configuration corrigée (${corrections.length} corrections):`);
-        corrections.forEach(c => console.warn(`   - ${c}`));
-    } else {
-    }
+    // Corrections appliquées silencieusement (pas de log)
+    // Les corrections sont retournées dans l'objet pour gestion par le caller
 
     return { config: validatedConfig, corrections };
 }

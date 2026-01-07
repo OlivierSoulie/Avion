@@ -158,82 +158,102 @@ function buildDecorConfig(xmlDoc, decorName) {
     // ⚠️ IMPORTANT : Supporte UNIQUEMENT les bases Production (V0.2+)
     // Les bases POC (V0.1) avec "POC Decor" ne sont PAS supportées
 
+    // IMPORTANT : decorName peut maintenant être le nom complet avec index (V0.9.2+) ou sans (V0.3-V0.9.1)
+    // Exemples :
+    // - V0.9.2+ : "Studio_Ground_6", "Fjord_Flight_2"
+    // - V0.3-V0.9.1 : "Studio_Ground", "Fjord_Flight"
+    // - V0.2 : "Studio" (juste le nom)
+    // → Il faut extraire le nom de base pour chercher dans le XML
+
+    // Extraire le nom de base du décor
+    let decorBaseName = decorName;
+    // V0.9.2+ : {decorName}_{Ground|Flight}_{index} → extraire decorName
+    if (/^[A-Za-z]+_(Ground|Flight)_\d+$/.test(decorName)) {
+        decorBaseName = decorName.split('_')[0];
+    }
+    // V0.3-V0.9.1 : {decorName}_{Ground|Flight} → extraire decorName
+    else if (/^[A-Za-z]+_(Ground|Flight)$/.test(decorName)) {
+        decorBaseName = decorName.split('_')[0];
+    }
+    // V0.2 ou autre : garder tel quel
 
     // Chercher le paramètre Decor dans le XML (PRODUCTION uniquement)
     const decorParam = xmlDoc.querySelector('Parameter[label="Decor"]');
 
     if (!decorParam) {
-        console.warn('⚠️ Paramètre Decor non trouvé - Base POC (V0.1) non supportée ou XML invalide');
-        console.warn('   Utilisation fallback générique');
-        return { prefix: 'Decor', suffix: `${decorName}_Ground`, positionValue: decorName };
+        return { prefix: 'Decor', suffix: decorName, positionValue: decorBaseName };
     }
 
     // Extraire les valeurs pour détecter le format
     const values = decorParam.querySelectorAll('Value');
 
     if (values.length === 0) {
-        console.warn('⚠️ Aucune valeur trouvée dans Parameter[label="Decor"]');
-        console.warn('   Utilisation fallback générique');
-        return { prefix: 'Decor', suffix: `${decorName}_Ground`, positionValue: decorName };
+        return { prefix: 'Decor', suffix: decorName, positionValue: decorBaseName };
     }
 
     const firstSymbol = values[0]?.getAttribute('symbol') || '';
     // Extraire le suffix (enlever "Decor." au début)
     const firstValue = firstSymbol.replace(/^Decor\./i, '');
 
-    // Détecter le format Production (V0.2 ou V0.3+)
+    // Détecter le format Production (V0.2, V0.3+, ou V0.9.2+)
+    // V0.9.2+ : Format "{decorName}_{Ground|Flight}_{index}" (ex: "Fjord_Flight_2")
+    // V0.3-V0.9.1 : Format "{decorName}_{Ground|Flight}" (ex: "Studio_Ground")
+    // V0.2 : Format "{decorName}_{cameraName}_Tx_Ty_Tz_Rx_Ry_Rz" (ex: "Fjord_201_0_0_0_0_-90_-15")
+
     if (/^[A-Za-z]+_[A-Za-z0-9]+_[\d\-_]+$/.test(firstValue)) {
         // V0.2 : Format "{decorName}_{cameraName}_Tx_Ty_Tz_Rx_Ry_Rz"
 
-        // Chercher la première valeur qui correspond au décor demandé
+        // Chercher la première valeur qui correspond au décor demandé (utiliser decorBaseName)
         for (const value of values) {
             const symbol = value.getAttribute('symbol');
             // Extraire le suffix (enlever "Decor." au début)
             const suffix = symbol.replace(/^Decor\./i, '');
-            if (suffix.toLowerCase().startsWith(decorName.toLowerCase() + '_')) {
-                return { prefix: 'Decor', suffix: suffix, positionValue: decorName };
+            if (suffix.toLowerCase().startsWith(decorBaseName.toLowerCase() + '_')) {
+                return { prefix: 'Decor', suffix: suffix, positionValue: decorBaseName };
             }
         }
 
         // Fallback si aucune correspondance
-        console.warn(`   ⚠️ Aucune valeur V0.2 trouvée pour "${decorName}", utilisation première valeur`);
-        return { prefix: 'Decor', suffix: firstValue, positionValue: decorName };
+        return { prefix: 'Decor', suffix: firstValue, positionValue: decorBaseName };
     } else {
-        // V0.3+ : Format "{decorName}_{Ground|Flight}"
+        // V0.3+ ET V0.9.2+ : Format "{decorName}_{Ground|Flight}" ou "{decorName}_{Ground|Flight}_{index}"
 
-        // DEBUG : Afficher TOUTES les valeurs du XML
-        for (const value of values) {
-            const sym = value.getAttribute('symbol');
-            const suf = sym.replace(/^Decor\./i, '');
-        }
+        // Stratégie de recherche :
+        // 1. Match EXACT avec decorName (si on a reçu le nom complet comme "Studio_Ground_6")
+        // 2. Match avec decorBaseName + underscore (pour trouver n'importe quelle variante)
 
-        // CORRECTION : Lire depuis le XML au lieu du dictionnaire hardcodé
-        // Chercher la première valeur qui correspond au décor demandé
+        // 1. Chercher un match EXACT avec decorName
         for (const value of values) {
             const symbol = value.getAttribute('symbol');
-
-            // Le symbol contient "Decor.Fjord_Flight" → extraire "Fjord_Flight"
             const suffix = symbol.replace(/^Decor\./i, '');
 
-            // Vérifier si le suffix commence par le decorName
-            // Exemples : "Studio_Ground", "Fjord_Flight", "NewDecor_Ground"
-            if (suffix.toLowerCase().startsWith(decorName.toLowerCase() + '_')) {
-                return { prefix: 'Decor', suffix: suffix, positionValue: decorName };
+            if (suffix.toLowerCase() === decorName.toLowerCase()) {
+                return { prefix: 'Decor', suffix: suffix, positionValue: decorBaseName };
+            }
+        }
+
+        // 2. Chercher avec decorBaseName (pour trouver n'importe quelle variante)
+        for (const value of values) {
+            const symbol = value.getAttribute('symbol');
+            const suffix = symbol.replace(/^Decor\./i, '');
+
+            // Vérifier si le suffix commence par decorBaseName
+            // Exemples V0.3-V0.9.1 : "Studio_Ground", "Fjord_Flight"
+            // Exemples V0.9.2+ : "Fjord_Flight_2", "Tarmac_Ground_5"
+            if (suffix.toLowerCase().startsWith(decorBaseName.toLowerCase() + '_')) {
+                return { prefix: 'Decor', suffix: suffix, positionValue: decorBaseName };
             }
         }
 
         // Fallback 1 : Si decorName est vide, utiliser la première valeur
         if (!decorName || decorName.trim() === '') {
-            console.warn(`   ⚠️ decorName vide, utilisation première valeur : "${firstValue}"`);
-            // Extraire le decorName de la première valeur (ex: "Studio_Ground" → "Studio")
+            // Extraire le decorName de la première valeur (ex: "Studio_Ground_6" → "Studio")
             const extractedName = firstValue.split('_')[0];
             return { prefix: 'Decor', suffix: firstValue, positionValue: extractedName };
         }
 
         // Fallback 2 : Si aucune correspondance, utiliser un fallback générique
-        console.warn(`   ⚠️ Aucune valeur V0.3+ trouvée pour "${decorName}"`);
-        console.warn(`   ⚠️ Utilisation fallback générique : "${decorName}_Ground"`);
-        return { prefix: 'Decor', suffix: `${decorName}_Ground`, positionValue: decorName };
+        return { prefix: 'Decor', suffix: `${decorName}_Ground`, positionValue: decorBaseName };
     }
 }
 

@@ -7,6 +7,8 @@
 import { openFullscreen } from './modal.js';
 import { downloadImage } from './download.js';
 import { showSuccessToast, showError } from './loader.js';
+import { getConfig } from '../state.js';
+import { generatePDFMosaic } from '../api/index.js';
 
 /**
  * Constantes de style de base pour les hotspots
@@ -1374,4 +1376,51 @@ function createPDFViewElement(viewData, index, maxHeight, isMain) {
     wrapper.appendChild(downloadBtn);
 
     return wrapper;
+}
+
+/**
+ * Charge et affiche la vue PDF avec hotspots
+ * Récupère les hotspots depuis pdf-hotspots.json selon le paint scheme actuel
+ *
+ * @async
+ * @returns {Promise<Array>} viewsData - Données des 3 vues (profil, dessus, dessous)
+ * @throws {Error} Si le fichier pdf-hotspots.json ne peut pas être chargé
+ */
+export async function loadAndDisplayPDFView() {
+    // Récupérer le paint scheme actuel depuis la config
+    const config = getConfig();
+    const fullPaintScheme = config.paintScheme || 'Tehuano'; // Fallback sur Tehuano si non défini
+
+    // Extraire le nom court du paintScheme (ex: "Tehuano_6_A-0_A-D_..." → "Tehuano")
+    const paintScheme = fullPaintScheme.split('_')[0];
+
+    console.log('🎨 Paint scheme complet:', fullPaintScheme);
+    console.log('🎨 Paint scheme court (pour hotspots):', paintScheme);
+
+    // Charger le fichier JSON consolidé avec tous les paint schemes
+    const response = await fetch('data/pdf-hotspots.json');
+    if (!response.ok) {
+        throw new Error('Impossible de charger pdf-hotspots.json');
+    }
+
+    const pdfData = await response.json();
+    console.log('📋 Paint schemes disponibles dans JSON:', Object.keys(pdfData));
+
+    // Récupérer les hotspots pour le paint scheme actuel
+    let paintSchemeData = pdfData[paintScheme];
+    if (!paintSchemeData) {
+        console.warn(`⚠️ Paint scheme "${paintScheme}" non trouvé dans pdf-hotspots.json, utilisation de Tehuano par défaut`);
+        paintSchemeData = pdfData['Tehuano']; // Fallback
+    } else {
+        console.log('✅ Hotspots chargés pour:', paintScheme);
+    }
+
+    // Générer la mosaïque PDF avec 3 caméras (caméras 4, 5, 6 du groupe Overview)
+    const viewsData = await generatePDFMosaic(paintSchemeData.hotspots);
+
+    // Afficher la mosaïque PDF
+    const container = document.getElementById('viewportDisplay');
+    renderPDFMosaic(container, viewsData);
+
+    return viewsData;
 }

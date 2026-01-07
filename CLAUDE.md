@@ -112,12 +112,18 @@ POC Storage right
 
 #### Décor (Decor)
 - **Définition** : Environnement de fond pour la scène 3D
-- **Valeurs possibles** : Studio, Tarmac, Fjord, Hangar, Onirique
+- **Valeurs possibles** : Studio, Tarmac, Fjord, Hangar, Onirique, SunriseVeiled
+- **Format XML** :
+  - V0.3-V0.9.1 : `{DecorName}_{Ground|Flight}` (ex: `Studio_Ground`, `Fjord_Flight`)
+  - V0.9.2+ : `{DecorName}_{Ground|Flight}_{Index}` (ex: `Fjord_Flight_2`, `Tarmac_Ground_5`)
 - **Utilisation** :
   - Position de l'avion (`Position.${decor}`)
   - Groupe de caméras extérieur (`Exterieur_Decor${decor}`)
-  - Paramètre de configuration (`Decor.${decor}_Ground` ou `Decor.${decor}_Flight`)
-- **Exemple** : `Decor.Studio_Ground`, `Position.Studio`
+  - Paramètre de configuration (`Decor.${decor}_Ground` ou `Decor.${decor}_Flight_X`)
+- **Dropdown** : Affiche juste le nom (ex: "Fjord", "Tarmac")
+- **API** : Envoie le nom complet avec index (ex: "Fjord_Flight_2")
+- **Tri** : Par index croissant (1, 2, 3...) si présent dans le XML
+- **Exemple V0.9.2+** : `Decor.Tarmac_Ground_5`, `Position.Tarmac`
 
 #### Paint Scheme (Schéma de Peinture)
 - **Définition** : Schéma de peinture de l'avion avec zones de couleur

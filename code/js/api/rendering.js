@@ -22,15 +22,17 @@ export async function fetchRenderImages(config) {
 
     try {
         // Détecter si format V0.1/V0.2 (coordonnées dans decor) pour vue extérieure
+        // V0.2 : {decorName}_{cameraName}_Tx_Ty_Tz_Rx_Ry_Rz (au moins 8 segments)
+        // V0.9.2+ : {decorName}_{Ground|Flight}_{index} (exactement 3 segments) → NE PAS traiter comme V0.2
         const isV01V02Format = config.viewType === 'exterior' &&
                                config.decor &&
-                               /^[A-Za-z]+_[A-Za-z0-9]+_[\d\-_]+$/.test(config.decor);
+                               config.decor.split('_').length >= 8;
 
         if (isV01V02Format) {
             return await fetchRenderImagesSingle(config);
         }
 
-        // Format V0.3+ : Mode groupe de caméras (logique actuelle)
+        // Format V0.3+ et V0.9.2+ : Mode groupe de caméras (logique actuelle)
 
         // 1. Construire le payload (ASYNC - télécharge le XML pour le camera group ID)
         const payload = await buildPayload(config);

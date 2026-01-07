@@ -98,10 +98,29 @@ export function extractAnchors(xmlRoot, scheme) {
 }
 
 /**
+ * Calcule le décalage optique pour centrage de la première lettre
+ * - Grandes lettres (W, M) : +5cm (vers la droite)
+ * - Petites lettres (I, 1) : -5cm (vers la gauche)
+ * - Lettres standard : 0 (pas de décalage)
+ *
+ * @param {string} char - Le caractère
+ * @returns {number} Le décalage en mètres
+ */
+function getOpticalOffset(char) {
+    if (char === 'W' || char === 'M') {
+        return 0.05; // +5cm vers la droite
+    }
+    if (char === 'I' || char === '1') {
+        return -0.05; // -5cm vers la gauche
+    }
+    return 0.0; // Pas de décalage pour les lettres standard
+}
+
+/**
  * Calcule les positions absolues des lettres avec espacement bord-à-bord de 5cm
  *
  * Logique (du script Python lignes 159-198):
- * - Lettre 0 : centre exactement à start_x
+ * - Lettre 0 : centre exactement à start_x (+ décalage optique si W/M/I/1)
  * - Lettre N : centre = start_x + (moitié_lettre_0) + somme(largeurs_complètes 1..N-1) + (N × SPACING) + (moitié_lettre_N)
  *
  * @param {string} immatString - L'immatriculation (ex: "NWM1MW")
@@ -113,10 +132,14 @@ export function calculateTransformsAbsolute(immatString, startX, directionSign) 
 
     const transforms = [];
 
+    // Centrage optique : ajuster la référence selon la première lettre
+    const opticalOffset = getOpticalOffset(immatString[0]);
+    const adjustedStartX = startX + opticalOffset;
+
     for (let i = 0; i < immatString.length; i++) {
         if (i === 0) {
-            // Première lettre : centre exactement à start_x
-            transforms.push(startX);
+            // Première lettre : centre à la référence ajustée
+            transforms.push(adjustedStartX);
         } else {
             // 1. Moitié de la première lettre (pour partir de son bord droit)
             const wFirst = CHAR_WIDTHS[immatString[0]] || CHAR_WIDTHS.DEFAULT;
@@ -136,11 +159,11 @@ export function calculateTransformsAbsolute(immatString, startX, directionSign) 
             const wCurr = CHAR_WIDTHS[immatString[i]] || CHAR_WIDTHS.DEFAULT;
             const halfCurr = wCurr / 2.0;
 
-            // 5. Calcul de l'offset total par rapport au Start
+            // 5. Calcul de l'offset total par rapport à la référence ajustée
             const offset = halfFirst + sumWidthsMiddle + (numSpaces * SPACING) + halfCurr;
 
-            // 6. Application de la direction (positif = droite, négatif = gauche)
-            const position = startX + (offset * directionSign);
+            // 6. Application de la direction à partir de la référence ajustée
+            const position = adjustedStartX + (offset * directionSign);
 
             // 7. Arrondir à 4 décimales (comme Python)
             const roundedPosition = Math.round(position * 10000) / 10000;

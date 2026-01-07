@@ -48,8 +48,28 @@ import {
 // Menu burger mobile
 import { initMobileMenu } from './mobile-menu.js';
 
+// Gestion des couleurs
+import {
+    initColorZones,
+    populateColorZone,
+    syncZonesWithPaintScheme,
+    filterColorDropdown,
+    colorZonesData
+} from './color-manager.js';
+
 // Vue PDF
-import { renderPDFView, renderPDFMosaic } from './pdf-view.js';
+import { renderPDFView, renderPDFMosaic, loadAndDisplayPDFView } from './pdf-view.js';
+
+// Modal Configuration (Documentation XML)
+import {
+    initConfigSchemaModal,
+    openConfigSchemaModal,
+    closeConfigSchemaModal,
+    currentDatabaseStructure
+} from './config-schema-modal.js';
+
+// Gestion des dropdowns
+import { populateAllDropdowns } from './dropdown-manager.js';
 
 // ======================================
 // Re-exports publics
@@ -88,8 +108,28 @@ export {
 // Menu burger mobile
 export { initMobileMenu };
 
+// Gestion des couleurs
+export {
+    initColorZones,
+    populateColorZone,
+    syncZonesWithPaintScheme,
+    filterColorDropdown,
+    colorZonesData
+};
+
 // Vue PDF
-export { renderPDFView, renderPDFMosaic };
+export { renderPDFView, renderPDFMosaic, loadAndDisplayPDFView };
+
+// Modal Configuration
+export {
+    initConfigSchemaModal,
+    openConfigSchemaModal,
+    closeConfigSchemaModal,
+    currentDatabaseStructure
+};
+
+// Dropdowns
+export { populateAllDropdowns };
 
 // ======================================
 // Export par défaut pour compatibilité
@@ -131,6 +171,22 @@ export default {
     // Mobile menu
     initMobileMenu,
 
+    // Color management
+    initColorZones,
+    populateColorZone,
+    syncZonesWithPaintScheme,
+    filterColorDropdown,
+
     // PDF view
-    renderPDFView
+    renderPDFView,
+    renderPDFMosaic,
+    loadAndDisplayPDFView,
+
+    // Config Schema Modal
+    initConfigSchemaModal,
+    openConfigSchemaModal,
+    closeConfigSchemaModal,
+
+    // Dropdowns
+    populateAllDropdowns
 };

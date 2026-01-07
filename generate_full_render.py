@@ -71,7 +71,8 @@ PRESTIGE_LIST = ["Oslo", "SanPedro", "London", "Labrador", "GooseBay", "BlackFri
 SPINNER_LIST = ["PolishedAluminium", "MattBlack"]
 
 # --- PHYSIQUE ---
-CHAR_WIDTHS = {'W': 0.30, 'M': 0.30, 'I': 0.05, 'DEFAULT': 0.20}
+# US-053 : Largeurs de caractères synchronisées avec config.js
+CHAR_WIDTHS = {'W': 0.30, 'M': 0.30, 'I': 0.05, '1': 0.09, '-': 0.15, 'DEFAULT': 0.20}
 SPACING = 0.05
 
 # --- FONCTIONS I/O ---

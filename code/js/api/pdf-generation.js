@@ -4,12 +4,12 @@
  * @version 2.0 - Ajout mosaïque 3 caméras
  */
 
-import { getConfig } from '../state.js';
+import { getConfig, setPDFCamera0SnapshotPayload, setPDFCamera0HotspotPayload } from '../state.js';
 import { buildPayloadForSingleCamera } from './payload-builder.js';
 import { callLumiscapheAPI } from './api-client.js';
 import { callHotspotAPI, buildHotspotPayload } from './hotspot.js';
 import { enrichHotspotsWithColors } from '../utils/hotspot-helper.js';
-import { getDatabaseXML, getPDFCameras } from './xml-parser.js';
+import { getDatabaseXML, getPDFCameras, validateConfigForDatabase } from './xml-parser.js';
 
 /**
  * Génère la vue PDF complète avec image + hotspots
@@ -23,9 +23,17 @@ export async function generatePDFView(pdfConfig) {
         // 1. Récupérer la config actuelle
         const config = getConfig();
 
-        // 2. Ajouter la caméra à la config
-        const configWithCamera = {
+        // IMPORTANT : La vue PDF doit TOUJOURS utiliser le décor "Studio"
+        // Forcer Studio et valider pour obtenir la valeur correcte (Studio_Ground ou Studio_Ground_X)
+        const configWithStudio = {
             ...config,
+            decor: 'Studio'
+        };
+        const { config: validatedConfig } = await validateConfigForDatabase(configWithStudio);
+
+        // 2. Ajouter la caméra à la config validée
+        const configWithCamera = {
+            ...validatedConfig,
             cameraId: pdfConfig.camera
         };
 
@@ -92,7 +100,15 @@ export async function generatePDFMosaic(pdfHotspots) {
         }
 
         // 2. Récupérer la config actuelle
-        const config = getConfig();
+        const baseConfig = getConfig();
+
+        // IMPORTANT : La vue PDF doit TOUJOURS utiliser le décor "Studio"
+        // Forcer Studio et valider pour obtenir la valeur correcte (Studio_Ground ou Studio_Ground_X)
+        const configWithStudio = {
+            ...baseConfig,
+            decor: 'Studio'
+        };
+        const { config } = await validateConfigForDatabase(configWithStudio);
 
         // 3. Extraire les positions 3D des hotspots (une seule fois, partagées par toutes les caméras)
         const positions3D = pdfHotspots.map(h => h.position3D);
@@ -162,6 +178,12 @@ export async function generatePDFMosaic(pdfHotspots) {
                 position2D: hotspot2D.position2D,  // {x, y} depuis API Hotspot
                 visibility: hotspot2D.visibility  // "Visible" | "Hidden" | "Occluded"
             }));
+
+            // US-052 : Sauvegarder les payloads de la caméra 0 (16:9) pour téléchargement JSON
+            if (index === 0) {
+                setPDFCamera0SnapshotPayload(adjustedSnapshotPayload);
+                setPDFCamera0HotspotPayload(hotspotPayload);
+            }
 
             return {
                 imageUrl,

@@ -67,7 +67,14 @@ const state = {
     lastValidConfig: null,
 
     // US-021 : Dernier payload envoyé à l'API (pour téléchargement JSON)
-    lastPayload: null
+    lastPayload: null,
+
+    // US-051 : Dernier payload Hotspot envoyé à l'API (pour téléchargement JSON)
+    lastHotspotPayload: null,
+
+    // US-052 : Payloads PDF caméra 0 (16:9) pour téléchargement JSON
+    pdfCamera0SnapshotPayload: null,
+    pdfCamera0HotspotPayload: null
 };
 
 // ======================================
@@ -128,6 +135,14 @@ export function getError() {
  */
 export function getLastPayload() {
     return state.lastPayload;
+}
+
+/**
+ * US-051 : Retourne le dernier payload Hotspot envoyé à l'API
+ * @returns {Object|null} Le payload Hotspot ou null
+ */
+export function getLastHotspotPayload() {
+    return state.lastHotspotPayload;
 }
 
 /**
@@ -325,6 +340,46 @@ export function setError(error) {
  */
 export function setLastPayload(payload) {
     state.lastPayload = payload;
+}
+
+/**
+ * US-051 : Sauvegarde le payload Hotspot envoyé à l'API
+ * @param {Object} payload - Le payload Hotspot JSON
+ */
+export function setLastHotspotPayload(payload) {
+    state.lastHotspotPayload = payload;
+}
+
+/**
+ * US-052 : Retourne le payload Snapshot de la caméra 0 PDF
+ * @returns {Object|null} Le payload Snapshot caméra 0
+ */
+export function getPDFCamera0SnapshotPayload() {
+    return state.pdfCamera0SnapshotPayload;
+}
+
+/**
+ * US-052 : Sauvegarde le payload Snapshot de la caméra 0 PDF
+ * @param {Object} payload - Le payload Snapshot
+ */
+export function setPDFCamera0SnapshotPayload(payload) {
+    state.pdfCamera0SnapshotPayload = payload;
+}
+
+/**
+ * US-052 : Retourne le payload Hotspot de la caméra 0 PDF
+ * @returns {Object|null} Le payload Hotspot caméra 0
+ */
+export function getPDFCamera0HotspotPayload() {
+    return state.pdfCamera0HotspotPayload;
+}
+
+/**
+ * US-052 : Sauvegarde le payload Hotspot de la caméra 0 PDF
+ * @param {Object} payload - Le payload Hotspot
+ */
+export function setPDFCamera0HotspotPayload(payload) {
+    state.pdfCamera0HotspotPayload = payload;
 }
 
 /**
