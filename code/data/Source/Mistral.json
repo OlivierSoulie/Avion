@@ -1,1 +1,94 @@
-{"settings":{"api":"v2","server":"https://wr-daher.lumiscaphe.com/","scene":{"database":"2787143d-3b03-4126-89bf-e6778ec4ad5e","configuration":"Version.980/Exterior_Colors_ZoneA+.SocataWhite-29017-#dcdcd7-#D9D7C8-A+-29017-socata-white-solid-light/Exterior_Colors_ZoneA.SocataWhite-29017-#dcdcd7-#D9D7C8-A+-29017-socata-white-solid-light/Exterior_Colors_ZoneB.SignalBlue-05005-#1b5e85-#003B70-noA+-05005-signal-blue-solid/Exterior_Colors_ZoneC.BethmaleSilver-22513-#7a7e7c-#5B5B56-noA+-22513-bethmale-silver-grey-gray-dark-metallic/Exterior_Colors_ZoneD.AlbeilleBlack-22505-#414142-#171719-noA+-22505-albeille-black-dark-metallic/Exterior_PaintScheme.Mistral_4_B-0_B-D_B-D_B-D_B-D/Interior_Carpet.LightBrown_carpet_Premium/Interior_CentralSeatMaterial.Leather_Premium/Interior_LowerSidePanel.BeigeGray_2176_Leather_Premium/Interior_MetalFinish.BrushedStainless_metal_Premium/Interior_PerforatedSeatOptions.NoSeatPerforation_Premium/Interior_SeatCovers.BeigeGray_2176_Leather_Premium/Interior_Seatbelts.OatMeal_belt/Interior_Stitching.LightSand_Premium/Interior_TabletFinish.SapelliMat_table_wood_Premium/Interior_Ultra-SuedeRibbon.Elephant_3367_Suede_Premium/Interior_UpperSidePanel.WhiteSand_2192_Leather_Premium/Decor.Studio_Ground_6/Position.Studio/Exterior_Spinner.PolishedAluminium_1/SunGlass.SunGlassOFF/Tablet.Closed/Lighting_mood.undefined/Door_pilot.Closed/Door_passenger.Closed"},"views":[{"mode":"image","camera":"0a674741-3aa8-4a0c-bcfe-bae5c2a9c088"},{"mode":"vrcube","camera":""},{"mode":"vrobject","camera":"0a674741-3aa8-4a0c-bcfe-bae5c2a9c088","loop":true,"frames":24}],"view":"image"},"hotspots":[{"name":" Zone A","description":"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse sodales erat nec elit porttitor fermentum. Morbi diam tellus, placerat sed condimentum sit amet, vulputate tristique arcu. Suspendisse ut consectetur metus.","attachment":{"type":"image","url":"assets/images/placeholder.webp"},"position3D":{"x":-3.478896141052246,"y":1.384543776512146,"z":0.6332787871360779}},{"name":"Zone B","description":"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse sodales erat nec elit porttitor fermentum. Morbi diam tellus, placerat sed condimentum sit amet, vulputate tristique arcu. Suspendisse ut consectetur metus.","attachment":{"type":"image","url":"assets/images/placeholder.webp"},"position3D":{"x":-3.7380638122558594,"y":1.0553900003433228,"z":0.5412606596946716}},{"name":"Zone A+","description":"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse sodales erat nec elit porttitor fermentum. Morbi diam tellus, placerat sed condimentum sit amet, vulputate tristique arcu. Suspendisse ut consectetur metus.","attachment":{"type":"image","url":"assets/images/placeholder.webp"},"position3D":{"x":-0.5288054943084717,"y":1.1658316850662231,"z":5.078500747680664}},{"name":"Zone C","description":"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse sodales erat nec elit porttitor fermentum. Morbi diam tellus, placerat sed condimentum sit amet, vulputate tristique arcu. Suspendisse ut consectetur metus.","attachment":{"type":"image","url":"assets/images/placeholder.webp"},"position3D":{"x":0.12986791133880615,"y":1.226261854171753,"z":0.6801236867904663}},{"name":"Zone D","description":"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse sodales erat nec elit porttitor fermentum. Morbi diam tellus, placerat sed condimentum sit amet, vulputate tristique arcu. Suspendisse ut consectetur metus.","attachment":{"type":"image","url":"assets/images/placeholder.webp"},"position3D":{"x":2.7697811126708984,"y":1.4988844394683838,"z":0.42075419425964355}}]}
+{
+    "settings": {
+        "api": "v2",
+        "server": "https://wr-daher.lumiscaphe.com/",
+        "scene": {
+            "database": "2787143d-3b03-4126-89bf-e6778ec4ad5e",
+            "configuration": "Version.980/Exterior_Colors_ZoneA+.SocataWhite-29017-#dcdcd7-#D9D7C8-A+-29017-socata-white-solid-light/Exterior_Colors_ZoneA.SocataWhite-29017-#dcdcd7-#D9D7C8-A+-29017-socata-white-solid-light/Exterior_Colors_ZoneB.SignalBlue-05005-#1b5e85-#003B70-noA+-05005-signal-blue-solid/Exterior_Colors_ZoneC.BethmaleSilver-22513-#7a7e7c-#5B5B56-noA+-22513-bethmale-silver-grey-gray-dark-metallic/Exterior_Colors_ZoneD.AlbeilleBlack-22505-#414142-#171719-noA+-22505-albeille-black-dark-metallic/Exterior_PaintScheme.Mistral_4_B-0_B-D_B-D_B-D_B-D/Interior_Carpet.LightBrown_carpet_Premium/Interior_CentralSeatMaterial.Leather_Premium/Interior_LowerSidePanel.BeigeGray_2176_Leather_Premium/Interior_MetalFinish.BrushedStainless_metal_Premium/Interior_PerforatedSeatOptions.NoSeatPerforation_Premium/Interior_SeatCovers.BeigeGray_2176_Leather_Premium/Interior_Seatbelts.OatMeal_belt/Interior_Stitching.LightSand_Premium/Interior_TabletFinish.SapelliMat_table_wood_Premium/Interior_Ultra-SuedeRibbon.Elephant_3367_Suede_Premium/Interior_UpperSidePanel.WhiteSand_2192_Leather_Premium/Decor.Studio_Ground_6/Position.Studio/Exterior_Spinner.PolishedAluminium_1/SunGlass.SunGlassOFF/Tablet.Closed/Lighting_mood.undefined/Door_pilot.Closed/Door_passenger.Closed"
+        },
+        "views": [
+            {
+                "mode": "image",
+                "camera": "0a674741-3aa8-4a0c-bcfe-bae5c2a9c088"
+            },
+            {
+                "mode": "vrcube",
+                "camera": ""
+            },
+            {
+                "mode": "vrobject",
+                "camera": "0a674741-3aa8-4a0c-bcfe-bae5c2a9c088",
+                "loop": true,
+                "frames": 24
+            }
+        ],
+        "view": "image"
+    },
+    "hotspots": [
+        {
+            "name": " Zone A",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse sodales erat nec elit porttitor fermentum. Morbi diam tellus, placerat sed condimentum sit amet, vulputate tristique arcu. Suspendisse ut consectetur metus.",
+            "attachment": {
+                "type": "image",
+                "url": "assets/images/placeholder.webp"
+            },
+            "position3D": {
+                "x": -3.478896141052246,
+                "y": 1.384543776512146,
+                "z": 0.6332787871360779
+            }
+        },
+        {
+            "name": "Zone B",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse sodales erat nec elit porttitor fermentum. Morbi diam tellus, placerat sed condimentum sit amet, vulputate tristique arcu. Suspendisse ut consectetur metus.",
+            "attachment": {
+                "type": "image",
+                "url": "assets/images/placeholder.webp"
+            },
+            "position3D": {
+                "x": -3.7380638122558594,
+                "y": 1.0553900003433228,
+                "z": 0.5412606596946716
+            }
+        },
+        {
+            "name": "Zone A+",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse sodales erat nec elit porttitor fermentum. Morbi diam tellus, placerat sed condimentum sit amet, vulputate tristique arcu. Suspendisse ut consectetur metus.",
+            "attachment": {
+                "type": "image",
+                "url": "assets/images/placeholder.webp"
+            },
+            "position3D": {
+                "x": -0.6500220894813538,
+                "y": 1.0098228454589844,
+                "z": 3.2950918674468994
+            }
+        },
+        {
+            "name": "Zone C",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse sodales erat nec elit porttitor fermentum. Morbi diam tellus, placerat sed condimentum sit amet, vulputate tristique arcu. Suspendisse ut consectetur metus.",
+            "attachment": {
+                "type": "image",
+                "url": "assets/images/placeholder.webp"
+            },
+            "position3D": {
+                "x": 0.12986791133880615,
+                "y": 1.226261854171753,
+                "z": 0.6801236867904663
+            }
+        },
+        {
+            "name": "Zone D",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse sodales erat nec elit porttitor fermentum. Morbi diam tellus, placerat sed condimentum sit amet, vulputate tristique arcu. Suspendisse ut consectetur metus.",
+            "attachment": {
+                "type": "image",
+                "url": "assets/images/placeholder.webp"
+            },
+            "position3D": {
+                "x": 3.3283908367156982,
+                "y": 1.5860298871994019,
+                "z": 0.32797881960868835
+            }
+        }
+    ]
+}
