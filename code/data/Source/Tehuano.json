@@ -1,0 +1,94 @@
+{
+    "settings": {
+        "api": "v2",
+        "server": "https://wr-daher.lumiscaphe.com/",
+        "scene": {
+            "database": "2787143d-3b03-4126-89bf-e6778ec4ad5e",
+            "configuration": "Version.980/Exterior_Colors_ZoneA+.SocataWhite-29017-#dcdcd7-#D9D7C8-A+-29017-socata-white-solid-light/Exterior_Colors_ZoneA.CobaltBlue-05013-#3c495f-#282742-noA+-05013-cobalt-blue-dark-solid/Exterior_Colors_ZoneB.SocataWhite-29017-#dcdcd7-#D9D7C8-A+-29017-socata-white-solid-light/Exterior_Colors_ZoneC.MelonYellow-01028-#ed9936-#FF9700-noA+-01028-orange-melon-yellow-solid/Exterior_Colors_ZoneD.SilverGrey-07001-#939a9e-#8A8F90-noA+-07001-silver-grey-gray-solid/Exterior_PaintScheme.Tehuano_6_A-0_A-D_A-D_A-D_A-D/Interior_Carpet.LightBrown_carpet_Premium/Interior_CentralSeatMaterial.Leather_Premium/Interior_LowerSidePanel.BeigeGray_2176_Leather_Premium/Interior_MetalFinish.BrushedStainless_metal_Premium/Interior_PerforatedSeatOptions.NoSeatPerforation_Premium/Interior_SeatCovers.BeigeGray_2176_Leather_Premium/Interior_Seatbelts.OatMeal_belt/Interior_Stitching.LightSand_Premium/Interior_TabletFinish.SapelliMat_table_wood_Premium/Interior_Ultra-SuedeRibbon.Elephant_3367_Suede_Premium/Interior_UpperSidePanel.WhiteSand_2192_Leather_Premium/Decor.Studio_Ground_6/Position.Studio/Exterior_Spinner.PolishedAluminium_1/SunGlass.SunGlassOFF/Tablet.Closed/Lighting_mood.undefined/Door_pilot.Closed/Door_passenger.Closed"
+        },
+        "views": [
+            {
+                "mode": "image",
+                "camera": "0a674741-3aa8-4a0c-bcfe-bae5c2a9c088"
+            },
+            {
+                "mode": "vrcube",
+                "camera": ""
+            },
+            {
+                "mode": "vrobject",
+                "camera": "0a674741-3aa8-4a0c-bcfe-bae5c2a9c088",
+                "loop": true,
+                "frames": 24
+            }
+        ],
+        "view": "image"
+    },
+    "hotspots": [
+        {
+            "name": "Zone A",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse sodales erat nec elit porttitor fermentum. Morbi diam tellus, placerat sed condimentum sit amet, vulputate tristique arcu. Suspendisse ut consectetur metus.",
+            "attachment": {
+                "type": "image",
+                "url": "assets/images/placeholder.webp"
+            },
+            "position3D": {
+                "x": -3.472846508026123,
+                "y": 1.4914079904556274,
+                "z": 0.6319094300270081
+            }
+        },
+        {
+            "name": "Zone D",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse sodales erat nec elit porttitor fermentum. Morbi diam tellus, placerat sed condimentum sit amet, vulputate tristique arcu. Suspendisse ut consectetur metus.",
+            "attachment": {
+                "type": "image",
+                "url": "assets/images/placeholder.webp"
+            },
+            "position3D": {
+                "x": -3.7380638122558594,
+                "y": 1.0553900003433228,
+                "z": 0.5412606596946716
+            }
+        },
+        {
+            "name": "Zone A+",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse sodales erat nec elit porttitor fermentum. Morbi diam tellus, placerat sed condimentum sit amet, vulputate tristique arcu. Suspendisse ut consectetur metus.",
+            "attachment": {
+                "type": "image",
+                "url": "assets/images/placeholder.webp"
+            },
+            "position3D": {
+                "x": -0.5288054943084717,
+                "y": 1.1658316850662231,
+                "z": 5.078500747680664
+            }
+        },
+        {
+            "name": "Zone C",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse sodales erat nec elit porttitor fermentum. Morbi diam tellus, placerat sed condimentum sit amet, vulputate tristique arcu. Suspendisse ut consectetur metus.",
+            "attachment": {
+                "type": "image",
+                "url": "assets/images/placeholder.webp"
+            },
+            "position3D": {
+                "x": 0.13600878417491913,
+                "y": 1.4642690420150757,
+                "z": 0.6836632490158081
+            }
+        },
+        {
+            "name": "Zone B",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse sodales erat nec elit porttitor fermentum. Morbi diam tellus, placerat sed condimentum sit amet, vulputate tristique arcu. Suspendisse ut consectetur metus.",
+            "attachment": {
+                "type": "image",
+                "url": "assets/images/placeholder.webp"
+            },
+            "position3D": {
+                "x": 2.7687525749206543,
+                "y": 1.5309741497039795,
+                "z": 0.4257611334323883
+            }
+        }
+    ]
+}
