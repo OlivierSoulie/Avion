@@ -18,6 +18,8 @@ const state = {
         prestige: DEFAULT_CONFIG.prestige,
         decor: DEFAULT_CONFIG.decor,
         spinner: DEFAULT_CONFIG.spinner,
+        logoTBM: DEFAULT_CONFIG.logoTBM,     // US-051
+        logo9xx: DEFAULT_CONFIG.logo9xx,     // US-051
         fontType: DEFAULT_CONFIG.fontType,
         style: DEFAULT_CONFIG.style,
         immat: DEFAULT_CONFIG.immat,

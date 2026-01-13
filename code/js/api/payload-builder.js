@@ -289,6 +289,8 @@ export function buildConfigString(xmlDoc, config) {
         `${decorPrefix}.${decorSuffix}`,  // Production V0.2+: "Decor.{value}"
         `Position.${positionValue}`,
         `Exterior_Spinner.${config.spinner}`,
+        `Exterior_Logo_TBM.${config.logoTBM}`,  // US-051: Logo TBM (LogoBlack/Red/White)
+        `Exterior_Logo_9xx.${config.logo9xx}`,  // US-051: Logo 9xx (LogoBlack/Red/White)
         `SunGlass.${config.sunglass}`,        // US-024: Dynamique (SunGlassON/OFF)
         `Tablet.${config.tablet}`,            // US-023: Dynamique (Open/Closed)
         `Lighting_mood.${config.moodLights}`, // Mood Lights dynamique (Lighting_Mood_ON/OFF)

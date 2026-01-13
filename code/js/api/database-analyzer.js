@@ -126,6 +126,8 @@ function analyzeFeatures(xmlDoc) {
             hasTablet: paramNames.has('Tablet'),
             hasLightingCeiling: paramNames.has('Lighting_Ceiling') || paramNames.has('Lighting_ceiling'),
             hasMoodLights: paramNames.has('Lighting_mood') || paramNames.has('Mood_Lights') || paramNames.has('MoodLights'),
+            hasLogoTBM: paramNames.has('Exterior_Logo_TBM'),  // US-051
+            hasLogo9xx: paramNames.has('Exterior_Logo_9xx'),  // US-051
 
             // Variantes de nommage (pour gérer les différences mineures entre V0.2, V0.3, V0.4)
             lightingCeilingNaming: paramNames.has('Lighting_ceiling') ? 'Lighting_ceiling' : 'Lighting_Ceiling',
@@ -428,6 +430,14 @@ function detectValuePattern(paramName, options) {
 
     // ⚠️ Stitching est maintenant géré dans la section Interior_ (ligne 452)
     // Ce code a été supprimé pour éviter les doublons
+
+    // US-051 : Patterns Exterior_Logo_TBM et Exterior_Logo_9xx (V0.9.7+)
+    if (paramName === 'Exterior_Logo_TBM' || paramName === 'Exterior_Logo_9xx') {
+        return {
+            pattern: `${paramName}.{colorName}_{hexCode}`,
+            description: 'V0.9.7+ : Couleur des logos TBM et 9xx sur l\'extérieur de l\'avion. Structure en 2 segments : {colorName} = Nom de la couleur pour affichage IHM/dropdown (ex: LogoBlack, LogoRed, LogoWhite). Utilisé pour le label du dropdown dans l\'interface utilisateur. {hexCode} = Code couleur HTML du logo (ex: #262626, #A40000, #EFEFEF). Peut servir à calculer un contraste avec la couleur de la zone de fuselage sur laquelle le logo est appliqué (utiliser les codes {hexLAB} des paramètres Exterior_Colors_Zone pour le calcul de contraste). Format: ColorName_HexCode. Exemples: LogoBlack_#262626, LogoRed_#A40000, LogoWhite_#EFEFEF.'
+        };
+    }
 
     // Patterns Exterior_Colors_ZoneA, ZoneB, ZoneC, ZoneD, ZoneA+ (V0.2+)
     // TOUTES les zones ont exactement la même structure (6 segments + metadata variable)

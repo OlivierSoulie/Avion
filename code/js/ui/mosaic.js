@@ -85,7 +85,7 @@ async function bakeWatermarkOnImage(img, watermarkText) {
  * @param {string} viewType - Type de vue ('exterior' ou 'interior')
  * @public
  */
-export function renderMosaic(imageData, viewType = 'exterior') {
+export async function renderMosaic(imageData, viewType = 'exterior') {
     const mosaicGrid = document.getElementById('mosaicGrid');
     const overviewMosaic = document.getElementById('overviewMosaic');
     const viewportDisplay = document.getElementById('viewportDisplay');
@@ -131,6 +131,9 @@ export function renderMosaic(imageData, viewType = 'exterior') {
     mosaicGrid.classList.remove('exterior', 'interior', 'configuration');
     mosaicGrid.classList.add(viewType);
 
+    // Tableau pour collecter les Promises de chargement d'images
+    const imageLoadPromises = [];
+
     // Créer les images avec event listeners
     imageData.forEach((item, index) => {
         // Support ancien format (string URL) et nouveau format (objet)
@@ -147,6 +150,16 @@ export function renderMosaic(imageData, viewType = 'exterior') {
         img.src = url;
         img.alt = `Vue TBM ${index + 1}`;
         img.loading = 'lazy';
+
+        // Créer une Promise qui se résout quand l'image est chargée
+        const loadPromise = new Promise((resolve, reject) => {
+            img.onload = () => resolve();
+            img.onerror = () => {
+                console.warn(`Image ${index + 1} (${url}) failed to load`);
+                resolve(); // Résoudre quand même pour ne pas bloquer les autres images
+            };
+        });
+        imageLoadPromises.push(loadPromise);
 
         // Ajouter les métadonnées dans data-attributes
         if (groupName) img.dataset.groupName = groupName;
@@ -197,6 +210,9 @@ export function renderMosaic(imageData, viewType = 'exterior') {
 
         mosaicGrid.appendChild(wrapper);
     });
+
+    // Attendre que toutes les images soient chargées avant de cacher le loader
+    await Promise.all(imageLoadPromises);
 
     // Afficher la mosaïque
     mosaicGrid.classList.remove('hidden');

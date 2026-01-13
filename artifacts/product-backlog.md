@@ -2967,3 +2967,89 @@ Afin d'obtenir un rendu visuel correct et proportionné.
 ---
 
 **Total Sprint #15** : 8 Story Points (US-047: 3 SP + US-048: 5 SP)
+
+---
+
+### [US-051] Configuration couleurs logos TBM et 9xx
+
+**Priorité** : Moyenne
+**Story Points** : 3 SP
+**Sprint** : Sprint #18 (Prévu)
+**Status** : To Do
+
+**User Story :**
+En tant qu'utilisateur configurant l'extérieur de mon avion,
+Je veux pouvoir choisir la couleur des logos "TBM" et "9xx",
+Afin de personnaliser l'apparence des logos sur mon avion.
+
+**Critères d'acceptation :**
+- [ ] Deux nouveaux dropdowns dans la section "Extérieur" :
+  - "Logo TBM" (Exterior_Logo_TBM)
+  - "Logo 9xx" (Exterior_Logo_9xx)
+- [ ] Dropdowns affichés UNIQUEMENT si les paramètres existent dans le XML (détection dynamique)
+- [ ] Chaque dropdown propose les 3 couleurs disponibles :
+  - Noir (#262626)
+  - Rouge (#A40000)
+  - Blanc (#EFEFEF)
+- [ ] Les valeurs sont extraites dynamiquement du XML (pas de hardcoding)
+- [ ] La sélection est incluse dans le payload API lors du rendu
+- [ ] La configuration par défaut est extraite depuis balise `<Default>` du XML :
+  - Exterior_Logo_TBM : LogoBlack_#262626 (Noir)
+  - Exterior_Logo_9xx : LogoRed_#A40000 (Rouge)
+- [ ] Aucune modification des fonctionnalités existantes
+- [ ] Tests avec base V0.9.7 (paramètres présents) et V0.9.6 (paramètres absents)
+
+**Format des paramètres dans le XML** :
+```
+Exterior_Logo_TBM.LogoBlack_#262626
+Exterior_Logo_TBM.LogoRed_#A40000
+Exterior_Logo_TBM.LogoWhite_#EFEFEF
+
+Exterior_Logo_9xx.LogoBlack_#262626
+Exterior_Logo_9xx.LogoRed_#A40000
+Exterior_Logo_9xx.LogoWhite_#EFEFEF
+```
+
+**Pattern détecté** :
+- Nom du paramètre : `Exterior_Logo_TBM` / `Exterior_Logo_9xx`
+- Format valeur : `{ColorName}_{HexCode}`
+- Segments : 2 (ColorName + HexCode)
+
+**Décomposition technique** :
+- [T051-1] Analyser structure XML des paramètres logos (30min) - DEV
+- [T051-2] Ajouter extraction dans `xml-parser.js` (30min) - DEV
+- [T051-3] Créer dropdowns HTML dans section Extérieur (30min) - DEV
+- [T051-4] Ajouter gestion événements et état (30min) - DEV
+- [T051-5] Intégrer dans payload API (30min) - DEV
+- [T051-6] Extraire valeurs par défaut depuis balise `<Default>` du XML (15min) - DEV
+- [T051-7] Tests bases V0.9.7 (présents) et V0.9.6 (absents) (45min) - QA
+- [T051-8] Mise à jour documentation (15min) - DOC
+
+**Note technique valeurs par défaut** :
+Les valeurs par défaut sont extraites depuis la balise `<Default value="...">` du XML :
+- `Exterior_Logo_TBM.LogoBlack_#262626` (Noir)
+- `Exterior_Logo_9xx.LogoRed_#A40000` (Rouge)
+
+**Estimation** : 3 Story Points (~4h de développement)
+
+**Fichiers à modifier** :
+- `code/index.html` : Ajout des 2 dropdowns dans section Extérieur
+- `code/js/api/xml-parser.js` : Extraction dynamique des options logos
+- `code/js/ui/dropdown-manager.js` : Population des dropdowns logos
+- `code/js/state.js` : Ajout des champs logoTBM et logo9xx
+- `code/js/config.js` : Valeurs par défaut
+- `code/js/api/payload-builder.js` : Intégration dans le payload
+- `CLAUDE.md` : Documentation du nouveau paramètre
+
+**Contraintes** :
+- ⚠️ AUCUNE modification des fonctionnalités existantes
+- ⚠️ Détection dynamique obligatoire (ne pas afficher si paramètre absent)
+- ⚠️ Pas de hardcoding des valeurs (extraction depuis XML)
+
+**Dépendances** :
+- Base de données V0.9.7 disponible
+- XML téléchargé et analysé
+
+---
+
+**Total Sprint #18** : 3 Story Points (US-051)

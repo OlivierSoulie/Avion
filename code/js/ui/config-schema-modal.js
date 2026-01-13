@@ -123,7 +123,9 @@ export function renderDatabaseStructure(structure) {
         { key: 'hasSunGlass', label: 'Volet Hublots', icon: '🪟', path: 'features.production' },
         { key: 'hasTablet', label: 'Tablette', icon: '📱', path: 'features.production' },
         { key: 'hasLightingCeiling', label: 'Éclairage Plafond', icon: '💡', path: 'features.production' },
-        { key: 'hasMoodLights', label: 'Mood Lights', icon: '✨', path: 'features.production' }
+        { key: 'hasMoodLights', label: 'Mood Lights', icon: '✨', path: 'features.production' },
+        { key: 'hasLogoTBM', label: 'Logo TBM', icon: '🏷️', path: 'features.production' },  // US-051
+        { key: 'hasLogo9xx', label: 'Logo 9xx', icon: '🏷️', path: 'features.production' }   // US-051
     ];
 
     featuresList.forEach(({ key, label, path }) => {
@@ -185,6 +187,8 @@ export function renderDatabaseStructure(structure) {
 
     // Regroupement spécial pour les Exterior_Colors_Zone
     const colorZonesABCD = ['Exterior_Colors_ZoneA', 'Exterior_Colors_ZoneB', 'Exterior_Colors_ZoneC', 'Exterior_Colors_ZoneD'];
+    // US-051 : Regroupement spécial pour les Exterior_Logo
+    const logoParams = ['Exterior_Logo_TBM', 'Exterior_Logo_9xx'];
     const processedParams = new Set();
 
     Object.entries(structure.parameters).forEach(([paramName, paramData]) => {
@@ -237,6 +241,58 @@ export function renderDatabaseStructure(structure) {
 
         // Si c'est une zone A/B/C/D mais déjà traitée en groupe, skip
         if (colorZonesABCD.includes(paramName)) {
+            return;
+        }
+
+        // US-051 : Regroupement spécial pour les Exterior_Logo (TBM + 9xx)
+        if (logoParams.includes(paramName) && !processedParams.has('Logo_Group')) {
+            // Créer une seule div pour les deux logos
+            const paramDiv = document.createElement('div');
+            paramDiv.className = 'config-parameter-item';
+
+            // Collecter toutes les options des deux logos
+            const allOptions = [];
+            let totalCount = 0;
+            logoParams.forEach(logoName => {
+                if (structure.parameters[logoName]) {
+                    totalCount += structure.parameters[logoName].optionCount;
+                    structure.parameters[logoName].options.forEach(opt => {
+                        // Éviter les doublons (les couleurs sont les mêmes pour les 2 logos)
+                        if (!allOptions.find(o => o.label === opt.label)) {
+                            allOptions.push(opt);
+                        }
+                    });
+                }
+            });
+
+            let optionsHTML = '';
+            allOptions.forEach(opt => {
+                optionsHTML += `<div class="config-option-item" title="${opt.value}">${opt.label}</div>`;
+            });
+
+            // Utiliser le pattern et la description du premier paramètre trouvé
+            const firstLogoData = structure.parameters[logoParams.find(l => structure.parameters[l])];
+            let descriptionHTML = '';
+            if (firstLogoData && firstLogoData.patternDescription) {
+                descriptionHTML = `<div class="config-parameter-description">ℹ️ ${firstLogoData.patternDescription}</div>`;
+            }
+
+            paramDiv.innerHTML = `
+                <div class="config-parameter-header">
+                    <span class="config-parameter-name">Exterior_Logo_TBM<br>Exterior_Logo_9xx</span>
+                    <span class="config-parameter-count">${allOptions.length} option(s)</span>
+                </div>
+                <div class="config-parameter-pattern">Pattern: ${firstLogoData ? firstLogoData.pattern : 'N/A'}</div>
+                ${descriptionHTML}
+                <div class="config-parameter-options">${optionsHTML}</div>
+            `;
+            parametersContainer.appendChild(paramDiv);
+            processedParams.add('Logo_Group');
+            return; // Skip le deuxième logo
+        }
+
+        // Si c'est un logo mais déjà traité en groupe, skip
+        if (logoParams.includes(paramName)) {
             return;
         }
 

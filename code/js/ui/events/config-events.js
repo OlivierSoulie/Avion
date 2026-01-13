@@ -191,4 +191,22 @@ export function attachConfigEvents() {
             window.triggerRender(); // US-005: Appel API automatique
         });
     }
+
+    // US-051 : Logo TBM
+    const selectLogoTBM = document.getElementById('selectLogoTBM');
+    if (selectLogoTBM) {
+        selectLogoTBM.addEventListener('change', (e) => {
+            updateConfig('logoTBM', e.target.value);
+            window.triggerRender(); // US-005: Appel API automatique
+        });
+    }
+
+    // US-051 : Logo 9xx
+    const selectLogo9xx = document.getElementById('selectLogo9xx');
+    if (selectLogo9xx) {
+        selectLogo9xx.addEventListener('change', (e) => {
+            updateConfig('logo9xx', e.target.value);
+            window.triggerRender(); // US-005: Appel API automatique
+        });
+    }
 }

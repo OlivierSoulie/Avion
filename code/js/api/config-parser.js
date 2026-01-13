@@ -41,6 +41,10 @@ export function parseDefaultConfigString(configString) {
             config.decor = decorFull.split('_')[0];
         } else if (part.startsWith('Exterior_Spinner.')) {
             config.spinner = part.replace('Exterior_Spinner.', '');
+        } else if (part.startsWith('Exterior_Logo_TBM.')) {  // US-051
+            config.logoTBM = part.replace('Exterior_Logo_TBM.', '');
+        } else if (part.startsWith('Exterior_Logo_9xx.')) {  // US-051
+            config.logo9xx = part.replace('Exterior_Logo_9xx.', '');
         } else if (part.startsWith('Interior_Stitching.')) {
             config.stitching = part.replace('Interior_Stitching.', '');
         }

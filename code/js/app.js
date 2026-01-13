@@ -232,15 +232,16 @@ async function loadRender() {
         setImages(images);
 
         // 5. Afficher les images dans la mosaïque
-        hideLoader();
-
         if (viewType === 'configuration') {
             // Afficher la mosaïque Configuration avec ratios mixtes
             await renderConfigMosaic(images);
         } else {
             // Pour exterior/interior, passer les objets complets avec métadonnées
-            renderMosaic(images, viewType);
+            await renderMosaic(images, viewType);
         }
+
+        // Cacher le loader seulement après que toutes les images sont chargées
+        hideLoader();
 
         // BUG-002 FIX: Afficher le message de succès
         showSuccessToast('Rendu généré avec succès !');
@@ -394,3 +395,10 @@ if (document.readyState === 'loading') {
 // testPayloadBuild supprimé lors du refactoring
 window.loadRender = loadRender;
 window.triggerRender = triggerRender;
+
+// Exposer lastConfigHash pour permettre le reset au changement de base (database-events.js)
+// On utilise un getter/setter pour maintenir l'accès à la variable locale
+Object.defineProperty(window, 'lastConfigHash', {
+    get: () => lastConfigHash,
+    set: (value) => { lastConfigHash = value; }
+});

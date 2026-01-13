@@ -209,6 +209,8 @@ export const DEFAULT_CONFIG = {
     prestige: "Oslo",
     decor: "Tarmac",
     spinner: "PolishedAluminium",
+    logoTBM: "LogoBlack_#262626",  // US-051 : Extrait depuis XML <Default>
+    logo9xx: "LogoRed_#A40000",    // US-051 : Extrait depuis XML <Default>
     fontType: "slanted",
     style: "A",
     immat: "N960TB",

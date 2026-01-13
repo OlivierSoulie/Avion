@@ -31,6 +31,25 @@ export async function populateAllDropdowns() {
         populateDropdown('selectPaintScheme', exteriorOptions.paintScheme, config.paintScheme);
         populateDropdown('selectPrestige', exteriorOptions.prestige, config.prestige);
         populateDropdown('selectSpinner', exteriorOptions.spinner, config.spinner);
+
+        // US-051 : Logos (détection dynamique - RESET puis affichage conditionnel)
+        const sectionLogoTBM = document.getElementById('sectionLogoTBM');
+        const sectionLogo9xx = document.getElementById('sectionLogo9xx');
+
+        // RESET : Toujours cacher les sections au début (important lors du changement de base)
+        if (sectionLogoTBM) sectionLogoTBM.style.display = 'none';
+        if (sectionLogo9xx) sectionLogo9xx.style.display = 'none';
+
+        // Afficher uniquement si paramètres existent dans le XML
+        if (exteriorOptions.logoTBM && exteriorOptions.logoTBM.length > 0) {
+            sectionLogoTBM.style.display = '';
+            populateDropdown('selectLogoTBM', exteriorOptions.logoTBM, config.logoTBM);
+        }
+        if (exteriorOptions.logo9xx && exteriorOptions.logo9xx.length > 0) {
+            sectionLogo9xx.style.display = '';
+            populateDropdown('selectLogo9xx', exteriorOptions.logo9xx, config.logo9xx);
+        }
+
         populateDropdown('selectDecor', exteriorOptions.decor, config.decor);
         // Peupler aussi le dropdown décor de la section intérieur (synchronisé)
         populateDropdown('selectDecorInterior', exteriorOptions.decor, config.decor);

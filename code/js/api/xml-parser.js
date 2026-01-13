@@ -619,6 +619,22 @@ export function getExteriorOptionsFromXML(xmlDoc) {
         value: opt.value
     }));
 
+    // US-051 : Logo TBM - FORMAT : {ColorName}_{HexCode}
+    // Exemple : "LogoBlack_#262626", "LogoRed_#A40000", "LogoWhite_#EFEFEF"
+    const logoTBMRaw = extractParameterOptions(xmlDoc, 'Exterior_Logo_TBM', false);
+    options.logoTBM = logoTBMRaw.map(opt => ({
+        label: opt.label.split('_')[0],  // "LogoBlack_#262626" → "LogoBlack"
+        value: opt.value                  // Valeur complète pour API : "Exterior_Logo_TBM.LogoBlack_#262626"
+    }));
+
+    // US-051 : Logo 9xx - FORMAT : {ColorName}_{HexCode}
+    // Exemple : "LogoBlack_#262626", "LogoRed_#A40000", "LogoWhite_#EFEFEF"
+    const logo9xxRaw = extractParameterOptions(xmlDoc, 'Exterior_Logo_9xx', false);
+    options.logo9xx = logo9xxRaw.map(opt => ({
+        label: opt.label.split('_')[0],  // "LogoRed_#A40000" → "LogoRed"
+        value: opt.value                  // Valeur complète pour API : "Exterior_Logo_9xx.LogoRed_#A40000"
+    }));
+
     // Decor - FORMAT V0.9.2+ : {DecorName}_{Flight|Ground}_{index}
     // Exemples : "Fjord_Flight_2", "Tarmac_Ground_5", "Studio_Ground_6"
     // ⚠️ IMPORTANT : Supporte UNIQUEMENT les bases Production (V0.2+) avec paramètre "Decor"
