@@ -4,6 +4,43 @@ Ce fichier contient l'historique complet de toutes les modifications, sprints et
 
 ---
 
+## 14/01/2026 (US-052: Paramètre InterieurBackplate conditionnel)
+
+**Type** : Feature technique
+**Durée** : ~15 min
+**Context** : Activation conditionnelle paramètre InterieurBackplate pour décors Tarmac/Onirique
+
+### Fonctionnalité implémentée
+
+**Paramètre InterieurBackplate conditionnel (US-052)**
+- **Problème** : Décors Tarmac et Onirique nécessitent un paramètre spécial pour les vues intérieur
+- **Solution** : Ajout automatique de `InterieurBackplate` dans le payload selon conditions
+- **Logique** : Paramètre ajouté si et seulement si :
+  - Vue = "interior" **ET**
+  - Décor = "Tarmac" **OU** "Onirique"
+
+**Implémentation** :
+- Utilise `decorPositionValue` (nom de base sans suffixes)
+- Comparaison insensible à la casse
+- Ajouté après tous les autres paramètres dans le payload
+
+**Fichier modifié** :
+- `code/js/api/payload-builder.js` (lignes 302-309) - Logique conditionnelle
+
+**Résultat** :
+- ✅ Vue Intérieur + Tarmac → `InterieurBackplate` ajouté
+- ✅ Vue Intérieur + Onirique → `InterieurBackplate` ajouté
+- ✅ Vue Intérieur + autres décors → Pas de paramètre
+- ✅ Vue Extérieur (tous décors) → Pas de paramètre
+- ✅ Aucun impact sur autres fonctionnalités
+
+**Exemple payload** :
+```
+.../Door_passenger.Closed/InterieurBackplate
+```
+
+---
+
 ## 13/01/2026 (US-051: Configuration logos TBM et 9xx + Fix loader images)
 
 **Type** : Feature + Bug fix critique

@@ -299,6 +299,15 @@ export function buildConfigString(xmlDoc, config) {
         config.registrationStyle ? `Exterior_RegistrationNumber_Style.${config.registrationStyle}` : null
     ];
 
+    // US-052: InterieurBackplate requis pour vue intérieur avec décors Tarmac ou Onirique
+    // Activer uniquement si vue intérieur ET décor Tarmac/Onirique
+    if (config.viewType === "interior") {
+        const decorBaseName = decorPositionValue.toLowerCase();
+        if (decorBaseName === "tarmac" || decorBaseName === "onirique") {
+            configParts.push("InterieurBackplate");
+        }
+    }
+
     const fullConfigStr = configParts.filter(Boolean).join('/');
 
     return fullConfigStr;
