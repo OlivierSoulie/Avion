@@ -399,12 +399,11 @@ async function buildPayloadBase(config, mode) {
         renderParameters: {
             width: config.imageWidth || (mode === 'singleCamera' ? 400 : 1920),
             height: config.imageHeight || (mode === 'singleCamera' ? 225 : 1080),
-            antialiasing: true,
             superSampling: "2"
         },
         encoder: {
             jpeg: {
-                quality: 95
+                quality: 80
             }
         }
     };
@@ -487,7 +486,6 @@ export async function buildOverviewPayload(cameraId, isMainImage, config) {
         renderParams = {
             width: 1920,
             height: 1080,
-            antialiasing: true,
             superSampling: "2",
             background: false // false = fond transparent (Boolean selon spec API)
         };
@@ -501,12 +499,11 @@ export async function buildOverviewPayload(cameraId, isMainImage, config) {
         renderParams = {
             width: 1920,
             height: 1080,
-            antialiasing: true,
             superSampling: "2"
         };
         encoderParams = {
             jpeg: {
-                quality: 95
+                quality: 80
             }
         };
     }
