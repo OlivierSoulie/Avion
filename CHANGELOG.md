@@ -4,6 +4,82 @@ Ce fichier contient l'historique complet de toutes les modifications, sprints et
 
 ---
 
+## 20/01/2026 (Optimisation performance + Nettoyage documentation)
+
+**Type** : Performance + Maintenance documentation
+**Durée** : ~1h
+**Commits** : `3b90fae`, `d49c047`
+
+### 1. Optimisation paramètres rendu API
+
+**Type** : Amélioration performance
+**Context** : Réduction temps de rendu GPU et poids des fichiers JPEG
+
+**Modifications (`code/js/api/payload-builder.js`)** :
+
+#### Suppression antialiasing (3 endroits)
+- **Ligne 402** : Mode normal (Extérieur/Intérieur/PDF)
+- **Ligne 489** : Vue Overview - Image A (PNG transparent)
+- **Ligne 502** : Vue Overview - Images B/C/D (JPEG)
+- **Avant** : `antialiasing: true`
+- **Après** : Paramètre supprimé (API utilise défaut = `false`)
+
+#### Réduction qualité JPEG (2 endroits)
+- **Ligne 406** : Mode normal
+- **Ligne 506** : Vue Overview B/C/D
+- **Avant** : `quality: 95`
+- **Après** : `quality: 80`
+
+#### Conservation superSampling
+- **Valeur** : `"2"` maintenue partout
+- **Raison** : Assure qualité visuelle acceptable malgré suppression antialiasing
+
+**Impact attendu** :
+- ⚡ Rendu GPU plus rapide (~20-30%)
+- ⚡ Fichiers JPEG plus légers (~30-40%)
+- ⚡ Temps de téléchargement réduit
+- 🔍 Bords légèrement plus dentelés (acceptable avec superSampling 2x)
+
+**Vues concernées** : Toutes (Extérieur, Intérieur, PDF, Overview)
+
+---
+
+### 2. Nettoyage documentation CLAUDE.md
+
+**Type** : Maintenance documentation
+**Context** : Suppression duplication massive avec CHANGELOG.md
+
+**Modifications** :
+- **Suppression** : Section "## Changelog" complète (~810 lignes)
+- **Ajout** : Référence vers `CHANGELOG.md` dédié
+- **Réduction** : CLAUDE.md de 1096 → 295 lignes (73% de réduction)
+
+**Fichier modifié** :
+- `CLAUDE.md` (lignes 289-291) - Référence vers CHANGELOG.md
+
+**Résultat** :
+- ✅ Suppression duplication (810 lignes)
+- ✅ Séparation des responsabilités (règles vs historique)
+- ✅ Meilleure maintenabilité
+- ✅ Fichier CLAUDE.md plus lisible
+
+---
+
+### Statistiques
+
+| Métrique | Valeur |
+|----------|--------|
+| **Commits** | 2 |
+| **Fichiers modifiés** | 2 |
+| **Lignes supprimées** | ~805 |
+| **Lignes modifiées** | 5 |
+| **Optimisations perf** | 3 (antialiasing) + 2 (JPEG quality) |
+| **Réduction doc** | 73% |
+
+**GitHub** : ✅ Poussé vers origin/main le 20/01/2026
+
+---
+
 ## 14/01/2026 (US-052: Paramètre InterieurBackplate conditionnel)
 
 **Type** : Feature technique
