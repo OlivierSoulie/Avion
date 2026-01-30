@@ -129,7 +129,7 @@ export function hidePDFViewer() {
 export function toggleViewControls(viewType) {
     const controlsExterior = document.getElementById('controls-exterior');
     const controlsInterior = document.getElementById('controls-interior');
-    const actionsExterior = document.getElementById('actions-exterior');
+    const actionsCommon = document.getElementById('actions-common');
     const actionsInterior = document.getElementById('actions-interior');
     const actionsPanel = document.querySelector('.viewport-actions-panel');
 
@@ -143,24 +143,24 @@ export function toggleViewControls(viewType) {
         controlsExterior.style.display = 'block';
         controlsInterior.style.display = 'none';
 
-        // Afficher actions extérieur, masquer actions intérieur
-        if (actionsExterior) actionsExterior.style.display = 'flex';
+        // Afficher actions communes (Décor + Portes), masquer actions intérieur spécifiques
+        if (actionsCommon) actionsCommon.style.display = 'flex';
         if (actionsInterior) actionsInterior.style.display = 'none';
 
-        // Afficher le panneau d'actions
-        if (actionsPanel) actionsPanel.style.display = 'block';
+        // Afficher le panneau d'actions (flex pour alignement horizontal)
+        if (actionsPanel) actionsPanel.style.display = 'flex';
 
     } else if (viewType === 'interior') {
         // Masquer contrôles extérieur, afficher contrôles intérieur
         controlsExterior.style.display = 'none';
         controlsInterior.style.display = 'block';
 
-        // Masquer actions extérieur, afficher actions intérieur
-        if (actionsExterior) actionsExterior.style.display = 'none';
+        // Afficher actions communes (Décor + Portes) ET actions intérieur spécifiques
+        if (actionsCommon) actionsCommon.style.display = 'flex';
         if (actionsInterior) actionsInterior.style.display = 'flex';
 
-        // Afficher le panneau d'actions
-        if (actionsPanel) actionsPanel.style.display = 'block';
+        // Afficher le panneau d'actions (flex pour alignement horizontal)
+        if (actionsPanel) actionsPanel.style.display = 'flex';
 
     } else if (viewType === 'configuration') {
         // US-042: Vue Configuration - masquer tous les contrôles (pas de personnalisation)
@@ -168,7 +168,7 @@ export function toggleViewControls(viewType) {
         controlsInterior.style.display = 'none';
 
         // Masquer toutes les actions
-        if (actionsExterior) actionsExterior.style.display = 'none';
+        if (actionsCommon) actionsCommon.style.display = 'none';
         if (actionsInterior) actionsInterior.style.display = 'none';
 
         // Masquer le panneau d'actions (vide)
@@ -179,7 +179,7 @@ export function toggleViewControls(viewType) {
         controlsInterior.style.display = 'none';
 
         // Masquer toutes les actions
-        if (actionsExterior) actionsExterior.style.display = 'none';
+        if (actionsCommon) actionsCommon.style.display = 'none';
         if (actionsInterior) actionsInterior.style.display = 'none';
 
         // Masquer le panneau d'actions (vide)
@@ -191,7 +191,7 @@ export function toggleViewControls(viewType) {
         controlsInterior.style.display = 'none';
 
         // Masquer toutes les actions (pas besoin de décor, portes, etc.)
-        if (actionsExterior) actionsExterior.style.display = 'none';
+        if (actionsCommon) actionsCommon.style.display = 'none';
         if (actionsInterior) actionsInterior.style.display = 'none';
 
         // Masquer le panneau d'actions
@@ -516,12 +516,7 @@ export async function checkConfigFieldsAvailability() {
             {
                 selector: '.form-group:has(#selectDecor)',
                 params: ['Decor'], // Production uniquement (V0.2+) - POC non supporté
-                name: 'Décor (Extérieur)'
-            },
-            {
-                selector: '.form-group:has(#selectDecorInterior)',
-                params: ['Decor'], // Production uniquement (V0.2+) - POC non supporté
-                name: 'Décor (Intérieur)'
+                name: 'Décor'
             },
             {
                 selector: '.form-group:has(#selectPrestige)',

@@ -182,10 +182,6 @@ async function loadRender() {
             if (selectDecor && validatedConfig.decor) {
                 selectDecor.value = validatedConfig.decor;
             }
-            const selectDecorInterior = document.getElementById('selectDecorInterior');
-            if (selectDecorInterior && validatedConfig.decor) {
-                selectDecorInterior.value = validatedConfig.decor;
-            }
         }
 
         // BUG-001 FIX: Vérifier si la config a changé

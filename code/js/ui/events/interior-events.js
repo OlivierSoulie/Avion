@@ -134,7 +134,7 @@ export function attachInteriorEvents() {
             });
         }
 
-        // US-025 : Porte pilote
+        // US-025 : Porte pilote (section commune - visible en Extérieur ET Intérieur)
         const btnDoorPilotClosed = document.getElementById('btnDoorPilotClosed');
         const btnDoorPilotOpen = document.getElementById('btnDoorPilotOpen');
         if (btnDoorPilotClosed && btnDoorPilotOpen) {
@@ -152,7 +152,7 @@ export function attachInteriorEvents() {
             });
         }
 
-        // US-026 : Porte passager
+        // US-026 : Porte passager (section commune - visible en Extérieur ET Intérieur)
         const btnDoorPassengerClosed = document.getElementById('btnDoorPassengerClosed');
         const btnDoorPassengerOpen = document.getElementById('btnDoorPassengerOpen');
         if (btnDoorPassengerClosed && btnDoorPassengerOpen) {

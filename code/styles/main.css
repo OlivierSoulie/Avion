@@ -1186,14 +1186,20 @@ p {
     border-radius: var(--radius-sm);
     border: 1px solid var(--color-border);
     flex-shrink: 0;
+    /* Aligner les sections communes et intérieur sur une seule ligne */
+    display: flex;
+    flex-direction: row;
+    gap: var(--spacing-md);
+    align-items: center;
+    flex-wrap: nowrap;
 }
 
 .actions-section {
     display: flex;
     flex-direction: row;
-    gap: var(--spacing-lg);
+    gap: var(--spacing-md);
     align-items: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
 }
 
 .actions-section .form-group {

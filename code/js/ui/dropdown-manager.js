@@ -50,9 +50,8 @@ export async function populateAllDropdowns() {
             populateDropdown('selectLogo9xx', exteriorOptions.logo9xx, config.logo9xx);
         }
 
+        // Un seul dropdown décor (section commune visible en Extérieur ET Intérieur)
         populateDropdown('selectDecor', exteriorOptions.decor, config.decor);
-        // Peupler aussi le dropdown décor de la section intérieur (synchronisé)
-        populateDropdown('selectDecorInterior', exteriorOptions.decor, config.decor);
 
         // Mettre à jour le dropdown Style selon le type de police actuel
         updateStyleDropdown(config.fontType, exteriorOptions.styleSlanted, exteriorOptions.styleStraight);

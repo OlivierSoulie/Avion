@@ -155,30 +155,11 @@ export function attachConfigEvents() {
         });
     }
 
-    // Dropdown Décor (Extérieur)
+    // Dropdown Décor (section commune - visible en Extérieur ET Intérieur)
     const selectDecor = document.getElementById('selectDecor');
     if (selectDecor) {
         selectDecor.addEventListener('change', (e) => {
             updateConfig('decor', e.target.value);
-
-            // Synchroniser le dropdown décor de la section intérieur
-            const selectDecorInterior = document.getElementById('selectDecorInterior');
-            if (selectDecorInterior) selectDecorInterior.value = e.target.value;
-
-            window.triggerRender(); // US-005: Appel API automatique
-        });
-    }
-
-    // Dropdown Décor (Intérieur) - Synchronisé avec Extérieur
-    const selectDecorInterior = document.getElementById('selectDecorInterior');
-    if (selectDecorInterior) {
-        selectDecorInterior.addEventListener('change', (e) => {
-            updateConfig('decor', e.target.value);
-
-            // Synchroniser le dropdown décor de la section extérieur
-            const selectDecor = document.getElementById('selectDecor');
-            if (selectDecor) selectDecor.value = e.target.value;
-
             window.triggerRender(); // US-005: Appel API automatique
         });
     }

@@ -109,9 +109,6 @@ export async function loadDefaultConfigFromXML() {
         if (parsedConfig.decor) {
             const selectDecor = document.getElementById('selectDecor');
             if (selectDecor) selectDecor.value = parsedConfig.decor;
-            // Synchroniser le dropdown décor de la section intérieur
-            const selectDecorInterior = document.getElementById('selectDecorInterior');
-            if (selectDecorInterior) selectDecorInterior.value = parsedConfig.decor;
         }
         if (parsedConfig.spinner) {
             const selectSpinner = document.getElementById('selectSpinner');

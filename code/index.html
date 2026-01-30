@@ -195,8 +195,8 @@
 
                 <!-- Actions contextuelles sous la mosaïque -->
                 <div class="viewport-actions-panel">
-                    <!-- Actions EXTÉRIEUR : Décor + Portes -->
-                    <div id="actions-exterior" class="actions-section">
+                    <!-- Actions COMMUNES : Décor + Portes (visibles en Extérieur ET Intérieur) -->
+                    <div id="actions-common" class="actions-section">
                         <div class="form-group">
                             <label for="selectDecor">Décor</label>
                             <select id="selectDecor" name="decor" class="form-control"></select>
@@ -217,13 +217,8 @@
                         </div>
                     </div>
 
-                    <!-- Actions INTÉRIEUR : Accessoires -->
+                    <!-- Actions INTÉRIEUR uniquement : Accessoires spécifiques à la vue intérieure -->
                     <div id="actions-interior" class="actions-section" style="display: none;">
-                        <!-- Décor (partagé avec Extérieur) -->
-                        <div class="form-group">
-                            <label for="selectDecorInterior">Décor</label>
-                            <select id="selectDecorInterior" name="decor" class="form-control"></select>
-                        </div>
                         <div class="form-group">
                             <label>Volet Hublots</label>
                             <div class="toggle-group">
