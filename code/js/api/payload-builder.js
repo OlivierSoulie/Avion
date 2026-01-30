@@ -291,22 +291,20 @@ export function buildConfigString(xmlDoc, config) {
         `Exterior_Spinner.${config.spinner}`,
         `Exterior_Logo_TBM.${config.logoTBM}`,  // US-051: Logo TBM (LogoBlack/Red/White)
         `Exterior_Logo_9xx.${config.logo9xx}`,  // US-051: Logo 9xx (LogoBlack/Red/White)
-        `SunGlass.${config.sunglass}`,        // US-024: Dynamique (SunGlassON/OFF)
-        `Tablet.${config.tablet}`,            // US-023: Dynamique (Open/Closed)
-        `Lighting_mood.${config.moodLights}`, // Mood Lights dynamique (Lighting_Mood_ON/OFF)
-        `Door_pilot.${config.doorPilot}`,     // US-025: Dynamique (Open/Closed)
-        `Door_passenger.${config.doorPassenger}`, // US-026: Dynamique (Open/Closed)
+        `SunGlass.${config.sunglass || 'SunGlassOFF'}`,        // US-024
+        `Tablet.${config.tablet || 'Closed'}`,                  // US-023
+        `Lighting_mood.${config.moodLights || 'Lighting_Mood_OFF'}`, // US-053
+        `Lighting_Ceiling.${config.lightingCeiling || 'Lighting_Ceiling_OFF'}`, // US-054
+        `Door_pilot.${config.doorPilot || 'Closed'}`,        // US-025
+        `Door_passenger.${config.doorPassenger || 'Closed'}`, // US-026
         config.registrationStyle ? `Exterior_RegistrationNumber_Style.${config.registrationStyle}` : null
     ];
 
-    // US-052: InterieurBackplate requis pour vue intérieur avec décors Tarmac ou Onirique
-    // Activer uniquement si vue intérieur ET décor Tarmac/Onirique
-    if (config.viewType === "interior") {
-        const decorBaseName = decorPositionValue.toLowerCase();
-        if (decorBaseName === "tarmac" || decorBaseName === "onirique") {
-            configParts.push("InterieurBackplate");
-        }
-    }
+    // US-052: InterieurBackplate - paramètre toujours présent
+    // ON uniquement pour vue intérieur avec décors Tarmac ou Onirique, OFF sinon
+    const decorBaseName = decorPositionValue.toLowerCase();
+    const needsBackplate = config.viewType === "interior" && (decorBaseName === "tarmac" || decorBaseName === "onirique");
+    configParts.push(`InterieurBackplate.${needsBackplate ? 'ON' : 'OFF'}`);
 
     const fullConfigStr = configParts.filter(Boolean).join('/');
 

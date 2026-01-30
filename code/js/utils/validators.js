@@ -430,6 +430,11 @@ export async function checkActionButtonsAvailability() {
                 selector: '.form-group:has(#btnMoodLightsOFF)',
                 params: ['Lighting_mood'], // Mood Lights (V0.6+)
                 name: 'Mood Lights'
+            },
+            {
+                selector: '#lightingCeilingGroup',
+                params: ['Lighting_Ceiling', 'Lighting_ceiling'], // US-054: Éclairage plafond
+                name: 'Éclairage Plafond'
             }
         ];
 

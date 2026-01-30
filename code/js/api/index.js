@@ -19,6 +19,7 @@ export {
     getExteriorOptionsFromXML,
     getInteriorOptionsFromXML,
     getInteriorPrestigeConfig,
+    findPrestigeFromInteriorConfig,
     getDefaultConfig,
     fetchDatabases,
     parseColorString,

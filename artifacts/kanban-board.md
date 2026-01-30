@@ -1,8 +1,8 @@
 # Kanban Board - Configurateur_Daher
 
 **Projet** : 005-Configurateur_Daher
-**Sprint actuel** : Aucun (Sprint #18 terminé ✅)
-**Derniere mise a jour** : 22/12/2025 - Hotfixes: 9 corrections/améliorations mosaïque PDF (système labels 6 zones coins + navigation fullscreen)
+**Sprint actuel** : Sprint #19 - Éclairage (EN COURS)
+**Derniere mise a jour** : 30/01/2026 - Sprint Planning terminé par ARCH, US-053 et US-054 In Progress
 **Équipe** : 6 agents (PO + ARCH + COORDINATOR + 1 DEV-Généraliste + 1 QA-Fonctionnel + 1 DOC)
 
 ---
@@ -1702,7 +1702,46 @@ XML Config → API Snapshot → API Hotspot → SVG Overlay → Canvas Export
 
 ---
 
-## 📋 Historique des mouvements (Sprint #12, #13, #14, #15, #16, #17, #18)
+## Sprint #19 - Éclairage (EN COURS 🚀)
+
+**Sprint Goal** : "Corriger le bug Mood Lights et ajouter le contrôle Lighting_Ceiling"
+
+**Date de création** : 30/01/2026
+**Sprint Planning** : 30/01/2026 par ARCH
+**Story Points prévus** : 3 SP (US-053: 1 SP + US-054: 2 SP)
+**Mode** : ✅ Process Scrumban complet
+
+### 🔵 To Do (0 US - 0 SP)
+
+_Toutes les US sont en cours de développement_
+
+### 🟡 In Progress (2 US - 3 SP)
+
+#### [US-053] Correction bug Mood Lights (1 SP) - Bug Priorité Haute - DEV
+- **Problème** : `Lighting_mood.undefined` dans le payload
+- **Cause** : Propriété `moodLights` manquante dans `state.config`
+- **Fichiers** : state.js, config.js, interior-events.js, index.html
+- **Tâches** : 5 (T053-1 à T053-5)
+
+#### [US-054] Contrôle Lighting_Ceiling (2 SP) - Nouvelle fonctionnalité - DEV
+- **Objectif** : Bouton ON/OFF pour éclairage plafond
+- **Pattern** : Identique à Tablet/SunGlass/Mood Lights
+- **Fichiers** : index.html, state.js, config.js, interior-events.js, payload-builder.js
+- **Tâches** : 7 (T054-1 à T054-7)
+
+### 🟢 Testing (0 US - 0 SP)
+
+_En attente de développement_
+
+### ✅ Done (0 US - 0 SP)
+
+_Pas encore de US terminées_
+
+**Progression Sprint #19** : 0/3 SP complétés (0%) - **DÉVELOPPEMENT EN COURS**
+
+---
+
+## 📋 Historique des mouvements (Sprint #12, #13, #14, #15, #16, #17, #18, #19)
 
 | Date | US | Mouvement | Responsable |
 |------|----|-----------| ------------|
@@ -1748,4 +1787,10 @@ XML Config → API Snapshot → API Hotspot → SVG Overlay → Canvas Export
 | 15/12/2025 | US-050 | In Progress → Testing (modification CHAR_WIDTHS terminée) | DEV-Généraliste |
 | 15/12/2025 | US-050 | Testing → Done (validation statique PASS) | QA-Fonctionnel |
 | 15/12/2025 | Sprint #17 | TERMINÉ ✅ - 1/1 SP validé (100%) | COORDINATOR |
+| 30/01/2026 | US-053 | Créée et ajoutée au Sprint #19 (To Do) - Bug Mood Lights (Lighting_mood.undefined) | PO |
+| 30/01/2026 | US-054 | Créée et ajoutée au Sprint #19 (To Do) - Contrôle Lighting_Ceiling | PO |
+| 30/01/2026 | Sprint #19 | Sprint créé - Éclairage (3 SP) - En attente Sprint Planning ARCH | PO |
+| 30/01/2026 | Sprint #19 | Sprint Planning terminé - US-053 (5 tâches) + US-054 (7 tâches) décomposées | ARCH |
+| 30/01/2026 | US-053 | To Do → In Progress (assignation DEV) | COORDINATOR |
+| 30/01/2026 | US-054 | To Do → In Progress (assignation DEV) | COORDINATOR |
 

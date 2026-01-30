@@ -525,7 +525,14 @@ export function getExteriorOptionsFromXML(xmlDoc) {
         spinner: [],
         decor: [],
         styleSlanted: [],
-        styleStraight: []
+        styleStraight: [],
+        // US-053/US-054 : Toggles extraits du XML (pas hardcodés)
+        sunGlass: [],
+        tablet: [],
+        doorPilot: [],
+        doorPassenger: [],
+        moodLights: [],
+        lightingCeiling: []
     };
 
     // Version (TBM 960, 980)
@@ -694,6 +701,28 @@ export function getExteriorOptionsFromXML(xmlDoc) {
         options.styleStraight = ['F', 'G', 'H', 'I', 'J'];
     }
 
+    // US-053/US-054 : Extraction des toggles depuis le XML
+    // SunGlass - ex: SunGlassON, SunGlassOFF
+    options.sunGlass = extractParameterOptions(xmlDoc, 'SunGlass', false);
+
+    // Tablet - ex: Open, Closed
+    options.tablet = extractParameterOptions(xmlDoc, 'Tablet', false);
+
+    // Door_pilot - ex: Open, Closed
+    options.doorPilot = extractParameterOptions(xmlDoc, 'Door_pilot', false);
+
+    // Door_passenger - ex: Open, Closed
+    options.doorPassenger = extractParameterOptions(xmlDoc, 'Door_passenger', false);
+
+    // Lighting_mood - ex: ON, OFF
+    options.moodLights = extractParameterOptions(xmlDoc, 'Lighting_mood', false);
+
+    // Lighting_Ceiling - ex: ON, OFF (variante Lighting_ceiling aussi possible)
+    let lightingCeilingOptions = extractParameterOptions(xmlDoc, 'Lighting_Ceiling', false);
+    if (lightingCeilingOptions.length === 0) {
+        lightingCeilingOptions = extractParameterOptions(xmlDoc, 'Lighting_ceiling', false);
+    }
+    options.lightingCeiling = lightingCeilingOptions;
 
     return options;
 }
@@ -787,6 +816,38 @@ export function getInteriorPrestigeConfig(xmlDoc, prestigeName) {
     });
 
     return config;
+}
+
+/**
+ * Déduit le prestige utilisé à partir des valeurs intérieur de la config par défaut
+ * Compare les valeurs avec chaque bookmark prestige du XML
+ *
+ * @param {XMLDocument} xmlDoc - Document XML
+ * @param {Object} interiorConfig - Config intérieur parsée (carpet, seatCovers, etc.)
+ * @returns {string|null} Nom du prestige trouvé ou null
+ */
+export function findPrestigeFromInteriorConfig(xmlDoc, interiorConfig) {
+    // Récupérer tous les bookmarks prestige
+    const prestigeBookmarks = xmlDoc.querySelectorAll('ConfigurationBookmark[label^="Interior_PrestigeSelection_"]');
+
+    for (const bookmark of prestigeBookmarks) {
+        const label = bookmark.getAttribute('label');
+        const prestigeName = label.replace('Interior_PrestigeSelection_', '');
+
+        try {
+            const prestigeConfig = getInteriorPrestigeConfig(xmlDoc, prestigeName);
+
+            // Comparer les valeurs clés (carpet et seatCovers suffisent généralement)
+            if (prestigeConfig.carpet === interiorConfig.carpet &&
+                prestigeConfig.seatCovers === interiorConfig.seatCovers) {
+                return prestigeName;
+            }
+        } catch (e) {
+            // Ignorer les erreurs de parsing
+        }
+    }
+
+    return null;
 }
 
 // ======================================

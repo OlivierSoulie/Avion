@@ -7,10 +7,8 @@ import { getConfig, setConfig, updateConfig, setImages, setLoading, setError, ha
 import {
     STYLES_SLANTED,
     STYLES_STRAIGHT,
-    DEFAULT_CONFIG,
-    getAirplaneType // US-044
-    // IMPORTANT : Toutes les listes de choix (VERSION, PAINT_SCHEMES, PRESTIGE, SPINNER, DECORS, etc.)
-    // sont maintenant extraites dynamiquement du XML via getExteriorOptionsFromXML() et getInteriorOptionsFromXML()
+    getAirplaneType
+    // IMPORTANT : Toutes les valeurs de configuration viennent du XML via loadDefaultConfigFromXML()
 } from './config.js';
 import {
     renderMosaic,

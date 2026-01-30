@@ -3053,3 +3053,105 @@ Les valeurs par défaut sont extraites depuis la balise `<Default value="...">` 
 ---
 
 **Total Sprint #18** : 3 Story Points (US-051)
+
+---
+
+## User Stories - Sprint #19 (Éclairage)
+
+### [US-053] Correction bug Mood Lights (Lighting_mood.undefined)
+
+**Priorité** : Haute (Bug)
+**Story Points** : 1 SP
+**Sprint** : Sprint #19 (Prévu)
+**Status** : To Do
+
+**User Story :**
+En tant qu'utilisateur,
+Je veux que le bouton Mood Lights (ON/OFF) fonctionne correctement,
+Afin que la configuration d'éclairage soit envoyée à l'API et produise l'image attendue.
+
+**Contexte du bug :**
+- Le bouton Mood Lights existe dans l'UI (index.html lignes 242-247)
+- Les événements existent (interior-events.js lignes 55-73)
+- MAIS : la propriété `moodLights` n'existe PAS dans `state.config` (state.js)
+- Résultat : `updateConfig('moodLights', ...)` échoue silencieusement
+- Le payload contient `Lighting_mood.undefined` au lieu de `Lighting_mood.ON` ou `Lighting_mood.OFF`
+
+**Critères d'acceptation :**
+- [ ] Ajouter `moodLights: DEFAULT_CONFIG.moodLights` dans state.js (après ligne 33)
+- [ ] Vérifier le format attendu par l'API : `Lighting_mood.ON` ou `Lighting_mood.OFF`
+- [ ] Corriger l'événement si nécessaire pour stocker `"ON"` ou `"OFF"` (pas `"Lighting_Mood_ON"`)
+- [ ] Corriger payload-builder.js si le format est incorrect
+- [ ] Cliquer sur ON → config string contient `Lighting_mood.ON`
+- [ ] Cliquer sur OFF → config string contient `Lighting_mood.OFF`
+- [ ] L'image rendue reflète l'état des Mood Lights
+- [ ] Aucune modification des autres fonctionnalités
+
+**Fichiers à modifier :**
+- `code/js/state.js` : Ajouter propriété `moodLights`
+- `code/js/ui/events/interior-events.js` : Vérifier/corriger les valeurs stockées
+- `code/js/api/payload-builder.js` : Vérifier/corriger le format de la config string
+
+**Notes techniques :**
+- Comparer avec le fonctionnement de `tablet` (qui fonctionne correctement)
+- Format attendu probable : `Lighting_mood.ON` et `Lighting_mood.OFF`
+- Vérifier dans le XML les valeurs exactes disponibles
+
+**Estimation** : 1 Story Point (~1h de développement + tests)
+
+---
+
+### [US-054] Contrôle Lighting_Ceiling (Éclairage Plafond)
+
+**Priorité** : Moyenne
+**Story Points** : 2 SP
+**Sprint** : Sprint #19 (Prévu)
+**Status** : To Do
+
+**User Story :**
+En tant qu'utilisateur,
+Je veux contrôler l'état de l'éclairage du plafond (ON/OFF),
+Afin de visualiser l'intérieur avec différentes configurations d'éclairage.
+
+**Critères d'acceptation :**
+- [ ] Toggle "Éclairage Plafond" dans les contrôles intérieur (ON / OFF)
+- [ ] Boutons similaires à Mood Lights (même style toggle-group)
+- [ ] Valeur par défaut : OFF
+- [ ] État ajouté dans state.js (`lightingCeiling: "OFF"`)
+- [ ] État ajouté dans config.js DEFAULT_CONFIG
+- [ ] Config string inclut `Lighting_Ceiling.ON` ou `Lighting_Ceiling.OFF`
+- [ ] Événements dans interior-events.js
+- [ ] Changement déclenche nouveau rendu
+- [ ] Fonctionne pour vue intérieure
+- [ ] Affichage conditionnel : bouton visible UNIQUEMENT si paramètre existe dans la base XML
+- [ ] Aucune modification des autres fonctionnalités
+
+**Notes techniques :**
+- Valeurs possibles : `Lighting_Ceiling.ON`, `Lighting_Ceiling.OFF`
+- Position dans config string : Après `Lighting_mood`
+- Détection dynamique : `database-analyzer.js` détecte déjà `hasLightingCeiling`
+- Variantes de nommage : `Lighting_Ceiling` ou `Lighting_ceiling` (selon version base)
+
+**Fichiers à modifier :**
+- `code/index.html` : Ajouter toggle dans section intérieur (après Mood Lights)
+- `code/js/state.js` : Ajouter propriété `lightingCeiling`
+- `code/js/config.js` : Ajouter DEFAULT_CONFIG.lightingCeiling
+- `code/js/ui/events/interior-events.js` : Ajouter événements ON/OFF
+- `code/js/api/payload-builder.js` : Ajouter dans config string
+
+**Décomposition technique :**
+- [T054-1] Ajouter propriété dans state.js et config.js (15min) - DEV
+- [T054-2] Ajouter boutons toggle HTML dans index.html (15min) - DEV
+- [T054-3] Ajouter événements dans interior-events.js (15min) - DEV
+- [T054-4] Ajouter dans payload-builder.js (15min) - DEV
+- [T054-5] Implémenter affichage conditionnel selon XML (30min) - DEV
+- [T054-6] Tests avec bases ayant/n'ayant pas le paramètre (30min) - QA
+
+**Estimation** : 2 Story Points (~2h de développement + tests)
+
+**Dépendances :**
+- US-053 doit être terminée (même pattern de correction)
+
+---
+
+**Total Sprint #19** : 3 Story Points (US-053 + US-054)

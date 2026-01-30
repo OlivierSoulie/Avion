@@ -48,6 +48,42 @@ export function parseDefaultConfigString(configString) {
         } else if (part.startsWith('Interior_Stitching.')) {
             config.stitching = part.replace('Interior_Stitching.', '');
         }
+        // US-053/US-054 : Toggles extraits du XML
+        else if (part.startsWith('SunGlass.')) {
+            config.sunglass = part.replace('SunGlass.', '');
+        } else if (part.startsWith('Tablet.')) {
+            config.tablet = part.replace('Tablet.', '');
+        } else if (part.startsWith('Door_pilot.')) {
+            config.doorPilot = part.replace('Door_pilot.', '');
+        } else if (part.startsWith('Door_passenger.')) {
+            config.doorPassenger = part.replace('Door_passenger.', '');
+        } else if (part.startsWith('Lighting_mood.')) {
+            config.moodLights = part.replace('Lighting_mood.', '');
+        } else if (part.startsWith('Lighting_Ceiling.') || part.startsWith('Lighting_ceiling.')) {
+            config.lightingCeiling = part.replace(/Lighting_[Cc]eiling\./, '');
+        }
+        // Paramètres intérieur (10 paramètres)
+        else if (part.startsWith('Interior_Carpet.')) {
+            config.carpet = part.replace('Interior_Carpet.', '');
+        } else if (part.startsWith('Interior_SeatCovers.')) {
+            config.seatCovers = part.replace('Interior_SeatCovers.', '');
+        } else if (part.startsWith('Interior_TabletFinish.')) {
+            config.tabletFinish = part.replace('Interior_TabletFinish.', '');
+        } else if (part.startsWith('Interior_Seatbelts.')) {
+            config.seatbelts = part.replace('Interior_Seatbelts.', '');
+        } else if (part.startsWith('Interior_MetalFinish.')) {
+            config.metalFinish = part.replace('Interior_MetalFinish.', '');
+        } else if (part.startsWith('Interior_UpperSidePanel.')) {
+            config.upperSidePanel = part.replace('Interior_UpperSidePanel.', '');
+        } else if (part.startsWith('Interior_LowerSidePanel.')) {
+            config.lowerSidePanel = part.replace('Interior_LowerSidePanel.', '');
+        } else if (part.startsWith('Interior_Ultra-SuedeRibbon.')) {
+            config.ultraSuedeRibbon = part.replace('Interior_Ultra-SuedeRibbon.', '');
+        } else if (part.startsWith('Interior_CentralSeatMaterial.')) {
+            config.centralSeatMaterial = part.replace('Interior_CentralSeatMaterial.', '');
+        } else if (part.startsWith('Interior_PerforatedSeatOptions.')) {
+            config.perforatedSeatOptions = part.replace('Interior_PerforatedSeatOptions.', '');
+        }
     }
 
     return config;
