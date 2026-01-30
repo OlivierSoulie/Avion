@@ -2,7 +2,7 @@
 
 **Projet** : 005-Configurateur_Daher
 **Sprint actuel** : Sprint #19 - Éclairage (EN COURS)
-**Derniere mise a jour** : 30/01/2026 - Sprint Planning terminé par ARCH, US-053 et US-054 In Progress
+**Derniere mise a jour** : 30/01/2026 - Sprint #19 TERMINÉ ✅ (US-053 + US-054 Done) - Commit d4e42ef
 **Équipe** : 6 agents (PO + ARCH + COORDINATOR + 1 DEV-Généraliste + 1 QA-Fonctionnel + 1 DOC)
 
 ---
@@ -1702,42 +1702,52 @@ XML Config → API Snapshot → API Hotspot → SVG Overlay → Canvas Export
 
 ---
 
-## Sprint #19 - Éclairage (EN COURS 🚀)
+## Sprint #19 - Éclairage (TERMINÉ ✅)
 
 **Sprint Goal** : "Corriger le bug Mood Lights et ajouter le contrôle Lighting_Ceiling"
 
 **Date de création** : 30/01/2026
 **Sprint Planning** : 30/01/2026 par ARCH
+**Sprint Review** : 30/01/2026
 **Story Points prévus** : 3 SP (US-053: 1 SP + US-054: 2 SP)
+**Story Points livrés** : 3 SP ✅
 **Mode** : ✅ Process Scrumban complet
 
 ### 🔵 To Do (0 US - 0 SP)
 
-_Toutes les US sont en cours de développement_
+_Vide_
 
-### 🟡 In Progress (2 US - 3 SP)
+### 🟡 In Progress (0 US - 0 SP)
 
-#### [US-053] Correction bug Mood Lights (1 SP) - Bug Priorité Haute - DEV
-- **Problème** : `Lighting_mood.undefined` dans le payload
-- **Cause** : Propriété `moodLights` manquante dans `state.config`
-- **Fichiers** : state.js, config.js, interior-events.js, index.html
-- **Tâches** : 5 (T053-1 à T053-5)
-
-#### [US-054] Contrôle Lighting_Ceiling (2 SP) - Nouvelle fonctionnalité - DEV
-- **Objectif** : Bouton ON/OFF pour éclairage plafond
-- **Pattern** : Identique à Tablet/SunGlass/Mood Lights
-- **Fichiers** : index.html, state.js, config.js, interior-events.js, payload-builder.js
-- **Tâches** : 7 (T054-1 à T054-7)
+_Vide_
 
 ### 🟢 Testing (0 US - 0 SP)
 
-_En attente de développement_
+_Vide_
 
-### ✅ Done (0 US - 0 SP)
+### ✅ Done (2 US - 3 SP)
 
-_Pas encore de US terminées_
+#### [US-053] Correction bug Mood Lights (1 SP) - Bug Priorité Haute ✅
+- **Problème** : `Lighting_mood.undefined` dans le payload
+- **Solution** : Valeurs extraites du XML + refactoring complet
+- **Fichiers modifiés** : state.js, config.js, interior-events.js, config-parser.js, config-loader.js
+- **Commit** : d4e42ef
 
-**Progression Sprint #19** : 0/3 SP complétés (0%) - **DÉVELOPPEMENT EN COURS**
+#### [US-054] Contrôle Lighting_Ceiling (2 SP) - Nouvelle fonctionnalité ✅
+- **Objectif** : Bouton ON/OFF pour éclairage plafond
+- **Solution** : Toggle dynamique avec valeurs XML
+- **Fichiers modifiés** : index.html, state.js, interior-events.js, payload-builder.js, validators.js
+- **Commit** : d4e42ef
+
+**Bonus réalisés** :
+- Fix InterieurBackplate (manquait ON/OFF)
+- Refactoring : toutes les valeurs extraites du XML (plus de hardcoding)
+- Parser config par défaut étendu (10 paramètres intérieur)
+- Déduction automatique du prestige depuis les valeurs intérieur
+- Fix Interior_Ultra-SuedeRibbon (tiret au lieu de underscore)
+- Nettoyage config.js (suppression DEFAULT_CONFIG et DECORS_CONFIG)
+
+**Progression Sprint #19** : 3/3 SP complétés (100%) ✅
 
 ---
 
@@ -1793,4 +1803,7 @@ _Pas encore de US terminées_
 | 30/01/2026 | Sprint #19 | Sprint Planning terminé - US-053 (5 tâches) + US-054 (7 tâches) décomposées | ARCH |
 | 30/01/2026 | US-053 | To Do → In Progress (assignation DEV) | COORDINATOR |
 | 30/01/2026 | US-054 | To Do → In Progress (assignation DEV) | COORDINATOR |
+| 30/01/2026 | US-053 | In Progress → Done (valeurs XML + refactoring) | DEV |
+| 30/01/2026 | US-054 | In Progress → Done (toggle dynamique XML) | DEV |
+| 30/01/2026 | Sprint #19 | TERMINÉ ✅ - 3/3 SP (100%) - Commit d4e42ef | COORDINATOR |
 

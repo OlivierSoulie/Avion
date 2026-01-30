@@ -3056,14 +3056,15 @@ Les valeurs par défaut sont extraites depuis la balise `<Default value="...">` 
 
 ---
 
-## User Stories - Sprint #19 (Éclairage)
+## User Stories - Sprint #19 (Éclairage) ✅ TERMINÉ
 
-### [US-053] Correction bug Mood Lights (Lighting_mood.undefined)
+### [US-053] Correction bug Mood Lights (Lighting_mood.undefined) ✅
 
 **Priorité** : Haute (Bug)
 **Story Points** : 1 SP
-**Sprint** : Sprint #19 (Prévu)
-**Status** : To Do
+**Sprint** : Sprint #19
+**Status** : Done ✅
+**Commit** : d4e42ef
 
 **User Story :**
 En tant qu'utilisateur,
@@ -3101,12 +3102,13 @@ Afin que la configuration d'éclairage soit envoyée à l'API et produise l'imag
 
 ---
 
-### [US-054] Contrôle Lighting_Ceiling (Éclairage Plafond)
+### [US-054] Contrôle Lighting_Ceiling (Éclairage Plafond) ✅
 
 **Priorité** : Moyenne
 **Story Points** : 2 SP
-**Sprint** : Sprint #19 (Prévu)
-**Status** : To Do
+**Sprint** : Sprint #19
+**Status** : Done ✅
+**Commit** : d4e42ef
 
 **User Story :**
 En tant qu'utilisateur,
@@ -3154,4 +3156,4 @@ Afin de visualiser l'intérieur avec différentes configurations d'éclairage.
 
 ---
 
-**Total Sprint #19** : 3 Story Points (US-053 + US-054)
+**Total Sprint #19** : 3 Story Points (US-053 + US-054) ✅ 100% livrés
